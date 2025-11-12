@@ -7,8 +7,6 @@ import RangRo7Nam from '../assets/images/rangro7nam.png';
 import Clio from '../assets/images/bannerClio.jpg';
 import SachSau from '../assets/images/sachsau.png';
 import LungLinh from '../assets/images/lunglinh.png';
-import Banilaco from '../assets/images/banilaco.png';
-import BestSeller50 from '../assets/images/bestseller50.png';
 
 export default function HomePage() {
   const [bannerIndex, setBannerIndex] = useState(0);
