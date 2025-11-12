@@ -142,7 +142,7 @@ export default function HomePage() {
         </div>
         <div className="mt-8 flex justify-center">
           <button className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]">
-            Xem tất cả
+            Xem tất aHUHIUAHIU cả
           </button>
         </div>
       </div>
