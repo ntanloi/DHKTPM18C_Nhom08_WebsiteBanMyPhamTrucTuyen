@@ -7,8 +7,6 @@ import RangRo7Nam from '../assets/images/rangro7nam.png';
 import Clio from '../assets/images/bannerClio.jpg';
 import SachSau from '../assets/images/sachsau.png';
 import LungLinh from '../assets/images/lunglinh.png';
-import Banilaco from '../assets/images/banilaco.png';
-import BestSeller50 from '../assets/images/bestseller50.png';
 
 export default function HomePage() {
   const [bannerIndex, setBannerIndex] = useState(0);
@@ -142,7 +140,7 @@ export default function HomePage() {
         </div>
         <div className="mt-8 flex justify-center">
           <button className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]">
-            Xem tất cả
+            Xem tất aHUHIUAHIU cả
           </button>
         </div>
       </div>
