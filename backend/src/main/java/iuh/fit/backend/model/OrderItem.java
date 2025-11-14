@@ -1,0 +1,37 @@
+package iuh.fit.backend.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+// Order Item Entity
+@Entity
+@Table(name = "order_items")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class OrderItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "order_id")
+    private Integer orderId;
+
+    @Column(name = "product_variant_id")
+    private Integer productVariantId;
+
+    private Integer quantity;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private Order order;
+
+    @OneToOne
+    @JoinColumn(name = "product_variant_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private ProductVariant productVariant;
+}

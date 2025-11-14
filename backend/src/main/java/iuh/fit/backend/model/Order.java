@@ -1,0 +1,81 @@
+package iuh.fit.backend.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+// Order Entity
+@Entity
+@Table(name = "orders")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "user_id")
+    private Integer userId;
+
+    private String status;
+
+    private Double subtotal;
+
+    @Column(name = "total_amount")
+    private Double totalAmount;
+
+    private String notes;
+
+    @Column(name = "discount_amount")
+    private Double discountAmount;
+
+    @Column(name = "shipping_fee")
+    private Double shippingFee;
+
+    @Column(name = "estimate_delivery_from")
+    private LocalDate estimateDeliveryFrom;
+
+    @Column(name = "estimate_delivery_to")
+    private LocalDate estimateDeliveryTo;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private User user;
+
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> orderItems;
+
+    @OneToOne(mappedBy = "order")
+    @JsonIgnore
+    private Payment payment;
+
+    @OneToOne(mappedBy = "order")
+    @JsonIgnore
+    private Return returnInfo;
+
+    @OneToOne(mappedBy = "order")
+    @JsonIgnore
+    private Shipment shipment;
+
+    @OneToOne(mappedBy = "order")
+    @JsonIgnore
+    private OrderStatusHistory orderStatusHistory;//1
+
+    @OneToOne(mappedBy = "order")
+    @JsonIgnore
+    private RecipientInformation recipientInformation;//1
+}
