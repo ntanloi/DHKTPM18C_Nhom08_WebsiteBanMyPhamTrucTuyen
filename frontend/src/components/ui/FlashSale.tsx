@@ -1,0 +1,163 @@
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ProductCard from '../ui/ProductCard';
+import { flashSaleProducts } from '../ui/ProductCard';
+import FlashSaleLogo from '../../assets/images/flashsale.png';
+import { useNavigate } from 'react-router-dom';
+
+export default function FlashSale() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  const navigateToProducts = (category: string) => {
+    // Push state và trigger popstate event
+    window.history.pushState({}, '', `/products/${category}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }; //sửa chỗ này
+
+  // Tính thời gian đếm ngược đến 0h
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+
+      const difference = midnight.getTime() - now.getTime();
+
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    };
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Sử dụng flashSaleProducts từ file ProductCard
+  const products = flashSaleProducts;
+  const visibleProducts = 4; // Hiển thị 4 sản phẩm cùng lúc
+
+  const prevProduct = () => {
+    setCurrentIndex((curr) => (curr === 0 ? products.length - 1 : curr - 1));
+  };
+
+  const nextProduct = () => {
+    setCurrentIndex((curr) => (curr === products.length - 1 ? 0 : curr + 1));
+  };
+
+  return (
+    <div className="color-brand mt-10 rounded-3xl p-8">
+      <div className="mb-6 flex items-center justify-between">
+        {/* Logo Flash Sale */}
+        <div className="flex items-center">
+          <img src={FlashSaleLogo} alt="Flash Sale" className="h-16 w-auto" />
+        </div>
+
+        {/* Center: Countdown Timer */}
+        <div className="flex flex-col">
+          <span className="mb-2 text-base font-medium text-gray-800">
+            Thời gian còn lại
+          </span>
+          <div className="flex items-center gap-3 rounded-xl bg-white px-6 py-3">
+            <div className="text-center">
+              <span className="text-2xl font-bold text-[#d20062]">
+                {String(timeLeft.days).padStart(2, '0')}
+              </span>
+              <span className="ml-1 text-xs font-semibold text-[#d20062]">
+                NGÀY
+              </span>
+            </div>
+            <div className="text-center">
+              <span className="text-2xl font-bold text-[#d20062]">
+                {String(timeLeft.hours).padStart(2, '0')}
+              </span>
+              <span className="ml-1 text-xs font-semibold text-[#d20062]">
+                GIỜ
+              </span>
+            </div>
+            <div className="text-center">
+              <span className="text-2xl font-bold text-[#d20062]">
+                {String(timeLeft.minutes).padStart(2, '0')}
+              </span>
+              <span className="ml-1 text-xs font-semibold text-[#d20062]">
+                PHÚT
+              </span>
+            </div>
+            <div className="text-center">
+              <span className="text-2xl font-bold text-[#d20062]">
+                {String(timeLeft.seconds).padStart(2, '0')}
+              </span>
+              <span className="ml-1 text-xs font-semibold text-[#d20062]">
+                GIÂY
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Nút Xem tất cả */}
+        <button
+          onClick={() => navigateToProducts('flash-sale')}
+          className="rounded-xl border-2 border-white bg-white px-8 py-3 font-semibold text-[#d20062] transition-all hover:bg-pink-50"
+        >
+          Xem tất cả
+        </button>
+      </div>
+
+      {/* Products Carousel */}
+      <div className="relative">
+        <button
+          onClick={prevProduct}
+          className="absolute top-1/2 -left-6 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 transition hover:bg-gray-50"
+        >
+          <ChevronLeft size={28} className="text-gray-800" />
+        </button>
+
+        <div className="overflow-hidden rounded-2xl px-4">
+          <div
+            className="flex gap-6 transition-transform duration-500 ease-in-out"
+            style={{
+              transform: `translateX(-${currentIndex * (100 / visibleProducts)}%)`,
+            }}
+          >
+            {products.map((product, index) => (
+              <div key={index} className="w-1/4 flex-shrink-0">
+                <ProductCard
+                  images={product.images}
+                  freeShip={product.freeShip}
+                  brand={product.brand}
+                  category={product.category}
+                  name={product.name}
+                  price={product.price}
+                  oldPrice={product.oldPrice}
+                  discount={product.discount}
+                  rating={product.rating}
+                  reviewCount={product.reviewCount}
+                  colors={product.colors}
+                  badge={product.badge}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={nextProduct}
+          className="absolute top-1/2 -right-6 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 transition hover:bg-gray-50"
+        >
+          <ChevronRight size={28} className="text-gray-800" />
+        </button>
+      </div>
+    </div>
+  );
+}
