@@ -1,0 +1,89 @@
+package iuh.fit.backend.controller;
+
+import iuh.fit.backend.dto.FavoriteListRequest;
+import iuh.fit.backend.dto.FavoriteListResponse;
+import iuh.fit.backend.service.FavoriteListService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/favorites")
+@CrossOrigin(origins = "*")
+public class FavoriteListController {
+
+    @Autowired
+    private FavoriteListService favoriteListService;
+
+    @GetMapping
+    public ResponseEntity<List<FavoriteListResponse>> getAllFavorites() {
+        List<FavoriteListResponse> favorites = favoriteListService.getAllFavorites();
+        return ResponseEntity.ok(favorites);
+    }
+
+    @GetMapping("/{favoriteId}")
+    public ResponseEntity<?> getFavoriteById(@PathVariable Integer favoriteId) {
+        try {
+            FavoriteListResponse response = favoriteListService.getFavoriteById(favoriteId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<FavoriteListResponse>> getFavoritesByUserId(
+            @PathVariable Integer userId) {
+        List<FavoriteListResponse> favorites = favoriteListService.getFavoritesByUserId(userId);
+        return ResponseEntity.ok(favorites);
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createFavorite(@RequestBody FavoriteListRequest request) {
+        try {
+            FavoriteListResponse response = favoriteListService.createFavorite(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
+    @DeleteMapping("/{favoriteId}")
+    public ResponseEntity<?> deleteFavorite(@PathVariable Integer favoriteId) {
+        try {
+            favoriteListService.deleteFavorite(favoriteId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Favorite deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
+    @DeleteMapping("/user/{userId}/product/{productId}")
+    public ResponseEntity<?> deleteFavoriteByUserAndProduct(
+            @PathVariable Integer userId,
+            @PathVariable Integer productId) {
+        try {
+            favoriteListService.deleteFavoriteByUserAndProduct(userId, productId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Favorite deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+}
