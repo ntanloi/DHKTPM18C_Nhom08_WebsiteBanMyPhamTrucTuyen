@@ -1,24 +1,24 @@
 import { useState } from 'react';
 
-import TinTuc1 from '../../assets/images/tintuc1.png';
-import TinTuc2 from '../../assets/images/tintuc2.png';
-import TinTuc3 from '../../assets/images/tintuc3.png';
+import TinTuc1 from '../../../assets/images/tintuc1.png';
+import TinTuc2 from '../../../assets/images/tintuc2.png';
+import TinTuc3 from '../../../assets/images/tintuc3.png';
 
-import GocRe1 from '../../assets/images/goc1.png';
-import GocRe2 from '../../assets/images/goc2.png';
-import GocRe3 from '../../assets/images/goc3.png';
+import GocRe1 from '../../../assets/images/goc1.png';
+import GocRe2 from '../../../assets/images/goc2.png';
+import GocRe3 from '../../../assets/images/goc3.png';
 
-import ChamSoc1 from '../../assets/images/chamsocda1.png';
-import ChamSoc2 from '../../assets/images/chamsocda2.png';
-import ChamSoc3 from '../../assets/images/chamsocda3.png';
+import ChamSoc1 from '../../../assets/images/chamsocda1.png';
+import ChamSoc2 from '../../../assets/images/chamsocda2.png';
+import ChamSoc3 from '../../../assets/images/chamsocda3.png';
 
-import XuHuong1 from '../../assets/images/xuhuong1.png';
-import XuHuong2 from '../../assets/images/xuhuong2.png';
-import XuHuong3 from '../../assets/images/xuhuong3.png';
+import XuHuong1 from '../../../assets/images/xuhuong1.png';
+import XuHuong2 from '../../../assets/images/xuhuong2.png';
+import XuHuong3 from '../../../assets/images/xuhuong3.png';
 
-import BiQuyet1 from '../../assets/images/biquyet1.png';
-import BiQuyet2 from '../../assets/images/biquyet2.png';
-import BiQuyet3 from '../../assets/images/biquyet3.png';
+import BiQuyet1 from '../../../assets/images/biquyet1.png';
+import BiQuyet2 from '../../../assets/images/biquyet2.png';
+import BiQuyet3 from '../../../assets/images/biquyet3.png';
 
 // Định nghĩa types
 interface Article {

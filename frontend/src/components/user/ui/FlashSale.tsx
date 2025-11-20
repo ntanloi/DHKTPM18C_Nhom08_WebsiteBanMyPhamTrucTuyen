@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from './ProductCard';
 import { flashSaleProducts } from './ProductCard';
-import FlashSaleLogo from '../../assets/images/flashsale.png';
+import FlashSaleLogo from '../../../assets/images/flashsale.png';
 import { useNavigate } from 'react-router-dom';
 
 export default function FlashSale() {

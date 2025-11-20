@@ -8,26 +8,26 @@ import ProductCard, {
   skincareProducts,
   makeupProducts,
 } from '../../components/user/ui/ProductCard';
-import LuongVe from '../assets/images/luongve.png';
-import DocQuyen99 from '../assets/images/docquyen99.png';
-import RangRo7Nam from '../assets/images/rangro7nam.png';
-import Clio from '../assets/images/bannerClio.jpg';
-import SachSau from '../assets/images/sachsau.png';
-import LungLinh from '../assets/images/lunglinh.png';
-import Gif1 from '../assets/images/gif6.gif';
+import LuongVe from '../../assets/images/luongve.png';
+import DocQuyen99 from '../../assets/images/docquyen99.png';
+import RangRo7Nam from '../../assets/images/rangro7nam.png';
+import Clio from '../../assets/images/bannerClio.jpg';
+import SachSau from '../../assets/images/sachsau.png';
+import LungLinh from '../../assets/images/lunglinh.png';
+import Gif1 from '../../assets/images/gif6.gif';
 
 import AllBrandSlide from '../../components/user/ui/AllBrandSlide';
 import FlashSale from '../../components/user/ui/FlashSale';
 import MagazineSection from '../../components/user/ui/MagazineSection';
 
-import Anh1 from '../assets/images/anh1.png';
-import Anh2 from '../assets/images/anh2.png';
-import Anh3 from '../assets/images/anh3.png';
+import Anh1 from '../../assets/images/anh1.png';
+import Anh2 from '../../assets/images/anh2.png';
+import Anh3 from '../../assets/images/anh3.png';
 
-import TimKiem1 from '../assets/images/search1.png';
-import TimKiem2 from '../assets/images/search2.png';
-import TimKiem3 from '../assets/images/search3.png';
-import TimKiem4 from '../assets/images/search4.png';
+import TimKiem1 from '../../assets/images/search1.png';
+import TimKiem2 from '../../assets/images/search2.png';
+import TimKiem3 from '../../assets/images/search3.png';
+import TimKiem4 from '../../assets/images/search4.png';
 
 export default function HomePage() {
   const [bannerIndex, setBannerIndex] = useState(0);

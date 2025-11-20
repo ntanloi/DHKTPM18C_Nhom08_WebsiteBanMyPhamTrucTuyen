@@ -1,4 +1,4 @@
-import logo from '../../assets/images/logo.png';
+import logo from '../../../assets/images/logo.png';
 import {
   AccountIcon,
   CartIcon,
@@ -8,7 +8,7 @@ import {
   SearchIcon,
   StoreIcon,
 } from '../../../assets/icons/index';
-import MenuItem from '../ui/MenuItem';
+import MenuItem from '../../user/ui/MenuItem';
 import Navbar from './Navbar';
 
 interface HeaderProps {
