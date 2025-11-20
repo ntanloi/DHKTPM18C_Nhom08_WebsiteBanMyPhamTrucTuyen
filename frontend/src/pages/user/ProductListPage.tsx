@@ -6,7 +6,7 @@ import ProductCard, {
   newProducts,
   skincareProducts,
   makeupProducts,
-} from '../components/ui/ProductCard';
+} from '../../components/user/ui/ProductCard';
 
 interface Product {
   images: string[];

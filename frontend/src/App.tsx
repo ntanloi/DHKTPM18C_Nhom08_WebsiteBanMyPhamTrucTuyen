@@ -5,7 +5,7 @@ import Header from './components/user/layout/Header';
 import StoreLocatorPage from './pages/user/StoreLocatorPage';
 import { useEffect, useState } from 'react';
 import AuthModal from './components/user/ui/AuthModal';
-import ProductListPage from './pages/ProductListPage';
+import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
 
 type Page = 'home' | 'stores' | 'products' | 'product-detail'; // thêm Products loi

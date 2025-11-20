@@ -1,11 +1,11 @@
 import { FaFacebookF, FaInstagram, FaTiktok } from 'react-icons/fa';
-import Logo from '../../assets/images/logo.png';
-import verified from '../../assets/images/verified.png';
-import cod from '../../assets/images/cod.png';
-import master from '../../assets/images/master.png';
-import momo from '../../assets/images/momo.png';
-import napas from '../../assets/images/napas.png';
-import visa from '../../assets/images/visa.png';
+import Logo from '../../../assets/images/logo.png';
+import verified from '../../../assets/images/verified.png';
+import cod from '../../../assets/images/cod.png';
+import master from '../../../assets/images/master.png';
+import momo from '../../../assets/images/momo.png';
+import napas from '../../../assets/images/napas.png';
+import visa from '../../../assets/images/visa.png';
 
 export default function Footer() {
   return (
