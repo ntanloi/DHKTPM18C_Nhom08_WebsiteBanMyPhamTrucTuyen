@@ -1,12 +1,12 @@
 import './App.css';
-import Footer from './components/layout/Footer';
-import HomePage from '../src/pages/HomePage';
-import Header from './components/layout/Header';
-import StoreLocatorPage from './pages/StoreLocatorPage';
+import Footer from './components/user/layout/Footer';
+import HomePage from './pages/user/HomePage';
+import Header from './components/user/layout/Header';
+import StoreLocatorPage from './pages/user/StoreLocatorPage';
 import { useEffect, useState } from 'react';
-import AuthModal from './components/ui/AuthModal';
+import AuthModal from './components/user/ui/AuthModal';
 import ProductListPage from './pages/ProductListPage';
-import ProductDetailPage from './pages/ProductDetailPage';
+import ProductDetailPage from './pages/user/ProductDetailPage';
 
 type Page = 'home' | 'stores' | 'products' | 'product-detail'; // thêm Products loi
 

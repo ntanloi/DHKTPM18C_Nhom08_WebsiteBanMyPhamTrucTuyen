@@ -7,7 +7,7 @@ import ProductCard, {
   newProducts,
   skincareProducts,
   makeupProducts,
-} from '../components/ui/ProductCard';
+} from '../../components/user/ui/ProductCard';
 import LuongVe from '../assets/images/luongve.png';
 import DocQuyen99 from '../assets/images/docquyen99.png';
 import RangRo7Nam from '../assets/images/rangro7nam.png';
@@ -16,9 +16,9 @@ import SachSau from '../assets/images/sachsau.png';
 import LungLinh from '../assets/images/lunglinh.png';
 import Gif1 from '../assets/images/gif6.gif';
 
-import AllBrandSlide from '../components/ui/AllBrandSlide';
-import FlashSale from '../components/ui/FlashSale';
-import MagazineSection from '../components/ui/MagazineSection';
+import AllBrandSlide from '../../components/user/ui/AllBrandSlide';
+import FlashSale from '../../components/user/ui/FlashSale';
+import MagazineSection from '../../components/user/ui/MagazineSection';
 
 import Anh1 from '../assets/images/anh1.png';
 import Anh2 from '../assets/images/anh2.png';
