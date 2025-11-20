@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { NextLeftNavIcon, NextRightNavIcon } from '../../assets/icons';
+import { NextLeftNavIcon, NextRightNavIcon } from '../../../assets/icons';
 
 const navlist = [
   'Thương hiệu',

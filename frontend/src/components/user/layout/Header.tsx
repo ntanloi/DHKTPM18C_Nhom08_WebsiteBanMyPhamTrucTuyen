@@ -7,7 +7,7 @@ import {
   MoreIcon,
   SearchIcon,
   StoreIcon,
-} from '../../assets/icons/index';
+} from '../../../assets/icons/index';
 import MenuItem from '../ui/MenuItem';
 import Navbar from './Navbar';
 
@@ -52,7 +52,11 @@ export default function Header({ onOpenStores, onOpenLogin }: HeaderProps) {
         <div className="flex items-center justify-between">
           {/* Menu Item 1 */}
           <div className="flex items-center justify-between gap-3 border-r px-5">
-            <MenuItem icon={<StoreIcon />} title="Hệ thống cửa hàng" onClick={onOpenStores} />
+            <MenuItem
+              icon={<StoreIcon />}
+              title="Hệ thống cửa hàng"
+              onClick={onOpenStores}
+            />
 
             <MenuItem icon={<MagazineIcon />} title="Tạp chí làm đẹp" url="#" />
 
@@ -63,7 +67,11 @@ export default function Header({ onOpenStores, onOpenLogin }: HeaderProps) {
 
           {/* Menu Item 2 */}
           <div className="flex items-center justify-between gap-3 pl-5">
-            <MenuItem icon={<AccountIcon />} title="Đăng nhập" onClick={onOpenLogin} />
+            <MenuItem
+              icon={<AccountIcon />}
+              title="Đăng nhập"
+              onClick={onOpenLogin}
+            />
 
             <a href="">
               <HeartIcon />

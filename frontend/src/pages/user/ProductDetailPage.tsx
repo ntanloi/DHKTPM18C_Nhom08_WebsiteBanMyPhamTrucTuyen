@@ -8,7 +8,7 @@ import {
   newProducts,
   skincareProducts,
   makeupProducts,
-} from '../components/ui/ProductCard';
+} from '../../components/user/ui/ProductCard';
 
 const ProductDetailPage = ({ productId }: { productId?: string }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
