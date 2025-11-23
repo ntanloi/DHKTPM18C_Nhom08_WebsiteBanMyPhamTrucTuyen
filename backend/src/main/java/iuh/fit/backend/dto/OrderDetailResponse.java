@@ -28,4 +28,5 @@ public class OrderDetailResponse {
     private RecipientInfoResponse recipientInfo;
     private PaymentInfoResponse paymentInfo;
     private ShipmentInfoResponse shipmentInfo;
+
 }
