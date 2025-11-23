@@ -34,5 +34,6 @@ public class OtpCode {
     private String purpose;
 
     @Column(nullable = false)
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }
