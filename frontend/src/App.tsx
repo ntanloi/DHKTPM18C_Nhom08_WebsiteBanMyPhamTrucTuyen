@@ -21,7 +21,6 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [productCategory, setProductCategory] = useState<string>('');
   const [productId, setProductId] = useState<string>(''); //thêm dòng này loi
 
   const navigate = (to: string) => {
@@ -30,12 +29,6 @@ function App() {
       window.history.pushState({}, '', to);
     }
     setPage(pathToPage(to));
-
-    // Extract category from URL loii
-    if (to.startsWith('/products/')) {
-      const category = to.replace('/products/', '');
-      setProductCategory(category);
-    }
 
     // THÊM: Extract product ID from URL
     if (to.startsWith('/product/')) {
@@ -49,11 +42,8 @@ function App() {
       const path = window.location.pathname;
       setPage(pathToPage(path));
 
-      // Update productCategory or productId based on path
-      if (path.startsWith('/products/')) {
-        const category = path.replace('/products/', '');
-        setProductCategory(category);
-      } else if (path.startsWith('/product/')) {
+      // Update productId based on path
+      if (path.startsWith('/product/')) {
         const id = path.replace('/product/', '');
         setProductId(id);
       }
