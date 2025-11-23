@@ -39,12 +39,12 @@ public class JwtUtil {
         return createToken(claims, phone, expiration);
     }
 
-    // Generate refresh token
+    // Generate JWT refresh token (no claims)
     public String generateRefreshToken(String phone) {
         return createToken(new HashMap<>(), phone, refreshExpiration);
     }
 
-    // Create token with claims, subject and expiration
+    // Create JWT token with claims and expiration
     private String createToken(Map<String, Object> claims, String subject, Long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -58,17 +58,17 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Extract username (phone) from token
+    // Extract email from token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // Extract userId from token
+    // Extract userId from token claims
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
-    // Extract role from token
+    // Extract role from token claims
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
@@ -84,7 +84,7 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    // Extract all claims from token
+    // Parse and extract all claims from token
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSignKey())
@@ -93,18 +93,18 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    // Check if token is expired
+    // Check if token expired
     private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    // Validate token with username (phone) check
+    // Validate token with email matching
     public Boolean validateToken(String token, String phone) {
         final String username = extractUsername(token);
         return (username.equals(phone) && !isTokenExpired(token));
     }
 
-    // Validate token without username check
+    // Validate token (expiration only)
     public Boolean validateToken(String token) {
         try {
             return !isTokenExpired(token);

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 import ProductCard, {
   bestSellingProducts,
@@ -36,7 +35,6 @@ export default function HomePage() {
   const [trendIndex, setTrendIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('skincare');
 
-  const navigate = useNavigate();
   const navigateToProducts = (category: string) => {
     // Push state và trigger popstate event
     window.history.pushState({}, '', `/products/${category}`);

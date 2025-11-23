@@ -6,17 +6,17 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "otp_codes")
+@Table(name = "mail_otp_codes")
+@Builder
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class OtpCode {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class MailOtpCode {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(nullable = false)
-    private String phone;
+    private String email;
 
     @Column(nullable = false)
     private String code;
@@ -25,15 +25,17 @@ public class OtpCode {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer attempts = 0;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean consumed = false;
 
     @Column(nullable = false)
     private String purpose;
 
     @Column(nullable = false)
-
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
