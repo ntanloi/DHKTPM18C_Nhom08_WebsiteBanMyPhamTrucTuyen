@@ -73,7 +73,7 @@ public class User {
     private FavoriteList favoriteList;
 
     @ManyToOne
-    @JoinColumn(name = "role_id", insertable = false, updatable = false)
+    @JoinColumn(name = "role_id")
     @JsonIgnore
     private Role role;
 }
