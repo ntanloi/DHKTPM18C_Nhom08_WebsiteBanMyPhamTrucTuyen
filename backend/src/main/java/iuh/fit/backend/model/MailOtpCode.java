@@ -25,9 +25,11 @@ public class MailOtpCode {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer attempts = 0;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean consumed = false;
 
     @Column(nullable = false)

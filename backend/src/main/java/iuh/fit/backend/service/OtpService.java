@@ -17,6 +17,7 @@ public class OtpService {
     private final OtpConfig otpConfig;
     private final EmailService emailService;
 
+    // Generate and send OTP to email
     public void sendOtp(String email, String purpose) {
         String otp = otpUtil.generateOtp(otpConfig.getLength());
 
@@ -25,39 +26,45 @@ public class OtpService {
                 .code(otp)
                 .purpose(purpose)
                 .attempts(0)
-                .expiresAt(LocalDateTime.now().plusMinutes(otpConfig.getExpiration()))
+                .expiresAt(LocalDateTime.now().plusNanos(otpConfig.getExpiration() * 1_000_000))
                 .build();
 
-        // Save or update the OTP code in the repository
         mailOtpCodeRepository.save(mailOtpCode);
 
-        // Send the OTP via email
         emailService.sendOtp(email, otp);
     }
 
+    // Verify OTP code with attempts limit and expiration check
     public void verifyOtp(String email, String code, String purpose) {
+        // Find latest unused OTP
         MailOtpCode mailOtpCode = mailOtpCodeRepository.findTopByEmailAndPurposeAndConsumedOrderByCreatedAtDesc(email, purpose, false)
                 .orElseThrow(() -> new RuntimeException("OTP not found"));
 
+        // Check max attempts
         if(mailOtpCode.getAttempts() >= otpConfig.getMaxAttempts()) {
             throw new RuntimeException("Too many attempts");
         }
 
+        // Check if already used
         if (mailOtpCode.getConsumed()) {
             throw new RuntimeException("OTP already consumed");
         }
 
+        // Check expiration
         if (mailOtpCode.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("OTP expired");
         }
+        
+        // Increment attempts
         mailOtpCode.setAttempts(mailOtpCode.getAttempts() + 1);
 
+        // Verify code
         if (!mailOtpCode.getCode().equals(code)) {
             mailOtpCodeRepository.save(mailOtpCode);
             throw new RuntimeException("Invalid OTP code");
         }
 
-        // Mark OTP as consumed
+        // Mark as consumed
         mailOtpCode.setConsumed(true);
         mailOtpCodeRepository.save(mailOtpCode);
     }
