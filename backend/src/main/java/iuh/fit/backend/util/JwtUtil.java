@@ -31,17 +31,22 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Generate JWT token
-    public String generateToken(String phone, Long userId, String role) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("role", role);
-        return createToken(claims, phone, expiration);
+    // Generate JWT access token
+    public String generateAccessToken(String email, Long userId, String role) {
+        Map<String, Object> claims = Map.of("userId", userId,
+            "role", role,
+            "type", "ACCESS"
+        );
+        return createToken(claims, email, expiration);
     }
 
     // Generate JWT refresh token (no claims)
-    public String generateRefreshToken(String phone) {
-        return createToken(new HashMap<>(), phone, refreshExpiration);
+    public String generateRefreshToken(String email) {
+        return createToken(new HashMap<>(), email, refreshExpiration);
+    }
+
+    public boolean isRefreshToken(String token) {
+        return "REFRESH".equals(extractClaim(token, c -> c.get("type", String.class)));
     }
 
     // Create JWT token with claims and expiration

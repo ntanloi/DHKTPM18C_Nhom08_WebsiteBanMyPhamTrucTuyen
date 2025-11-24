@@ -55,7 +55,6 @@ public class AuthController {
     }
 
     // Send OTP to email (passwordless login)
-    // Send OTP to email (passwordless login)
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@Valid @RequestBody LoginMailOtpRequest request) {
         try {

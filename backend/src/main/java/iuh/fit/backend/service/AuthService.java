@@ -54,7 +54,7 @@ public class AuthService {
         User savedUser = userRepository.save(newUser);
 
         // Generate JWT tokens
-        String accessToken = jwtUtil.generateToken(
+        String accessToken = jwtUtil.generateAccessToken(
             savedUser.getEmail(),
             savedUser.getId().longValue(),
             savedUser.getRole().getName()
@@ -92,7 +92,7 @@ public class AuthService {
         }
 
         // Generate JWT tokens
-        String accessToken = jwtUtil.generateToken(
+        String accessToken = jwtUtil.generateAccessToken(
             user.getEmail(),
             user.getId().longValue(),
             user.getRole().getName()
@@ -131,7 +131,7 @@ public class AuthService {
                 .orElseGet(() -> createNewUser(email));
 
         // Generate JWT tokens
-        String accessToken = jwtUtil.generateToken(
+        String accessToken = jwtUtil.generateAccessToken(
             email,
             user.getId().longValue(),
             user.getRole().getName()
@@ -175,6 +175,8 @@ public class AuthService {
     // Refresh access token using refresh token
     public AuthResponse refreshToken(String refreshToken) {
         try {
+            if (!jwtUtil.isRefreshToken(refreshToken)) throw new RuntimeException("Invalid token");
+
             // Extract email from refresh token
             String email = jwtUtil.extractUsername(refreshToken);
 
@@ -182,7 +184,7 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Generate new tokens
-            String newAccessToken = jwtUtil.generateToken(
+            String newAccessToken = jwtUtil.generateAccessToken(
                 email,
                 user.getId().longValue(),
                 user.getRole().getName()
