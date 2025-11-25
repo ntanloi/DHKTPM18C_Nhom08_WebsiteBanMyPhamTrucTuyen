@@ -54,9 +54,4 @@ public class Coupon {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    @JsonIgnore
-    private User user;
 }
