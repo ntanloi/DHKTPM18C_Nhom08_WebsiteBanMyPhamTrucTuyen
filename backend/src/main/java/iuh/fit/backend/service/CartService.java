@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -147,7 +148,7 @@ public class CartService {
         response.setUpdatedAt(cart.getUpdatedAt());
 
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
-        double totalAmount = 0.0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
         List<CartItemResponse> itemResponses = cartItems.stream().map(item -> {
             CartItemResponse itemResponse = new CartItemResponse();
@@ -161,17 +162,17 @@ public class CartService {
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
                 }
-                Double price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
+                BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
                 itemResponse.setPrice(price);
-                itemResponse.setSubtotal(price * item.getQuantity());
+                itemResponse.setSubtotal(price.multiply(BigDecimal.valueOf(item.getQuantity())));
             }
 
             return itemResponse;
         }).collect(Collectors.toList());
 
         totalAmount = itemResponses.stream()
-                .mapToDouble(CartItemResponse::getSubtotal)
-                .sum();
+                .map(CartItemResponse::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         response.setCartItems(itemResponses);
         response.setTotalAmount(totalAmount);

@@ -4,9 +4,11 @@ import iuh.fit.backend.dto.*;
 import iuh.fit.backend.model.*;
 import iuh.fit.backend.repository.*;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,27 +16,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-    @Autowired
     private OrderRepository orderRepository;
-
-    @Autowired
     private OrderItemRepository orderItemRepository;
-
-    @Autowired
     private OrderStatusHistoryRepository orderStatusHistoryRepository;
-
-    @Autowired
     private RecipientInformationRepository recipientInformationRepository;
-
-    @Autowired
     private PaymentRepository paymentRepository;
-
-    @Autowired
     private ShipmentRepository shipmentRepository;
-
-    @Autowired
     private ProductVariantRepository productVariantRepository;
 
     @Transactional
@@ -46,7 +36,7 @@ public class OrderService {
         order.setCreatedAt(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
 
-        double subtotal = 0.0;
+        BigDecimal subtotal = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (OrderItemRequest itemRequest : request.getOrderItems()) {
@@ -61,8 +51,8 @@ public class OrderService {
             orderItem.setProductVariantId(itemRequest.getProductVariantId());
             orderItem.setQuantity(itemRequest.getQuantity());
 
-            Double price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
-            subtotal += price * itemRequest.getQuantity();
+            BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
+            subtotal.add(price.multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
 
             orderItems.add(orderItem);
 
@@ -72,13 +62,13 @@ public class OrderService {
 
         order.setSubtotal(subtotal);
         
-        double discountAmount = 0.0;
+        BigDecimal discountAmount = BigDecimal.ZERO;
         order.setDiscountAmount(discountAmount);
 
-        double shippingFee = 30000.0;
+        BigDecimal shippingFee = BigDecimal.valueOf(30000.0);
         order.setShippingFee(shippingFee);
 
-        order.setTotalAmount(subtotal - discountAmount + shippingFee);
+        order.setTotalAmount(subtotal.subtract(discountAmount).add(shippingFee));
 
         order.setEstimateDeliveryFrom(LocalDate.now().plusDays(3));
         order.setEstimateDeliveryTo(LocalDate.now().plusDays(7));
@@ -161,9 +151,9 @@ public class OrderService {
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
                 }
-                Double price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
+                BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
                 itemResponse.setPrice(price);
-                itemResponse.setSubtotal(price * item.getQuantity());
+                itemResponse.setSubtotal(price.multiply(BigDecimal.valueOf(item.getQuantity())));
             }
 
             return itemResponse;

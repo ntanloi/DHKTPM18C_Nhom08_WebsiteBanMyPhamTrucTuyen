@@ -4,7 +4,9 @@ import iuh.fit.backend.dto.*;
 import iuh.fit.backend.model.User;
 import iuh.fit.backend.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -12,10 +14,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
     private UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -29,14 +33,14 @@ public class UserService {
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // Should be encrypted in production
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAvatarUrl(request.getAvatarUrl());
         user.setBirthDay(request.getBirthDay());
         user.setIsActive(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-
+  
         User savedUser = userRepository.save(user);
         return convertToUserResponse(savedUser);
     }

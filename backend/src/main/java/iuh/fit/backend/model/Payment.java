@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class Payment {
     @Column(name = "payment_method_id")
     private Integer paymentMethodId;
 
-    private Double amount;
+    private BigDecimal amount;
 
     private String status;
 

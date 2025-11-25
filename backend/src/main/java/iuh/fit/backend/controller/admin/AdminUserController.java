@@ -30,12 +30,12 @@ public class AdminUserController {
     
     private final AdminUserService adminUserService;
 
-    @GetMapping("/get-password")
-    public ResponseEntity<Map<String, String>> getPassword() {
-        String adminPassword = adminUserService.encodePassword("Admin123@");
-        String managerPassword = adminUserService.encodePassword("Manager123@");
-        return ResponseEntity.ok(Map.of("admin", adminPassword, "manager", managerPassword));
-    }
+    // @GetMapping("/get-password")
+    // public ResponseEntity<Map<String, String>> getPassword() {
+    //     String adminPassword = adminUserService.encodePassword("Admin123@");
+    //     String managerPassword = adminUserService.encodePassword("Manager123@");
+    //     return ResponseEntity.ok(Map.of("admin", adminPassword, "manager", managerPassword));
+    // }
 
     @GetMapping
     public ResponseEntity<Page<UserResponse>> getAllUsers(

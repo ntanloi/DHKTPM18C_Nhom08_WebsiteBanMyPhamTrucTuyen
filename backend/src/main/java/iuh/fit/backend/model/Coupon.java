@@ -1,12 +1,14 @@
 package iuh.fit.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 // Coupon Entity
 @Entity
@@ -30,10 +32,10 @@ public class Coupon {
     private String discountType;
 
     @Column(name = "discount_value")
-    private Double discountValue;
+    private BigDecimal discountValue;
 
     @Column(name = "min_order_value")
-    private Double minOrderValue;
+    private BigDecimal minOrderValue;
 
     @Column(name = "max_usage_value")
     private Integer maxUsageValue;
