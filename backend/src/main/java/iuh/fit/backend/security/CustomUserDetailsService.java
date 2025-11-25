@@ -16,16 +16,14 @@ import java.util.Collections;
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
-    // Load user by email for Spring Security authentication
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // Build Spring Security UserDetails with role authority
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password("") // Empty password for JWT authentication
+                .password(user.getPassword() != null ? user.getPassword() : "")
                 .authorities(Collections.singletonList(
                         new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
                 ))

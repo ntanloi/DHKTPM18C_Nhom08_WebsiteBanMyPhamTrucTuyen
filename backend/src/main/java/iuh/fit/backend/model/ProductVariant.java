@@ -36,18 +36,16 @@ public class ProductVariant {
     @OneToOne
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     @JsonIgnore
-    private Product product;  // Đổi từ @ManyToOne sang @OneToOne
+    private Product product;
 
     @OneToMany(mappedBy = "productVariant")
     @JsonIgnore
-    private List<VariantAttribute> variantAttributes;//co
+    private List<VariantAttribute> variantAttributes;
 
-    // Đổi từ OneToMany sang OneToOne
     @OneToOne(mappedBy = "productVariant")
     @JsonIgnore
     private CartItem cartItem;
 
-    // Đổi từ OneToMany sang OneToOne
     @OneToOne(mappedBy = "productVariant")
     @JsonIgnore
     private OrderItem orderItem;

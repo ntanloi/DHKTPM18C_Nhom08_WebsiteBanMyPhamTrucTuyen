@@ -41,7 +41,7 @@ public class RecipientInformation {
     private LocalDateTime createdAt;
 
     @OneToOne
-    @JoinColumn(name = "order_id", insertable = false, updatable = false)  // Cần thêm column order_id
+    @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore
     private Order order;
 }

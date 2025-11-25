@@ -48,7 +48,7 @@ public class Product {
 
     @OneToOne(mappedBy = "product")
     @JsonIgnore
-    private ProductVariant productVariant;  // Giữ nguyên
+    private ProductVariant productVariant;
 
     @OneToMany(mappedBy = "product")
     @JsonIgnore

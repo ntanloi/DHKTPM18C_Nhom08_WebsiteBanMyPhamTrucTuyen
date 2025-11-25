@@ -21,4 +21,5 @@ public class UserResponse {
     private LocalDateTime emailVerifiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String roleName; // Admin feature: show user's role
 }
