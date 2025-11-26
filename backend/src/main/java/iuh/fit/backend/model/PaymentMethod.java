@@ -29,8 +29,4 @@ public class PaymentMethod {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "payment_id", insertable = false, updatable = false)
-    private Payment payment;
 }

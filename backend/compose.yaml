@@ -1,15 +1,16 @@
 services:
   mariadb:
-    image: 'mariadb:11.4'
+    image: 'mariadb:11.6'
     container_name: beautybox-mariadb
     environment:
       - 'MARIADB_DATABASE=beautyboxdb'
-      - 'MARIADB_ROOT_PASSWORD=root'
+      - 'MARIADB_ROOT_PASSWORD=${DB_PASSWORD:-root}'
       - 'MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=no'
     ports:
       - '3306:3306'
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
     networks:
       - beautybox-network
     healthcheck:
@@ -18,8 +19,54 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: 'redis:7-alpine'
+    container_name: beautybox-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - beautybox-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: beautybox-backend
+    ports:
+      - '8080:8080'
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=beautyboxdb
+      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-root}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - beautybox-network
+    restart: unless-stopped
+
 volumes:
   mariadb_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

@@ -42,6 +42,20 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     INDEX idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Mail OTP codes table
+CREATE TABLE IF NOT EXISTS mail_otp_codes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    consumed BOOLEAN NOT NULL DEFAULT false,
+    purpose VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email_purpose (email, purpose),
+    INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Categories table
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -89,12 +103,15 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE TABLE IF NOT EXISTS product_variants (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
+    name VARCHAR(255),
     sku VARCHAR(100) UNIQUE,
     price DECIMAL(10,2) NOT NULL,
+    sale_price DECIMAL(10,2),
     stock_quantity INT DEFAULT 0,
     image_url VARCHAR(500),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    favorite_id INT,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     INDEX idx_product (product_id),
     INDEX idx_sku (sku)
@@ -240,9 +257,10 @@ CREATE TABLE IF NOT EXISTS payment (
     payment_method_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
-    transaction_id VARCHAR(255),
-    paid_at DATETIME,
+    transaction_code VARCHAR(255),
+    provider_response TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (payment_method_id) REFERENCES payment_method(id),
     INDEX idx_order (order_id),
@@ -260,6 +278,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     email VARCHAR(255),
     nickname VARCHAR(100),
     isRecommend BOOLEAN,
+    is_recommend BOOLEAN,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
@@ -339,3 +358,13 @@ CREATE TABLE IF NOT EXISTS order_status_history (
     INDEX idx_order (order_id),
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add foreign key constraints
+ALTER TABLE product_variants 
+ADD CONSTRAINT fk_product_variants_favorite 
+FOREIGN KEY (favorite_id) REFERENCES favorite_list(id) ON DELETE SET NULL;
+
+ALTER TABLE coupons 
+ADD CONSTRAINT fk_coupons_user 
+FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+
