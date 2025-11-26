@@ -5,6 +5,8 @@ import iuh.fit.backend.dto.OrderDetailResponse;
 import iuh.fit.backend.dto.OrderResponse;
 import iuh.fit.backend.dto.UpdateOrderStatusRequest;
 import iuh.fit.backend.service.OrderService;
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +25,7 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         try {
             OrderDetailResponse response = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);

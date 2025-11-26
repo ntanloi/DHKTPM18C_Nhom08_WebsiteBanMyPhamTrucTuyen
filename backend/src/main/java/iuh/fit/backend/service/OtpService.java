@@ -7,6 +7,7 @@ import iuh.fit.backend.util.OtpUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
@@ -26,7 +27,7 @@ public class OtpService {
                 .code(otp)
                 .purpose(purpose)
                 .attempts(0)
-                .expiresAt(LocalDateTime.now().plusNanos(otpConfig.getExpiration() * 1_000_000))
+                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(otpConfig.getExpiration())))
                 .build();
 
         mailOtpCodeRepository.save(mailOtpCode);

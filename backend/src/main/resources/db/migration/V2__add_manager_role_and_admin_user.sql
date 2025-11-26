@@ -1,3 +1,4 @@
+-- Active: 1762913020837@@127.0.0.1@3306@beautyboxdb
 -- Migration V2: Add MANAGER role and admin user
 -- Run this script to add MANAGER role and create default admin account
 
@@ -11,7 +12,7 @@ WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'MANAGER');
 INSERT INTO users (email, password, full_name, is_active, email_verified_at, created_at, updated_at, role_id)
 SELECT 
     'admin@beautybox.com',
-    '$2a$10$rQ5F5xZxJ5xYJxY5xY5xYeQ5F5xZxJ5xYJxY5xY5xYeQ5F5xZxJ5xY',
+    '$2a$10$BtEF52bLVpZoyO0Pae3DpereB/jfgQmyF6363JvdXrVktGUXWZvB6',
     'System Administrator',
     true,
     NOW(),
@@ -25,7 +26,7 @@ WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@beautybox.com');
 INSERT INTO users (email, password, full_name, is_active, email_verified_at, created_at, updated_at, role_id)
 SELECT 
     'manager@beautybox.com',
-    '$2a$10$rQ5F5xZxJ5xYJxY5xY5xYeQ5F5xZxJ5xYJxY5xY5xYeQ5F5xZxJ5xY',
+    '$2a$10$/k.A2AbqYYSCwU6Yr3LXmO29lVvcs2n7SX1u9uvIUFLdm8Z9ajy.W',
     'Store Manager',
     true,
     NOW(),

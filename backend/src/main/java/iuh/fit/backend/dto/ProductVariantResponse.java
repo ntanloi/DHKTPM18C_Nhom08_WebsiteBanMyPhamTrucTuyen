@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -14,8 +15,8 @@ public class ProductVariantResponse {
     private Integer productId;
     private String name;
     private String sku;
-    private Double price;
-    private Double salePrice;
+    private BigDecimal price;
+    private BigDecimal salePrice;
     private Integer stockQuantity;
     private List<VariantAttributeResponse> attributes;
 }

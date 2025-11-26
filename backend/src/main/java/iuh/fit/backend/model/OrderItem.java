@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 // Order Item Entity
 @Entity
 @Table(name = "order_items")
@@ -24,6 +26,8 @@ public class OrderItem {
     private Integer productVariantId;
 
     private Integer quantity;
+    
+    private BigDecimal price;
 
     @ManyToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)

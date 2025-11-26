@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 // Product Variant Entity
@@ -25,10 +25,10 @@ public class ProductVariant {
 
     private String name;
     private String sku;
-    private Double price;
+    private BigDecimal price;
 
     @Column(name = "sale_price")
-    private Double salePrice;
+    private BigDecimal salePrice;
 
     @Column(name = "stock_quantity")
     private Integer stockQuantity;

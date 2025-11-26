@@ -12,6 +12,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Admin User Management Controller
+ * Chỉ ADMIN mới có quyền truy cập
+ * 
+ * Endpoints:
+ * - GET /api/admin/users - Danh sách users với pagination & search
+ * - PUT /api/admin/users/{userId}/role - Thay đổi role user
+ * - PUT /api/admin/users/{userId}/status - Kích hoạt/vô hiệu hóa user
+ */
 @RestController
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
@@ -20,6 +29,13 @@ import java.util.Map;
 public class AdminUserController {
     
     private final AdminUserService adminUserService;
+
+    // @GetMapping("/get-password")
+    // public ResponseEntity<Map<String, String>> getPassword() {
+    //     String adminPassword = adminUserService.encodePassword("Admin123@");
+    //     String managerPassword = adminUserService.encodePassword("Manager123@");
+    //     return ResponseEntity.ok(Map.of("admin", adminPassword, "manager", managerPassword));
+    // }
 
     @GetMapping
     public ResponseEntity<Page<UserResponse>> getAllUsers(

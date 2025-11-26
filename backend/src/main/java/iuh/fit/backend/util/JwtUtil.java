@@ -2,14 +2,15 @@ package iuh.fit.backend.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -25,10 +26,17 @@ public class JwtUtil {
     @Value("${jwt.refresh-expiration}")
     private Long refreshExpiration;
 
+    private SecretKey secretKey;
+
+    @PostConstruct
+    public void initKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+    }
+
     // Generate signing key from secret
     private SecretKey getSignKey() {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return secretKey;
     }
 
     // Generate JWT access token
@@ -40,9 +48,9 @@ public class JwtUtil {
         return createToken(claims, email, expiration);
     }
 
-    // Generate JWT refresh token (no claims)
+    // Generate JWT refresh token
     public String generateRefreshToken(String email) {
-        return createToken(new HashMap<>(), email, refreshExpiration);
+        return createToken(Map.of("type", "REFRESH"), email, refreshExpiration);
     }
 
     public boolean isRefreshToken(String token) {
@@ -103,18 +111,24 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    // Validate token with email matching
-    public Boolean validateToken(String token, String phone) {
-        final String username = extractUsername(token);
-        return (username.equals(phone) && !isTokenExpired(token));
+    // Validate access token with email matching
+    public Boolean validateAccessToken(String token, String email) {
+        try {
+            return isAccessToken(token) && !isTokenExpired(token) && email.equals(extractUsername(token));
+        } catch(Exception e) {
+            return false;
+        }
     }
 
-    // Validate token (expiration only)
-    public Boolean validateToken(String token) {
+    public Boolean validateRefreshToken(String token, String email) {
         try {
-            return !isTokenExpired(token);
+            return isRefreshToken(token) && !isTokenExpired(token) && email.equals(extractUsername(token));
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Boolean isAccessToken(String token) {
+        return "ACCESS".equals(extractClaim(token, c -> c.get("type", String.class)));
     }
 }
