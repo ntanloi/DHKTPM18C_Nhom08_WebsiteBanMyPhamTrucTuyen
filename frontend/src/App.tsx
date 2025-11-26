@@ -7,12 +7,14 @@ import { useEffect, useState } from 'react';
 import AuthModal from './components/user/ui/AuthModal';
 import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
+import CheckoutPage from './pages/user/CheckoutPage';
 
-type Page = 'home' | 'stores' | 'products' | 'product-detail'; // thêm Products loi
+type Page = 'home' | 'stores' | 'products' | 'product-detail' | 'checkout'; // thêm Products loi
 
 function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/stores') return 'stores';
+    if (path === '/checkout') return 'checkout';
     if (path.startsWith('/products/')) return 'products';
     if (path.startsWith('/product/')) return 'product-detail'; // THÊM DÒNG NÀY
     return 'home';
@@ -57,10 +59,12 @@ function App() {
       <Header
         onOpenStores={() => navigate('/stores')}
         onOpenLogin={() => setAuthOpen(true)}
+        onNavigate={navigate}
       />
       {page === 'home' && <HomePage />}
       {page === 'stores' && <StoreLocatorPage />}
       {page === 'products' && <ProductListPage />} {/* sửa lại đoạn này */}
+      {page === 'checkout' && <CheckoutPage />}
       {page === 'product-detail' && <ProductDetailPage productId={productId} />}
       <Footer />
       <AuthModal
