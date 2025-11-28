@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from './ProductCard';
 import { flashSaleProducts } from './ProductCard';
 import FlashSaleLogo from '../../../assets/images/flashsale.png';
-import { useNavigate } from 'react-router-dom';
 
 export default function FlashSale() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,7 +14,6 @@ export default function FlashSale() {
   });
 
   const navigateToProducts = (category: string) => {
-    // Push state và trigger popstate event
     window.history.pushState({}, '', `/products/${category}`);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }; //sửa chỗ này
