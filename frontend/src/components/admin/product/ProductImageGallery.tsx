@@ -17,21 +17,21 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+        const data = await getProductImagesByProductId(productId);
+        setImages(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load images:', err);
+        setImages([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchImages();
   }, [productId]);
-
-  const fetchImages = async () => {
-    try {
-      setLoading(true);
-      const data = await getProductImagesByProductId(productId);
-      setImages(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load images:', err);
-      setImages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (

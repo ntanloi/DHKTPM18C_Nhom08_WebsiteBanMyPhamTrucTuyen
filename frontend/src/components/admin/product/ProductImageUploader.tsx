@@ -150,8 +150,10 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
       onUploadComplete(uploadedUrls);
       clearAll();
       alert('Upload thành công!');
-    } catch (err: any) {
-      setError(err.message || 'Upload failed. Please try again.');
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Upload failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -167,10 +169,11 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   };
 
   React.useEffect(() => {
+    const currentFiles = files;
     return () => {
-      files.forEach((f) => URL.revokeObjectURL(f.preview));
+      currentFiles.forEach((f) => URL.revokeObjectURL(f.preview));
     };
-  }, []);
+  }, [files]);
 
   return (
     <div className="w-full space-y-4">

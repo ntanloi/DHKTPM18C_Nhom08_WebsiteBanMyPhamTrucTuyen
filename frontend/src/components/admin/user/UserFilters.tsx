@@ -28,16 +28,16 @@ const UserFilters: React.FC<UserFiltersProps> = ({
       clearTimeout(searchDebounce);
     }
 
-    const timeout = setTimeout(() => {
+    const timeout = window.setTimeout(() => {
       onFilterChange(filters);
     }, 300);
 
     setSearchDebounce(timeout);
 
     return () => {
-      if (timeout) clearTimeout(timeout);
+      clearTimeout(timeout);
     };
-  }, [filters]);
+  }, [filters, onFilterChange]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters((prev) => ({

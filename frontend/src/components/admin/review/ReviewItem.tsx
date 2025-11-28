@@ -25,19 +25,19 @@ const ReviewItem: React.FC<ReviewItemProps> = ({
   const [loadingImages, setLoadingImages] = useState(true);
 
   useEffect(() => {
+    const fetchReviewImages = async () => {
+      try {
+        const images = await getReviewImagesByReviewId(review.id);
+        setReviewImages(images);
+      } catch (err) {
+        console.error('Failed to load review images:', err);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+
     fetchReviewImages();
   }, [review.id]);
-
-  const fetchReviewImages = async () => {
-    try {
-      const images = await getReviewImagesByReviewId(review.id);
-      setReviewImages(images);
-    } catch (err) {
-      console.error('Failed to load review images:', err);
-    } finally {
-      setLoadingImages(false);
-    }
-  };
 
   const shouldTruncate = review.content.length > 200;
   const displayContent =

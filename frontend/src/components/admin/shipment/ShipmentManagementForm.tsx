@@ -52,7 +52,7 @@ const ShipmentManagementForm: React.FC<ShipmentManagementFormProps> = ({
         deliveredAt: new Date().toISOString().slice(0, 16),
       }));
     }
-  }, [formData.status]);
+  }, [formData.status, formData.shippedAt, formData.deliveredAt]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
