@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,8 +14,8 @@ public class UpdateCouponRequest {
     private String description;
     private Boolean isActive;
     private String discountType;
-    private Double discountValue;
-    private Double minOrderValue;
+    private BigDecimal discountValue;
+    private BigDecimal minOrderValue;
     private Integer maxUsageValue;
     private LocalDateTime validFrom;
     private LocalDateTime validTo;

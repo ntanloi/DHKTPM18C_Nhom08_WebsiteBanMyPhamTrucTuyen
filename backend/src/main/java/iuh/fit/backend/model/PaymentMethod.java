@@ -1,13 +1,11 @@
 package iuh.fit.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 // Payment Method Entity
 @Entity
@@ -31,8 +29,4 @@ public class PaymentMethod {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "payment_id", insertable = false, updatable = false)
-    private Payment payment;
 }

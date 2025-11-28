@@ -6,8 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 // Payment Entity
 @Entity
@@ -26,7 +26,7 @@ public class Payment {
     @Column(name = "payment_method_id")
     private Integer paymentMethodId;
 
-    private Double amount;
+    private BigDecimal amount;
 
     private String status;
 
@@ -46,8 +46,4 @@ public class Payment {
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore
     private Order order;
-
-    @OneToMany(mappedBy = "payment")
-    @JsonIgnore
-    private List<PaymentMethod> paymentMethods;
 }

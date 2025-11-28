@@ -2,9 +2,7 @@ package iuh.fit.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,7 +11,8 @@ import java.util.List;
 // User Entity
 @Entity
 @Table(name = "users")
-@Data
+@Builder
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -56,10 +55,6 @@ public class User {
     @JsonIgnore
     private List<Review> reviews;
 
-    @OneToMany(mappedBy = "user")
-    @JsonIgnore
-    private List<Coupon> coupons;
-
     @OneToOne(mappedBy = "user")
     @JsonIgnore
     private Cart cart;
@@ -73,7 +68,7 @@ public class User {
     private FavoriteList favoriteList;
 
     @ManyToOne
-    @JoinColumn(name = "role_id", insertable = false, updatable = false)
+    @JoinColumn(name = "role_id")
     @JsonIgnore
     private Role role;
 }

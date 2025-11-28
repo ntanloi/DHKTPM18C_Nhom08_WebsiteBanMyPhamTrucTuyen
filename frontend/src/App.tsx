@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import AuthModal from './components/user/ui/AuthModal';
 import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
+import CheckoutPage from './pages/user/CheckoutPage';
 
 import UserListPage from './pages/admin/user/UserListPage';
 import UserCreatePage from './pages/admin/user/UserCreatePage';
@@ -47,6 +48,7 @@ type Page =
   | 'stores'
   | 'products'
   | 'product-detail'
+  | 'checkout'
   | 'admin-dashboard'
   | 'admin-analytics'
   | 'admin-users'
@@ -86,6 +88,7 @@ function App() {
     }
 
     if (path === '/stores') return 'stores';
+    if (path === '/checkout') return 'checkout';
     if (path.startsWith('/products/')) return 'products';
     if (path.startsWith('/product/')) return 'product-detail';
     if (path === '/admin/users') return 'admin-users';
@@ -295,6 +298,7 @@ function App() {
         }
       }
     };
+
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
@@ -313,6 +317,8 @@ function App() {
       {page === 'home' && <HomePage />}
       {page === 'stores' && <StoreLocatorPage />}
       {page === 'products' && <ProductListPage />}
+      {page === 'checkout' && <CheckoutPage />}
+
       {page === 'product-detail' && <ProductDetailPage productId={productId} />}
 
       {page === 'admin-dashboard' && <AdminDashboard onNavigate={navigate} />}

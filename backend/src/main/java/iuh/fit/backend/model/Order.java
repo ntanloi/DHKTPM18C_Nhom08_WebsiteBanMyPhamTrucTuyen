@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,18 +27,18 @@ public class Order {
 
     private String status;
 
-    private Double subtotal;
+    private BigDecimal subtotal;
 
     @Column(name = "total_amount")
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     private String notes;
 
     @Column(name = "discount_amount")
-    private Double discountAmount;
+    private BigDecimal discountAmount;
 
     @Column(name = "shipping_fee")
-    private Double shippingFee;
+    private BigDecimal shippingFee;
 
     @Column(name = "estimate_delivery_from")
     private LocalDate estimateDeliveryFrom;
