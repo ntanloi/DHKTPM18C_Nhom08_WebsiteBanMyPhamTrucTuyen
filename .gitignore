@@ -1,6 +1,16 @@
 .env
+
 !README.md
 *.md
+
+# Scraper artifacts
+scraper/
+scraper/.venv
+scraper/.mypy_cache
+scraper/__pycache__
+scraper/.pytest_cache
+scraper/out
+!scraper/out/.gitkeep
 
 # Logs
 logs

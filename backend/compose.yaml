@@ -10,7 +10,8 @@ services:
       - '3306:3306'
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+      # Note: Flyway migrations are handled by Spring Boot at runtime
+      # Do not mount to docker-entrypoint-initdb.d to avoid conflicts
     networks:
       - beautybox-network
     healthcheck:

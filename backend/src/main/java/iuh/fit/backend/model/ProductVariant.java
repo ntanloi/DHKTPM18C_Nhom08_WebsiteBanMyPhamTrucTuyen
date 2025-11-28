@@ -20,6 +20,9 @@ public class ProductVariant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Version
+    private Long version;  // Optimistic locking for additional safety
+
     @Column(name = "product_id")
     private Integer productId;
 

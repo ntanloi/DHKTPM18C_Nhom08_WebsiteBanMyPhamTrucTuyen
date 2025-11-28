@@ -40,7 +40,8 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (OrderItemRequest itemRequest : request.getOrderItems()) {
-            ProductVariant variant = productVariantRepository.findById(itemRequest.getProductVariantId())
+            // Use pessimistic lock to prevent race conditions on stock
+            ProductVariant variant = productVariantRepository.findByIdForUpdate(itemRequest.getProductVariantId())
                     .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
             if (variant.getStockQuantity() < itemRequest.getQuantity()) {
@@ -52,7 +53,8 @@ public class OrderService {
             orderItem.setQuantity(itemRequest.getQuantity());
 
             BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
-            subtotal.add(price.multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
+            // FIX: BigDecimal.add() returns a new object, must reassign
+            subtotal = subtotal.add(price.multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
 
             orderItems.add(orderItem);
 
@@ -82,6 +84,7 @@ public class OrderService {
 
         if (request.getRecipientInfo() != null) {
             RecipientInformation recipientInfo = new RecipientInformation();
+            recipientInfo.setOrderId(savedOrder.getId());  // FIX: Link recipient to order
             recipientInfo.setRecipientFirstName(request.getRecipientInfo().getRecipientFirstName());
             recipientInfo.setRecipientLastName(request.getRecipientInfo().getRecipientLastName());
             recipientInfo.setRecipientPhone(request.getRecipientInfo().getRecipientPhone());
@@ -259,7 +262,8 @@ public class OrderService {
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
         for (OrderItem item : orderItems) {
-            ProductVariant variant = productVariantRepository.findById(item.getProductVariantId()).orElse(null);
+            // Use pessimistic lock for stock restoration on cancel
+            ProductVariant variant = productVariantRepository.findByIdForUpdate(item.getProductVariantId()).orElse(null);
             if (variant != null) {
                 variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
                 productVariantRepository.save(variant);
