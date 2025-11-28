@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private OrderRepository orderRepository;
-    private OrderItemRepository orderItemRepository;
-    private OrderStatusHistoryRepository orderStatusHistoryRepository;
-    private RecipientInformationRepository recipientInformationRepository;
-    private PaymentRepository paymentRepository;
-    private ShipmentRepository shipmentRepository;
-    private ProductVariantRepository productVariantRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final RecipientInformationRepository recipientInformationRepository;
+    private final PaymentRepository paymentRepository;
+    private final ShipmentRepository shipmentRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     @Transactional
     public OrderDetailResponse createOrder(CreateOrderRequest request) {
