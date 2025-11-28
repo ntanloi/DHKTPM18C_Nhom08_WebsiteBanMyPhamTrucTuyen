@@ -14,7 +14,6 @@ export default function FlashSale() {
   });
 
   const navigateToProducts = (category: string) => {
-    // Push state và trigger popstate event
     window.history.pushState({}, '', `/products/${category}`);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }; //sửa chỗ này

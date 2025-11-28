@@ -2,6 +2,24 @@ import { useRef, useState, useEffect } from 'react';
 import { NextLeftNavIcon, NextRightNavIcon } from '../../../assets/icons/index';
 import UniversalDropdown from '../ui/UniversalDropdown';
 
+interface DropdownColumn {
+  title: string;
+  items: string[];
+}
+
+interface DropdownBanner {
+  bg: string;
+  title: string;
+  subtitle: string;
+}
+
+interface DropdownData {
+  type: 'multi-column' | 'mega';
+  title?: string;
+  columns: DropdownColumn[];
+  banners: DropdownBanner[];
+}
+
 const navlist = [
   'Thương hiệu',
   'Khuyến mãi hot',
@@ -19,9 +37,7 @@ const navlist = [
   'Chăm sóc răng miệng',
 ];
 
-// Data dropdown cho từng nav item
-const navbarDropdownData: Record<number, any> = {
-  // Thương hiệu (index 0)
+const navbarDropdownData: Record<number, DropdownData> = {
   0: {
     type: 'multi-column',
     title: 'TẤT CẢ THƯƠNG HIỆU',

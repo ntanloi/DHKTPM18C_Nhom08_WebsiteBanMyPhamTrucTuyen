@@ -882,38 +882,6 @@ export const makeupProducts = [
   },
 ];
 
-/*
-=============================================
-VÍ DỤ MỞ RỘNG (KHÔNG SỬ DỤNG - CHỈ THAM KHẢO)
-=============================================
-
-// Sản phẩm khuyến mãi
-export const promotionProducts = [
-  // ... các sản phẩm đang có chương trình khuyến mãi đặc biệt
-];
-
-// Sản phẩm cao cấp
-export const premiumProducts = [
-  // ... các sản phẩm thuộc phân khúc cao cấp
-];
-
-// Sản phẩm chăm sóc cá nhân
-export const personalCareProducts = [
-  // ... sữa tắm, dầu gội, dưỡng thể, v.v.
-];
-
-// Sản phẩm nước hoa
-export const perfumeProducts = [
-  // ... các loại nước hoa
-];
-
-// Sản phẩm chăm sóc tóc
-export const hairCareProducts = [
-  // ... dầu gội, dầu xả, mặt nạ tóc, v.v.
-];
-*/
-
-// ==================== PRODUCT CARD COMPONENT ====================
 const ProductCard = ({
   id,
   images = [

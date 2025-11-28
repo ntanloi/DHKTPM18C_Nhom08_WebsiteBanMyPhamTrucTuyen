@@ -36,11 +36,9 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('skincare');
 
   const navigateToProducts = (category: string) => {
-    // Push state và trigger popstate event
     window.history.pushState({}, '', `/products/${category}`);
     window.dispatchEvent(new PopStateEvent('popstate'));
-  }; //sửa chỗ này
-
+  };
   const images = [LuongVe, DocQuyen99, RangRo7Nam, Clio, SachSau, LungLinh];
   const itemsPerPage = 4;
 
