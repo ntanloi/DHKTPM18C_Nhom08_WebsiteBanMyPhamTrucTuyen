@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState } from 'react';
 
 import TinTuc1 from '../../../assets/images/tintuc1.png';

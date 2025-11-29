@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
-// Product Variant Entity
 @Entity
 @Table(name = "product_variants")
 @Data
@@ -36,24 +35,24 @@ public class ProductVariant {
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     @JsonIgnore
     private Product product;
 
-    @OneToMany(mappedBy = "productVariant")
+    @OneToMany(mappedBy = "productVariant", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<VariantAttribute> variantAttributes;
 
-    @OneToOne(mappedBy = "productVariant")
+    @OneToOne(mappedBy = "productVariant", fetch = FetchType.LAZY)
     @JsonIgnore
     private CartItem cartItem;
 
-    @OneToOne(mappedBy = "productVariant")
+    @OneToOne(mappedBy = "productVariant", fetch = FetchType.LAZY)
     @JsonIgnore
     private OrderItem orderItem;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "favorite_id", insertable = false, updatable = false)
     private FavoriteList favoriteList;
 }

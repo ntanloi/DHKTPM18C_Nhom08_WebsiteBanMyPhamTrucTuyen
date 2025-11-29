@@ -2,26 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 import { NextLeftNavIcon, NextRightNavIcon } from '../../../assets/icons/index';
 import UniversalDropdown from '../ui/UniversalDropdown';
 
-const navlist = [
-  'Thương hiệu',
-  'Khuyến mãi hot',
-  'Sản phẩm cao cấp',
-  'Trang điểm',
-  'Chăm sóc da',
-  'Chăm sóc cá nhân',
-  'Chăm sóc cơ thể',
-  'Sản phẩm mới',
-  'Dưỡng tóc',
-  'Sữa tắm',
-  'Nước hoa',
-  'Phụ kiện làm đẹp',
-  'Thực phẩm chức năng',
-  'Chăm sóc răng miệng',
-];
+import { categoriesService } from '../../../services/user.service';
+import type { Category } from '../../../types/Category';
+import { useNavigation } from '../../../context/NavigationContext';
 
-// Data dropdown cho từng nav item
-const navbarDropdownData: Record<number, any> = {
-  // Thương hiệu (index 0)
+
+const navbarDropdownData: Record<number, DropdownData> = {
   0: {
     type: 'multi-column',
     title: 'TẤT CẢ THƯƠNG HIỆU',
@@ -52,7 +38,7 @@ const navbarDropdownData: Record<number, any> = {
       },
       {
         bg: 'bg-gradient-to-br from-pink-200 to-pink-300',
-        title: 'MÁ HỒNG KEM SYRUPY TOK CHEEK',
+        title: 'MÀ HỒNG KEM SYRUPY TOK CHEEK',
         subtitle: 'Táo lăn da căng mọng',
       },
     ],
@@ -68,9 +54,9 @@ const navbarDropdownData: Record<number, any> = {
         items: [
           'MEGA SALE - SĂN NGAY DEAL HỜI | ÁP DỤNG WEBSITE',
           'BANILACO - MUA 1 TẶNG 4',
-          'AMUSE - GIẢM ĐẾN 30%',
+          'AMUSE - GIẢM ĐÉN 30%',
           'ƯU ĐÃI 50% MẶT NA SIÊU HOT',
-          'SIÊU DEAL RỤC RỠ | MUA 7 TẶNG 7',
+          'SIÊU DEAL RỰC RỠ | MUA 7 TẶNG 7',
         ],
       },
     ],
@@ -196,7 +182,7 @@ const navbarDropdownData: Record<number, any> = {
     banners: [
       {
         bg: 'bg-gradient-to-br from-teal-200 to-green-200',
-        title: 'YÊU MÁI TÓC CỦA BẠN',
+        title: 'YÊU MÃI TÓC CỦA BẠN',
         subtitle: 'Mỗi ngày với Dyson',
       },
     ],
@@ -206,9 +192,39 @@ const navbarDropdownData: Record<number, any> = {
 export default function Navbar() {
   const navRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
+  const navigate = useNavigation();
+
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  //API PROPERTIES
+  const [navlist, setNavlist] = useState<Category[]>([]);
+
+  //NAVIGATE BY CATEGORIES
+  const handleClickCategory = (item: Category) => {
+    // Đóng dropdown nếu đang mở
+    setHoveredIndex(null);
+
+    // Navigate đến trang products với slug
+    navigate.navigate(`/products/${item.slug}`);
+  };
+
+  //API CALL
+  const getListNav = async () => {
+    try {
+      const res = await categoriesService.getAll();
+      if (res) {
+        setNavlist(res.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    getListNav();
+  }, []);
 
   // Hàm cuộn trái/phải
   const scrollLeft = () => {
@@ -236,7 +252,7 @@ export default function Navbar() {
     return () => {
       nav?.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [navlist]); // Thêm navlist để re-check khi data load
 
   // Clear timeout khi component unmount
   useEffect(() => {
@@ -248,7 +264,6 @@ export default function Navbar() {
   }, []);
 
   const handleNavItemEnter = (index: number) => {
-    // Clear timeout cũ nếu có
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -257,7 +272,6 @@ export default function Navbar() {
   };
 
   const handleNavItemLeave = () => {
-    // Delay trước khi đóng
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -267,7 +281,6 @@ export default function Navbar() {
   };
 
   const handleDropdownEnter = () => {
-    // Cancel việc đóng dropdown
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -275,67 +288,75 @@ export default function Navbar() {
   };
 
   const handleDropdownLeave = () => {
-    // Đóng dropdown ngay lập tức khi rời khỏi
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     setHoveredIndex(null);
   };
 
-  // Lấy data cho dropdown hiện tại
   const currentDropdownData =
     hoveredIndex !== null ? navbarDropdownData[hoveredIndex] : null;
 
   return (
     <>
-      <div className="relative w-screen">
-        {/* Nút trái */}
-        {showLeft && (
-          <span
-            onClick={scrollLeft}
-            className="absolute top-1/2 left-7 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
+      <div className="relative w-full">
+        {/* Container cho nav với buttons */}
+        <div className="relative container mx-auto">
+          {/* Nút trái */}
+          {showLeft && (
+            <button
+              onClick={scrollLeft}
+              className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
+              aria-label="Scroll left"
+            >
+              <NextLeftNavIcon />
+            </button>
+          )}
+
+          {/* Thanh nav */}
+          <nav
+            ref={navRef}
+            className="hide-scrollbar flex flex-nowrap items-center gap-8 overflow-x-auto scroll-smooth py-3"
           >
-            <NextLeftNavIcon />
-          </span>
-        )}
+            {navlist.map((item, index) => {
+              const hasDropdown = navbarDropdownData[index] !== undefined;
 
-        {/* Thanh nav */}
-        <nav
-          ref={navRef}
-          className="hide-scrollbar container flex flex-nowrap items-center gap-8 overflow-x-auto scroll-smooth py-3"
-        >
-          {navlist.map((item, index) => {
-            // Chỉ hiển thị hover effect nếu có dropdown data
-            const hasDropdown = navbarDropdownData[index] !== undefined;
-
-            return (
-              <div
-                key={index}
-                onMouseEnter={() => hasDropdown && handleNavItemEnter(index)}
-                onMouseLeave={hasDropdown ? handleNavItemLeave : undefined}
-                className="relative shrink-0"
-              >
+              return (
                 <div
-                  className={`cursor-pointer rounded-lg border border-[#efefef] px-5 py-1 transition ${
-                    hasDropdown ? 'hover:bg-pink-100' : 'hover:bg-gray-50'
-                  }`}
+                  key={index}
+                  onMouseEnter={() => hasDropdown && handleNavItemEnter(index)}
+                  onMouseLeave={hasDropdown ? handleNavItemLeave : undefined}
+                  className="relative shrink-0"
                 >
-                  <span className="inline-block whitespace-nowrap">{item}</span>
+                  <div
+                    onClick={() => {
+                      // Navigate to products page with category slug
+                      handleClickCategory(item);
+                    }}
+                    className={`cursor-pointer rounded-lg border border-[#efefef] px-5 py-1 transition ${
+                      hasDropdown ? 'hover:bg-pink-100' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="inline-block whitespace-nowrap">
+                      {item.name}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </nav>
+              );
+            })}
+          </nav>
 
-        {/* Nút phải */}
-        {showRight && (
-          <span
-            onClick={scrollRight}
-            className="absolute top-1/2 right-7 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
-          >
-            <NextRightNavIcon />
-          </span>
-        )}
+          {/* Nút phải */}
+          {showRight && (
+            <button
+              onClick={scrollRight}
+              className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
+              aria-label="Scroll right"
+            >
+              <NextRightNavIcon />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Universal Dropdown */}
