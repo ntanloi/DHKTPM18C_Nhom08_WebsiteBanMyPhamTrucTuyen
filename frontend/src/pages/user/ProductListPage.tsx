@@ -1,105 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react';
-import ProductCard, {
-  bestSellingProducts,
-  flashSaleProducts,
-  newProducts,
-  skincareProducts,
-  makeupProducts,
-} from '../../components/user/ui/ProductCard';
+import ProductCard from '../../components/user/ui/ProductCard';
+import { useProducts } from '../../hooks/useProducts';
 
-interface Product {
-  images: string[];
-  brand: string;
-  category?: string;
-  name: string;
-  price: string;
-  oldPrice?: string;
-  discount?: string;
-  rating: number;
-  reviewCount: number;
-  colors?: string[];
-  freeShip: boolean;
-  badge?: string;
+interface ProductListPageProps {
+  categorySlug?: string;
 }
 
-export default function ProductListPage() {
-  // Lấy category từ URL path thay vì useParams
-  const getCurrentCategory = () => {
-    const path = window.location.pathname;
-    const match = path.match(/\/products\/(.+)/);
-    return match ? match[1] : '';
-  };
-
-  const [currentCategory, setCurrentCategory] = useState(getCurrentCategory());
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setCurrentCategory(getCurrentCategory());
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
-
-  const getInitialData = () => {
-    switch (currentCategory) {
-      case 'best-selling':
-        return {
-          products: bestSellingProducts,
-          title: 'TOP SẢN PHẨM BÁN CHẠY',
-        };
-      case 'flash-sale':
-        return {
-          products: flashSaleProducts,
-          title: 'FLASH SALE',
-        };
-      case 'new':
-        return {
-          products: newProducts,
-          title: 'SẢN PHẨM MỚI',
-        };
-      case 'skincare':
-        return {
-          products: skincareProducts,
-          title: 'DƯỠNG DA',
-        };
-      case 'makeup':
-        return {
-          products: makeupProducts,
-          title: 'TRANG ĐIỂM',
-        };
-      default:
-        return {
-          products: bestSellingProducts,
-          title: 'DANH SÁCH SẢN PHẨM',
-        };
-    }
-  };
-
-  const initialData = getInitialData();
-  const [allProducts, setAllProducts] = useState<Product[]>(
-    initialData.products,
+export default function ProductListPage({
+  categorySlug,
+}: ProductListPageProps) {
+  // Sử dụng custom hook để fetch products theo slug
+  const { products, loading, error, categoryName } = useProducts(
+    categorySlug || null,
   );
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(
-    initialData.products,
-  );
-  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
-  const [pageTitle, setPageTitle] = useState(initialData.title);
 
-  // Update khi category thay đổi
-  useEffect(() => {
-    const data = getInitialData();
-    setAllProducts(data.products);
-    setFilteredProducts(data.products);
-    setPageTitle(data.title);
-    setCurrentPage(1);
-  }, [currentCategory]);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 20;
-
+  // === LOCAL FILTERS & SORTING ===
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
@@ -108,7 +24,9 @@ export default function ProductListPage() {
   const [showPriceFilter, setShowPriceFilter] = useState(true);
   const [showBrandFilter, setShowBrandFilter] = useState(true);
 
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const priceRanges = [
     { id: 'under-500k', label: 'Dưới 500.000đ', min: 0, max: 500000 },
@@ -133,13 +51,17 @@ export default function ProductListPage() {
     { id: 'over-2m', label: 'Trên 2.000.000đ', min: 2000000, max: Infinity },
   ];
 
+  // Reset filters when category changes
   useEffect(() => {
-    const uniqueBrands = Array.from(
-      new Set(allProducts.map((p) => p.brand)),
-    ).sort();
-    setAvailableBrands(uniqueBrands);
-  }, [allProducts]);
+    setCurrentPage(1);
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setSelectedPriceRanges([]);
+    setSelectedBrands([]);
+    setSortBy('default');
+  }, [categorySlug]);
 
+  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -148,9 +70,16 @@ export default function ProductListPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    let result = [...allProducts];
+  // Available brands từ products
+  const availableBrands = useMemo(() => {
+    return Array.from(new Set(products.map((p) => p.brand))).sort();
+  }, [products]);
 
+  // Filter & Sort logic
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
+
+    // Search filter
     if (debouncedSearch) {
       const searchLower = debouncedSearch.toLowerCase();
       result = result.filter(
@@ -161,10 +90,12 @@ export default function ProductListPage() {
       );
     }
 
+    // Brand filter
     if (selectedBrands.length > 0) {
       result = result.filter((p) => selectedBrands.includes(p.brand));
     }
 
+    // Price filter
     if (selectedPriceRanges.length > 0) {
       result = result.filter((p) => {
         const price = parseInt(p.price.replace(/\D/g, ''));
@@ -179,6 +110,7 @@ export default function ProductListPage() {
       });
     }
 
+    // Sorting
     if (sortBy !== 'default') {
       result = [...result].sort((a, b) => {
         switch (sortBy) {
@@ -202,23 +134,27 @@ export default function ProductListPage() {
       });
     }
 
-    setFilteredProducts(result);
-    setTotalPages(Math.ceil(result.length / itemsPerPage));
-    setCurrentPage(1);
-  }, [
-    debouncedSearch,
-    selectedBrands,
-    selectedPriceRanges,
-    sortBy,
-    allProducts,
-  ]);
+    return result;
+  }, [products, debouncedSearch, selectedBrands, selectedPriceRanges, sortBy]);
 
-  useEffect(() => {
+  // Paginated products
+  const displayedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    setDisplayedProducts(filteredProducts.slice(startIndex, endIndex));
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, currentPage]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  // Reset page khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredProducts.length]);
+
+  // Scroll to top on page change
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentPage, filteredProducts]);
+  }, [currentPage]);
 
   const togglePriceRange = (rangeId: string) => {
     setSelectedPriceRanges((prev) =>
@@ -307,8 +243,15 @@ export default function ProductListPage() {
       <div className="mx-auto max-w-[1400px] px-4 py-4">
         {/* Header */}
         <h1 className="mb-4 text-xl font-bold tracking-wide uppercase">
-          {pageTitle}
+          {categoryName || 'DANH SÁCH SẢN PHẨM'}
         </h1>
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-600">
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="mb-4">
@@ -325,7 +268,7 @@ export default function ProductListPage() {
         </div>
 
         <div className="flex gap-4">
-          {/* Sidebar */}
+          {/* Sidebar Filters */}
           <div className="w-56 shrink-0">
             {/* Price Filter */}
             <div className="mb-3">
@@ -389,7 +332,6 @@ export default function ProductListPage() {
               )}
             </div>
           </div>
-
           {/* Main Content */}
           <div className="flex-1">
             {/* Toolbar */}
@@ -418,17 +360,26 @@ export default function ProductListPage() {
               </div>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="flex h-96 items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-black"></div>
+              </div>
+            )}
+
             {/* Product Grid */}
-            <div className="grid auto-rows-fr grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
-              {displayedProducts.map((product, index) => (
-                <div key={index} className="flex">
-                  <ProductCard {...product} />
-                </div>
-              ))}
-            </div>
+            {!loading && displayedProducts.length > 0 && (
+              <div className="grid auto-rows-fr grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
+                {displayedProducts.map((product, index) => (
+                  <div key={product.id || index} className="flex">
+                    <ProductCard {...product} />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Empty State */}
-            {displayedProducts.length === 0 && (
+            {!loading && displayedProducts.length === 0 && (
               <div className="flex h-96 flex-col items-center justify-center text-gray-400">
                 <svg
                   className="mb-3 h-16 w-16"
@@ -453,7 +404,7 @@ export default function ProductListPage() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && displayedProducts.length > 0 && (
+            {totalPages > 1 && displayedProducts.length > 0 && !loading && (
               <div className="mt-8 flex items-center justify-center gap-1">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}

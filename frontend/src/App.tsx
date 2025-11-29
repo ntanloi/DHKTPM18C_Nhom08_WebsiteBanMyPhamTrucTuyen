@@ -8,33 +8,51 @@ import AuthModal from './components/user/ui/AuthModal';
 import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
 import CheckoutPage from './pages/user/CheckoutPage';
+import { NavigationProvider } from './context/NavigationContext';
 
-type Page = 'home' | 'stores' | 'products' | 'product-detail' | 'checkout'; // thêm Products loi
+type Page = 'home' | 'stores' | 'products' | 'product-detail' | 'checkout';
 
 function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/stores') return 'stores';
     if (path === '/checkout') return 'checkout';
-    if (path.startsWith('/products/')) return 'products';
-    if (path.startsWith('/product/')) return 'product-detail'; // THÊM DÒNG NÀY
+    if (path.startsWith('/products') || path === '/products') return 'products';
+    if (path.startsWith('/product/')) return 'product-detail';
     return 'home';
-  }; //sửa đoạn này nưữa loi
+  };
 
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [productId, setProductId] = useState<string>(''); //thêm dòng này loi
+  const [productId, setProductId] = useState<string>('');
+  const [categorySlug, setCategorySlug] = useState<string>('');
+
+  // Extract initial categorySlug from URL
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/products/')) {
+      const slug = path.replace('/products/', '');
+      setCategorySlug(slug);
+    }
+  }, []);
 
   const navigate = (to: string) => {
-    //loi yo
-    if (window.location.pathname !== to) {
-      window.history.pushState({}, '', to);
-    }
-    setPage(pathToPage(to));
+    window.history.pushState({}, '', to);
 
-    // THÊM: Extract product ID from URL
-    if (to.startsWith('/product/')) {
-      const id = to.replace('/product/', '');
+    const pathname = to.split('?')[0];
+    setPage(pathToPage(pathname));
+
+    // Extract category slug from URL /products/sua-rua-mat
+    if (pathname.startsWith('/products/')) {
+      const slug = pathname.replace('/products/', '');
+      setCategorySlug(slug);
+    } else if (pathname === '/products') {
+      setCategorySlug('');
+    }
+
+    // Extract product ID from URL
+    if (pathname.startsWith('/product/')) {
+      const id = pathname.replace('/product/', '');
       setProductId(id);
     }
   };
@@ -43,6 +61,14 @@ function App() {
     const onPop = () => {
       const path = window.location.pathname;
       setPage(pathToPage(path));
+
+      // Update categorySlug when back/forward
+      if (path.startsWith('/products/')) {
+        const slug = path.replace('/products/', '');
+        setCategorySlug(slug);
+      } else if (path === '/products') {
+        setCategorySlug('');
+      }
 
       // Update productId based on path
       if (path.startsWith('/product/')) {
@@ -55,25 +81,29 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <Header
-        onOpenStores={() => navigate('/stores')}
-        onOpenLogin={() => setAuthOpen(true)}
-        onNavigate={navigate}
-      />
-      {page === 'home' && <HomePage />}
-      {page === 'stores' && <StoreLocatorPage />}
-      {page === 'products' && <ProductListPage />} {/* sửa lại đoạn này */}
-      {page === 'checkout' && <CheckoutPage />}
-      {page === 'product-detail' && <ProductDetailPage productId={productId} />}
-      <Footer />
-      <AuthModal
-        open={authOpen}
-        mode={authMode}
-        onClose={() => setAuthOpen(false)}
-        onSwitchMode={(m) => setAuthMode(m)}
-      />
-    </div>
+    <NavigationProvider navigate={navigate}>
+      <div>
+        <Header
+          onOpenStores={() => navigate('/stores')}
+          onOpenLogin={() => setAuthOpen(true)}
+          onNavigate={navigate}
+        />
+        {page === 'home' && <HomePage />}
+        {page === 'stores' && <StoreLocatorPage />}
+        {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
+        {page === 'checkout' && <CheckoutPage />}
+        {page === 'product-detail' && (
+          <ProductDetailPage productId={productId} />
+        )}
+        <Footer />
+        <AuthModal
+          open={authOpen}
+          mode={authMode}
+          onClose={() => setAuthOpen(false)}
+          onSwitchMode={(m) => setAuthMode(m)}
+        />
+      </div>
+    </NavigationProvider>
   );
 }
 

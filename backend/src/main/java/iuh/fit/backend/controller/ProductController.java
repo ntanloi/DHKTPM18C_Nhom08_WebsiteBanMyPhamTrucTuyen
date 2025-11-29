@@ -3,6 +3,7 @@ package iuh.fit.backend.controller;
 import iuh.fit.backend.dto.ProductDetailResponse;
 import iuh.fit.backend.dto.ProductRequest;
 import iuh.fit.backend.dto.ProductResponse;
+import iuh.fit.backend.service.CategoryService;
 import iuh.fit.backend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,13 @@ public class ProductController {
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
+    }
+
+    @GetMapping("/category/slug/{categorySlug}")
+    public ResponseEntity<List<ProductResponse>> getProductsByCategorySlug(
+            @PathVariable String categorySlug) {
+        List<ProductResponse> products = productService.getProductsByCategorySlug(categorySlug);
+        return ResponseEntity.ok(products);
     }
 
     @GetMapping("/category/{categoryId}")
