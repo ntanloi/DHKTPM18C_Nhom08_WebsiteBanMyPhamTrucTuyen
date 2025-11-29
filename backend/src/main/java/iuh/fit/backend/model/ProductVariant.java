@@ -35,7 +35,7 @@ public class ProductVariant {
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     @JsonIgnore
     private Product product;
