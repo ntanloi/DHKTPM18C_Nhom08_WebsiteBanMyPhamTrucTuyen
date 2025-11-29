@@ -3,6 +3,7 @@ package iuh.fit.backend.service;
 import iuh.fit.backend.dto.CategoryRequest;
 import iuh.fit.backend.dto.CategoryResponse;
 import iuh.fit.backend.model.Category;
+import iuh.fit.backend.model.Product;
 import iuh.fit.backend.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ public class CategoryService {
                 .map(this::convertToCategoryResponse)
                 .collect(Collectors.toList());
     }
+
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {

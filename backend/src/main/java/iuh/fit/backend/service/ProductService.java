@@ -68,6 +68,31 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    public List<ProductResponse> getProductsByCategorySlug(String categorySlug) {
+        List<Product> products = productRepository.findByCategory_Slug(categorySlug);
+
+        return products.stream()
+                .map(this::mapToProductResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Helper method để map
+    private ProductResponse mapToProductResponse(Product product) {
+        ProductResponse response = new ProductResponse();
+        response.setId(product.getId());
+        response.setName(product.getName());
+        response.setSlug(product.getSlug());
+        response.setDescription(product.getDescription());
+        response.setCategoryId(product.getCategoryId());
+        response.setCategoryName(product.getCategory() != null ? product.getCategory().getName() : null);
+        response.setBrandId(product.getBrandId());
+        response.setBrandName(product.getBrand() != null ? product.getBrand().getName() : null);
+        response.setStatus(product.getStatus());
+        response.setCreatedAt(product.getCreatedAt());
+        response.setUpdatedAt(product.getUpdatedAt());
+        return response;
+    }
+
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
         Product product = new Product();

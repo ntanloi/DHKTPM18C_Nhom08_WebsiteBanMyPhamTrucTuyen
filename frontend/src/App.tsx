@@ -8,6 +8,7 @@ import AuthModal from './components/user/ui/AuthModal';
 import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
 import CheckoutPage from './pages/user/CheckoutPage';
+import { NavigationProvider } from './context/NavigationContext';
 
 import UserListPage from './pages/admin/user/UserListPage';
 import UserCreatePage from './pages/admin/user/UserCreatePage';
@@ -78,6 +79,7 @@ type Page =
   | 'admin-coupon-edit'
   | 'admin-coupon-detail';
 
+
 function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/admin' || path === '/admin/') return 'admin-dashboard';
@@ -89,8 +91,10 @@ function App() {
 
     if (path === '/stores') return 'stores';
     if (path === '/checkout') return 'checkout';
-    if (path.startsWith('/products/')) return 'products';
+
+    if (path.startsWith('/products') || path === '/products') return 'products';
     if (path.startsWith('/product/')) return 'product-detail';
+
     if (path === '/admin/users') return 'admin-users';
     if (path === '/admin/users/create') return 'admin-user-create';
     if (path.startsWith('/admin/users/') && path.endsWith('/edit'))
@@ -164,8 +168,9 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [_productCategory, setProductCategory] = useState<string>('');
+
   const [productId, setProductId] = useState<string>('');
+  const [categorySlug, setCategorySlug] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [brandId, setBrandId] = useState<string>('');
@@ -174,19 +179,32 @@ function App() {
   const [orderId, setOrderId] = useState<string>('');
   const [couponId, setCouponId] = useState<string>(''); // THÊM
 
+  // Extract initial categorySlug from URL
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/products/')) {
+      const slug = path.replace('/products/', '');
+      setCategorySlug
+      (slug);
+    }
+  }, []);
+
   const navigate = (to: string) => {
-    if (window.location.pathname !== to) {
-      window.history.pushState({}, '', to);
-    }
-    setPage(pathToPage(to));
+    window.history.pushState({}, '', to);
 
-    if (to.startsWith('/products/')) {
-      const category = to.replace('/products/', '');
-      setProductCategory(category);
-    }
+    const pathname = to.split('?')[0];
+    setPage(pathToPage(pathname));
 
-    if (to.startsWith('/product/')) {
-      const id = to.replace('/product/', '');
+    // Extract category slug from URL /products/sua-rua-mat
+    if (pathname.startsWith('/products/')) {
+      const slug = pathname.replace('/products/', '');
+      setCategorySlug(slug);
+    } else if (pathname === '/products') {
+      setCategorySlug('');
+
+    // Extract product ID from URL
+    if (pathname.startsWith('/product/')) {
+      const id = pathname.replace('/product/', '');
       setProductId(id);
     }
 
@@ -249,10 +267,17 @@ function App() {
       const path = window.location.pathname;
       setPage(pathToPage(path));
 
+
+      // Update categorySlug when back/forward
       if (path.startsWith('/products/')) {
-        const category = path.replace('/products/', '');
-        setProductCategory(category);
-      } else if (path.startsWith('/product/')) {
+        const slug = path.replace('/products/', '');
+        setCategorySlug(slug);
+      } else if (path === '/products') {
+        setCategorySlug('');
+      }
+
+      // Update productId based on path
+      if (path.startsWith('/product/')) {
         const id = path.replace('/product/', '');
         setProductId(id);
       } else if (path.startsWith('/admin/users/')) {
@@ -306,7 +331,9 @@ function App() {
   const isAdminPage = page.startsWith('admin-');
 
   return (
-    <div>
+
+    <NavigationProvider navigate={navigate}>
+      <div>
       {!isAdminPage && (
         <Header
           onOpenStores={() => navigate('/stores')}
@@ -316,7 +343,7 @@ function App() {
 
       {page === 'home' && <HomePage />}
       {page === 'stores' && <StoreLocatorPage />}
-      {page === 'products' && <ProductListPage />}
+     {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
       {page === 'checkout' && <CheckoutPage />}
 
       {page === 'product-detail' && <ProductDetailPage productId={productId} />}
@@ -415,6 +442,7 @@ function App() {
         onSwitchMode={(m) => setAuthMode(m)}
       />
     </div>
+    </NavigationProvider>
   );
 }
 
