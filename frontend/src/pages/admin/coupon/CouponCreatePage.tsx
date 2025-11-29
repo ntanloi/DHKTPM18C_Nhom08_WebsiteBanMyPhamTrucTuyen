@@ -31,7 +31,9 @@ const CouponCreatePage: React.FC<CouponCreatePageProps> = ({ onNavigate }) => {
         );
         setLoading(false);
         return;
-      } catch (err) {}
+      } catch {
+        // Code doesn't exist, continue with creation
+      }
 
       const response = await mockCouponService.createCoupon(createData);
 
