@@ -1,13 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
 import { NextLeftNavIcon, NextRightNavIcon } from '../../../assets/icons/index';
 import UniversalDropdown from '../ui/UniversalDropdown';
+
 import { categoriesService } from '../../../services/user.service';
 import type { Category } from '../../../types/Category';
 import { useNavigation } from '../../../context/NavigationContext';
 
-// Data dropdown cho từng nav item
-const navbarDropdownData: Record<number, any> = {
-  // Thương hiệu (index 0)
+
+const navbarDropdownData: Record<number, DropdownData> = {
   0: {
     type: 'multi-column',
     title: 'TẤT CẢ THƯƠNG HIỆU',
