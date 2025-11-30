@@ -15,6 +15,12 @@ import java.util.Optional;
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Integer> {
     List<ProductVariant> findByProductId(Integer productId);
 
+    Optional<ProductVariant> findBySku(String sku);
+
+    boolean existsBySku(String sku);
+
+    boolean existsBySkuAndIdNot(String sku, Integer id);
+
     /**
      * Find variant with pessimistic write lock to prevent race conditions
      * when updating stock quantity during concurrent orders.
@@ -22,4 +28,6 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.id = :id")
     Optional<ProductVariant> findByIdForUpdate(@Param("id") Integer id);
+    @Query("SELECT pv FROM ProductVariant pv WHERE pv.stockQuantity > 0")
+    List<ProductVariant> findInStockVariants();
 }
