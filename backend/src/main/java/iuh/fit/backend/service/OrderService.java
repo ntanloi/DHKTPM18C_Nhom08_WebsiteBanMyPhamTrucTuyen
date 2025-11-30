@@ -5,6 +5,7 @@ import iuh.fit.backend.model.*;
 import iuh.fit.backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -26,6 +28,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final ShipmentRepository shipmentRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public OrderDetailResponse createOrder(CreateOrderRequest request) {
@@ -119,6 +122,14 @@ public class OrderService {
         shipment.setCreatedAt(LocalDateTime.now());
         shipment.setUpdatedAt(LocalDateTime.now());
         shipmentRepository.save(shipment);
+
+        // Send real-time notification for new order
+        try {
+            notificationService.notifyOrderCreated(savedOrder.getId(), request.getUserId());
+            log.info("Order created notification sent for order: {}", savedOrder.getId());
+        } catch (Exception e) {
+            log.warn("Failed to send order created notification: {}", e.getMessage());
+        }
 
         return getOrderDetail(savedOrder.getId());
     }
@@ -248,6 +259,14 @@ public class OrderService {
             });
         }
 
+        // Send real-time notification for order status change
+        try {
+            notificationService.notifyOrderStatusChange(orderId, newStatus, updatedOrder.getUserId());
+            log.info("Order status change notification sent for order: {}, new status: {}", orderId, newStatus);
+        } catch (Exception e) {
+            log.warn("Failed to send order status change notification: {}", e.getMessage());
+        }
+
         return convertToOrderResponse(updatedOrder);
     }
 
@@ -286,6 +305,14 @@ public class OrderService {
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
         });
+
+        // Send real-time notification for order cancellation
+        try {
+            notificationService.notifyOrderCancelled(orderId, order.getUserId());
+            log.info("Order cancellation notification sent for order: {}", orderId);
+        } catch (Exception e) {
+            log.warn("Failed to send order cancellation notification: {}", e.getMessage());
+        }
 
         return convertToOrderResponse(cancelledOrder);
     }
