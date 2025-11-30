@@ -184,8 +184,7 @@ function App() {
     const path = window.location.pathname;
     if (path.startsWith('/products/')) {
       const slug = path.replace('/products/', '');
-      setCategorySlug
-      (slug);
+      setCategorySlug(slug);
     }
   }, []);
 
@@ -201,6 +200,7 @@ function App() {
       setCategorySlug(slug);
     } else if (pathname === '/products') {
       setCategorySlug('');
+    }
 
     // Extract product ID from URL
     if (pathname.startsWith('/product/')) {
@@ -441,7 +441,7 @@ function App() {
         onClose={() => setAuthOpen(false)}
         onSwitchMode={(m) => setAuthMode(m)}
       />
-    </div>
+      </div>
     </NavigationProvider>
   );
 }

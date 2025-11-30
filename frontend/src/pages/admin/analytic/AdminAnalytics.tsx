@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -11,7 +9,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Area,
   AreaChart,
@@ -528,7 +525,7 @@ const AdminAnalytics = ({
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
-                  formatter={(value, name) => {
+                  formatter={(value: number, name: string) => {
                     if (name === 'sales') return [value, 'Đã bán'];
                     return [`₫${value.toLocaleString('vi-VN')}`, 'Doanh thu'];
                   }}

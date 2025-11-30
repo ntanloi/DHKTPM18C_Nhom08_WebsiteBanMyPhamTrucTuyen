@@ -6,6 +6,25 @@ import { categoriesService } from '../../../services/user.service';
 import type { Category } from '../../../types/Category';
 import { useNavigation } from '../../../context/NavigationContext';
 
+interface DropdownColumn {
+  title: string;
+  items: string[];
+}
+
+interface DropdownBanner {
+  bg: string;
+  title: string;
+  subtitle?: string;
+  buttonText?: string;
+  image?: string;
+}
+
+interface DropdownData {
+  type: string;
+  title?: string;
+  columns?: DropdownColumn[];
+  banners?: DropdownBanner[];
+}
 
 const navbarDropdownData: Record<number, DropdownData> = {
   0: {
