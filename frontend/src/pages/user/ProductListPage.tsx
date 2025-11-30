@@ -10,12 +10,10 @@ interface ProductListPageProps {
 export default function ProductListPage({
   categorySlug,
 }: ProductListPageProps) {
-  // Sử dụng custom hook để fetch products theo slug
   const { products, loading, error, categoryName } = useProducts(
     categorySlug || null,
   );
 
-  // === LOCAL FILTERS & SORTING ===
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
@@ -24,7 +22,6 @@ export default function ProductListPage({
   const [showPriceFilter, setShowPriceFilter] = useState(true);
   const [showBrandFilter, setShowBrandFilter] = useState(true);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -51,7 +48,6 @@ export default function ProductListPage({
     { id: 'over-2m', label: 'Trên 2.000.000đ', min: 2000000, max: Infinity },
   ];
 
-  // Reset filters when category changes
   useEffect(() => {
     setCurrentPage(1);
     setSearchQuery('');
@@ -61,7 +57,6 @@ export default function ProductListPage({
     setSortBy('default');
   }, [categorySlug]);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -70,12 +65,10 @@ export default function ProductListPage({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Available brands từ products
   const availableBrands = useMemo(() => {
-    return Array.from(new Set(products.map((p) => p.brand))).sort();
+    return Array.from(new Set(products.map((p) => p.brandName))).sort();
   }, [products]);
 
-  // Filter & Sort logic
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
@@ -85,20 +78,22 @@ export default function ProductListPage({
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(searchLower) ||
-          p.brand.toLowerCase().includes(searchLower) ||
-          p.category?.toLowerCase().includes(searchLower),
+          p.brandName.toLowerCase().includes(searchLower) ||
+          p.categoryName?.toLowerCase().includes(searchLower),
       );
     }
 
     // Brand filter
     if (selectedBrands.length > 0) {
-      result = result.filter((p) => selectedBrands.includes(p.brand));
+      result = result.filter((p) => selectedBrands.includes(p.brandName));
     }
 
-    // Price filter
+    // Price filter - needs to check variants
+    // For now, skip price filtering until we have price in product list
+    /*
     if (selectedPriceRanges.length > 0) {
       result = result.filter((p) => {
-        const price = parseInt(p.price.replace(/\D/g, ''));
+        const price = p.price; // You'll need to get this from variants
         return selectedPriceRanges.some((rangeId) => {
           const range = priceRanges.find((r) => r.id === rangeId);
           if (!range) return false;
@@ -109,25 +104,17 @@ export default function ProductListPage({
         });
       });
     }
+    */
 
     // Sorting
     if (sortBy !== 'default') {
       result = [...result].sort((a, b) => {
         switch (sortBy) {
-          case 'price-asc':
-            return (
-              parseInt(a.price.replace(/\D/g, '')) -
-              parseInt(b.price.replace(/\D/g, ''))
-            );
-          case 'price-desc':
-            return (
-              parseInt(b.price.replace(/\D/g, '')) -
-              parseInt(a.price.replace(/\D/g, ''))
-            );
-          case 'rating-desc':
-            return b.rating - a.rating;
           case 'name-asc':
             return a.name.localeCompare(b.name);
+          case 'name-desc':
+            return b.name.localeCompare(a.name);
+          // Price sorting would need variant data
           default:
             return 0;
         }
@@ -137,7 +124,6 @@ export default function ProductListPage({
     return result;
   }, [products, debouncedSearch, selectedBrands, selectedPriceRanges, sortBy]);
 
-  // Paginated products
   const displayedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -146,12 +132,10 @@ export default function ProductListPage({
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  // Reset page khi filter thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredProducts.length]);
 
-  // Scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
@@ -241,19 +225,16 @@ export default function ProductListPage({
   return (
     <div className="bg-white">
       <div className="mx-auto max-w-[1400px] px-4 py-4">
-        {/* Header */}
         <h1 className="mb-4 text-xl font-bold tracking-wide uppercase">
           {categoryName || 'DANH SÁCH SẢN PHẨM'}
         </h1>
 
-        {/* Error State */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-600">
             <p className="text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Search Bar */}
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -268,7 +249,6 @@ export default function ProductListPage({
         </div>
 
         <div className="flex gap-4">
-          {/* Sidebar Filters */}
           <div className="w-56 shrink-0">
             {/* Price Filter */}
             <div className="mb-3">
@@ -332,9 +312,8 @@ export default function ProductListPage({
               )}
             </div>
           </div>
-          {/* Main Content */}
+
           <div className="flex-1">
-            {/* Toolbar */}
             <div className="mb-4 flex items-center justify-between border-b border-gray-200 pb-3">
               <span className="text-sm text-gray-600">
                 Sắp xếp theo: <span className="font-medium">Mặc định</span>
@@ -349,10 +328,8 @@ export default function ProductListPage({
                   className="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-gray-400 focus:outline-none"
                 >
                   <option value="default">Mặc định</option>
-                  <option value="price-asc">Giá: Thấp đến Cao</option>
-                  <option value="price-desc">Giá: Cao đến Thấp</option>
-                  <option value="rating-desc">Đánh giá cao nhất</option>
                   <option value="name-asc">Tên: A-Z</option>
+                  <option value="name-desc">Tên: Z-A</option>
                 </select>
                 <button className="rounded border border-gray-300 bg-white p-1.5 hover:bg-gray-50">
                   <SlidersHorizontal className="h-4 w-4" />
@@ -360,25 +337,31 @@ export default function ProductListPage({
               </div>
             </div>
 
-            {/* Loading State */}
             {loading && (
               <div className="flex h-96 items-center justify-center">
                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-black"></div>
               </div>
             )}
 
-            {/* Product Grid */}
             {!loading && displayedProducts.length > 0 && (
               <div className="grid auto-rows-fr grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
-                {displayedProducts.map((product, index) => (
-                  <div key={product.id || index} className="flex">
-                    <ProductCard {...product} />
+                {displayedProducts.map((product) => (
+                  <div key={product.id} className="flex">
+                    <ProductCard
+                      id={product.id}
+                      slug={product.slug}
+                      name={product.name}
+                      brandName={product.brandName}
+                      categoryName={product.categoryName}
+                      images={product.images}
+                      freeShip={product.freeShip}
+                      badge={product.badge}
+                    />
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Empty State */}
             {!loading && displayedProducts.length === 0 && (
               <div className="flex h-96 flex-col items-center justify-center text-gray-400">
                 <svg
@@ -403,7 +386,6 @@ export default function ProductListPage({
               </div>
             )}
 
-            {/* Pagination */}
             {totalPages > 1 && displayedProducts.length > 0 && !loading && (
               <div className="mt-8 flex items-center justify-center gap-1">
                 <button

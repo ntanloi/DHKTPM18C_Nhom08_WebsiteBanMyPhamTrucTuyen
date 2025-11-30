@@ -31,6 +31,8 @@ public class ProductService {
 
     @Autowired
     private VariantAttributeRepository variantAttributeRepository;
+    @Autowired
+    private ReviewService reviewService;
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll().stream()
@@ -90,6 +92,19 @@ public class ProductService {
         response.setStatus(product.getStatus());
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
+
+        List<ReviewResponse> reviews = reviewService.getReviewsByProductId(product.getId());
+        if (reviews != null && !reviews.isEmpty()) {
+            double avgRating = reviews.stream()
+                    .mapToInt(ReviewResponse::getRating)
+                    .average()
+                    .orElse(0.0);
+            response.setAverageRating(avgRating);
+            response.setReviewCount((long) reviews.size());
+        } else {
+            response.setAverageRating(0.0);
+            response.setReviewCount(0L);
+        }
         return response;
     }
 

@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import ProductCard, {
-  bestSellingProducts,
-  newProducts,
-  skincareProducts,
-  makeupProducts,
-} from '../../components/user/ui/ProductCard';
+import ProductCard from '../../components/user/ui/ProductCard';
+import { useAllProducts } from '../../hooks/useProducts';
+
 import LuongVe from '../../assets/images/luongve.png';
 import DocQuyen99 from '../../assets/images/docquyen99.png';
 import RangRo7Nam from '../../assets/images/rangro7nam.png';
@@ -35,10 +32,39 @@ export default function HomePage() {
   const [trendIndex, setTrendIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('skincare');
 
+  // Load products from API
+  const { products, loading } = useAllProducts();
+
+  // Filter products by category for different sections
+  // You can customize these filters based on your actual data structure
+  const bestSellingProducts = products.slice(0, 12); // First 12 products as best selling
+  const newProducts = products.slice(12, 24); // Next 12 as new products
+
+  // Filter by category name for skincare and makeup
+  const skincareProducts = products
+    .filter(
+      (p) =>
+        p.categoryName?.toLowerCase().includes('dưỡng') ||
+        p.categoryName?.toLowerCase().includes('skincare') ||
+        p.categoryName?.toLowerCase().includes('chăm sóc'),
+    )
+    .slice(0, 12);
+
+  const makeupProducts = products
+    .filter(
+      (p) =>
+        p.categoryName?.toLowerCase().includes('trang điểm') ||
+        p.categoryName?.toLowerCase().includes('makeup') ||
+        p.categoryName?.toLowerCase().includes('son') ||
+        p.categoryName?.toLowerCase().includes('phấn'),
+    )
+    .slice(0, 12);
+
   const navigateToProducts = (category: string) => {
     window.history.pushState({}, '', `/products/${category}`);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
+
   const images = [LuongVe, DocQuyen99, RangRo7Nam, Clio, SachSau, LungLinh];
   const itemsPerPage = 4;
 
@@ -78,6 +104,17 @@ export default function HomePage() {
     setTrendIndex((curr) => (curr === 0 ? totalTrendPages - 1 : curr - 1));
   const nextTrend = () =>
     setTrendIndex((curr) => (curr === totalTrendPages - 1 ? 0 : curr + 1));
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex h-96 items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-pink-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -144,65 +181,76 @@ export default function HomePage() {
       </div>
 
       {/* Top Sản Phẩm Bán Chạy */}
-      <div className="relative mt-10">
-        <h1 className="mb-6 text-center text-2xl font-bold tracking-wide uppercase">
-          TOP SẢN PHẨM BÁN CHẠY
-        </h1>
+      {bestSellingProducts.length > 0 && (
+        <div className="relative mt-10">
+          <h1 className="mb-6 text-center text-2xl font-bold tracking-wide uppercase">
+            TOP SẢN PHẨM BÁN CHẠY
+          </h1>
 
-        <div className="relative">
-          <button
-            onClick={prevBestSelling}
-            className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronLeft size={28} className="text-gray-800" />
-          </button>
-
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{
-                transform: `translateX(-${bestSellingIndex * 100}%)`,
-              }}
+          <div className="relative">
+            <button
+              onClick={prevBestSelling}
+              className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
             >
-              {Array.from({ length: totalBestSellingPages }).map(
-                (_, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="flex w-full flex-shrink-0 gap-4 px-2"
-                  >
-                    {bestSellingProducts
-                      .slice(
-                        pageIndex * itemsPerPage,
-                        (pageIndex + 1) * itemsPerPage,
-                      )
-                      .map((product, index) => (
-                        <div key={index} className="w-1/4">
-                          <ProductCard {...product} />
-                        </div>
-                      ))}
-                  </div>
-                ),
-              )}
+              <ChevronLeft size={28} className="text-gray-800" />
+            </button>
+
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{
+                  transform: `translateX(-${bestSellingIndex * 100}%)`,
+                }}
+              >
+                {Array.from({ length: totalBestSellingPages }).map(
+                  (_, pageIndex) => (
+                    <div
+                      key={pageIndex}
+                      className="flex w-full flex-shrink-0 gap-4 px-2"
+                    >
+                      {bestSellingProducts
+                        .slice(
+                          pageIndex * itemsPerPage,
+                          (pageIndex + 1) * itemsPerPage,
+                        )
+                        .map((product) => (
+                          <div key={product.id} className="w-1/4">
+                            <ProductCard
+                              id={product.id}
+                              slug={product.slug}
+                              name={product.name}
+                              brandName={product.brandName}
+                              categoryName={product.categoryName}
+                              images={product.images}
+                              freeShip={product.freeShip}
+                              badge={product.badge}
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  ),
+                )}
+              </div>
             </div>
+
+            <button
+              onClick={nextBestSelling}
+              className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
+            >
+              <ChevronRight size={28} className="text-gray-800" />
+            </button>
           </div>
 
-          <button
-            onClick={nextBestSelling}
-            className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronRight size={28} className="text-gray-800" />
-          </button>
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => navigateToProducts('best-selling')}
+              className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
+            >
+              Xem tất cả
+            </button>
+          </div>
         </div>
-
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => navigateToProducts('best-selling')}
-            className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
-          >
-            Xem tất cả
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* GIF Section */}
       <div className="mt-10">
@@ -231,169 +279,195 @@ export default function HomePage() {
       </div>
 
       {/* Phần Xu hướng làm đẹp */}
-      <div className="mt-16 mb-16">
-        <h1 className="mb-6 text-center text-3xl font-bold tracking-wider uppercase">
-          XU HƯỚNG LÀM ĐẸP
-        </h1>
+      {(skincareProducts.length > 0 || makeupProducts.length > 0) && (
+        <div className="mt-16 mb-16">
+          <h1 className="mb-6 text-center text-3xl font-bold tracking-wider uppercase">
+            XU HƯỚNG LÀM ĐẸP
+          </h1>
 
-        {/* Tabs */}
-        <div className="mb-10 flex justify-center gap-12 border-gray-200">
-          <button
-            onClick={() => {
-              setActiveTab('skincare');
-              setTrendIndex(0);
-            }}
-            className={`pb-3 text-lg font-semibold transition-all ${
-              activeTab === 'skincare'
-                ? 'border-b-3 border-black text-black'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            style={
-              activeTab === 'skincare'
-                ? { borderBottomWidth: '3px', borderBottomColor: '#000' }
-                : {}
-            }
-          >
-            Dưỡng da
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('makeup');
-              setTrendIndex(0);
-            }}
-            className={`pb-3 text-lg font-semibold transition-all ${
-              activeTab === 'makeup'
-                ? 'border-b-3 border-black text-black'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            style={
-              activeTab === 'makeup'
-                ? { borderBottomWidth: '3px', borderBottomColor: '#000' }
-                : {}
-            }
-          >
-            Trang điểm
-          </button>
-        </div>
-
-        {/* Products Slider */}
-        <div className="relative">
-          <button
-            onClick={prevTrend}
-            className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronLeft size={28} className="text-gray-800" />
-          </button>
-
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{
-                transform: `translateX(-${trendIndex * 100}%)`,
+          {/* Tabs */}
+          <div className="mb-10 flex justify-center gap-12 border-gray-200">
+            <button
+              onClick={() => {
+                setActiveTab('skincare');
+                setTrendIndex(0);
               }}
+              className={`pb-3 text-lg font-semibold transition-all ${
+                activeTab === 'skincare'
+                  ? 'border-b-3 border-black text-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              style={
+                activeTab === 'skincare'
+                  ? { borderBottomWidth: '3px', borderBottomColor: '#000' }
+                  : {}
+              }
             >
-              {Array.from({ length: totalTrendPages }).map((_, pageIndex) => (
-                <div
-                  key={pageIndex}
-                  className="flex w-full flex-shrink-0 gap-4 px-2"
-                >
-                  {displayProducts
-                    .slice(
-                      pageIndex * itemsPerPage,
-                      (pageIndex + 1) * itemsPerPage,
-                    )
-                    .map((product, index) => (
-                      <div
-                        key={`${activeTab}-${pageIndex}-${index}`}
-                        className="w-1/4"
-                      >
-                        <ProductCard {...product} />
-                      </div>
-                    ))}
-                </div>
-              ))}
-            </div>
+              Dưỡng da
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('makeup');
+                setTrendIndex(0);
+              }}
+              className={`pb-3 text-lg font-semibold transition-all ${
+                activeTab === 'makeup'
+                  ? 'border-b-3 border-black text-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              style={
+                activeTab === 'makeup'
+                  ? { borderBottomWidth: '3px', borderBottomColor: '#000' }
+                  : {}
+              }
+            >
+              Trang điểm
+            </button>
           </div>
 
-          <button
-            onClick={nextTrend}
-            className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronRight size={28} className="text-gray-800" />
-          </button>
-        </div>
+          {/* Products Slider */}
+          {displayProducts.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={prevTrend}
+                className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
+              >
+                <ChevronLeft size={28} className="text-gray-800" />
+              </button>
 
-        {/* Nút Xem tất cả */}
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => navigateToProducts(activeTab)}
-            className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
-          >
-            Xem tất cả
-          </button>
+              <div className="overflow-hidden">
+                <div
+                  className="flex transition-transform duration-500 ease-in-out"
+                  style={{
+                    transform: `translateX(-${trendIndex * 100}%)`,
+                  }}
+                >
+                  {Array.from({ length: totalTrendPages }).map(
+                    (_, pageIndex) => (
+                      <div
+                        key={pageIndex}
+                        className="flex w-full flex-shrink-0 gap-4 px-2"
+                      >
+                        {displayProducts
+                          .slice(
+                            pageIndex * itemsPerPage,
+                            (pageIndex + 1) * itemsPerPage,
+                          )
+                          .map((product) => (
+                            <div
+                              key={`${activeTab}-${product.id}`}
+                              className="w-1/4"
+                            >
+                              <ProductCard
+                                id={product.id}
+                                slug={product.slug}
+                                name={product.name}
+                                brandName={product.brandName}
+                                categoryName={product.categoryName}
+                                images={product.images}
+                                freeShip={product.freeShip}
+                                badge={product.badge}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={nextTrend}
+                className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
+              >
+                <ChevronRight size={28} className="text-gray-800" />
+              </button>
+            </div>
+          )}
+
+          {/* Nút Xem tất cả */}
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => navigateToProducts(activeTab)}
+              className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
+            >
+              Xem tất cả
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sản phẩm mới */}
-      <div className="relative mt-10">
-        <h1 className="mb-6 text-center text-2xl font-bold tracking-wide uppercase">
-          Sản Phẩm Mới
-        </h1>
+      {newProducts.length > 0 && (
+        <div className="relative mt-10">
+          <h1 className="mb-6 text-center text-2xl font-bold tracking-wide uppercase">
+            Sản Phẩm Mới
+          </h1>
 
-        <div className="relative">
-          <button
-            onClick={prevNewProduct}
-            className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronLeft size={28} className="text-gray-800" />
-          </button>
-
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{
-                transform: `translateX(-${newProductIndex * 100}%)`,
-              }}
+          <div className="relative">
+            <button
+              onClick={prevNewProduct}
+              className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
             >
-              {Array.from({ length: totalNewProductPages }).map(
-                (_, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="flex w-full flex-shrink-0 gap-4 px-2"
-                  >
-                    {newProducts
-                      .slice(
-                        pageIndex * itemsPerPage,
-                        (pageIndex + 1) * itemsPerPage,
-                      )
-                      .map((product, index) => (
-                        <div key={index} className="w-1/4">
-                          <ProductCard {...product} />
-                        </div>
-                      ))}
-                  </div>
-                ),
-              )}
+              <ChevronLeft size={28} className="text-gray-800" />
+            </button>
+
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{
+                  transform: `translateX(-${newProductIndex * 100}%)`,
+                }}
+              >
+                {Array.from({ length: totalNewProductPages }).map(
+                  (_, pageIndex) => (
+                    <div
+                      key={pageIndex}
+                      className="flex w-full flex-shrink-0 gap-4 px-2"
+                    >
+                      {newProducts
+                        .slice(
+                          pageIndex * itemsPerPage,
+                          (pageIndex + 1) * itemsPerPage,
+                        )
+                        .map((product) => (
+                          <div key={product.id} className="w-1/4">
+                            <ProductCard
+                              id={product.id}
+                              slug={product.slug}
+                              name={product.name}
+                              brandName={product.brandName}
+                              categoryName={product.categoryName}
+                              images={product.images}
+                              freeShip={product.freeShip}
+                              badge={product.badge}
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  ),
+                )}
+              </div>
             </div>
+
+            <button
+              onClick={nextNewProduct}
+              className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
+            >
+              <ChevronRight size={28} className="text-gray-800" />
+            </button>
           </div>
 
-          <button
-            onClick={nextNewProduct}
-            className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white p-3 shadow-lg transition hover:bg-gray-50"
-          >
-            <ChevronRight size={28} className="text-gray-800" />
-          </button>
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => navigateToProducts('new')}
+              className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
+            >
+              Xem tất cả
+            </button>
+          </div>
         </div>
-
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => navigateToProducts('new')}
-            className="rounded-full border-2 border-black px-8 py-3 font-medium text-black transition-all duration-300 hover:border-[#c0595c] hover:text-[#c0595c]"
-          >
-            Xem tất cả
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Tìm kiếm nhiều nhất */}
       <div className="mt-16 mb-10">
@@ -409,7 +483,7 @@ export default function HomePage() {
             'cushion clio',
             'lipcerin',
             'pad',
-            'một nà',
+            'mặt nạ',
             'sữa rửa mặt',
           ].map((tag, index) => (
             <button
