@@ -99,6 +99,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
                         
+                        // VNPay payment endpoints
+                        .requestMatchers("/api/payments/vnpay/callback").permitAll()
+                        .requestMatchers("/api/payments/vnpay/ipn").permitAll()
+                        
+                        // WebSocket endpoints
+                        .requestMatchers("/ws/**").permitAll()
+
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 );
