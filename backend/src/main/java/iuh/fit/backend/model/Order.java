@@ -74,9 +74,9 @@ public class Order {
 
     @OneToOne(mappedBy = "order")
     @JsonIgnore
-    private OrderStatusHistory orderStatusHistory;//1
+    private OrderStatusHistory orderStatusHistory;
 
     @OneToOne(mappedBy = "order")
     @JsonIgnore
-    private RecipientInformation recipientInformation;//1
+    private RecipientInformation recipientInformation;
 }
