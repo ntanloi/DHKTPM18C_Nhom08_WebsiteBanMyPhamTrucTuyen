@@ -15,7 +15,11 @@ interface CartItem {
   };
 }
 
-export default function CheckoutPage() {
+interface CheckoutPageProps {
+  onNavigate?: (path: string) => void;
+}
+
+export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
   const [cartItems] = useState<CartItem[]>([
     {
       id: '1',
@@ -42,6 +46,12 @@ export default function CheckoutPage() {
       quantity: 1,
     },
   ]);
+
+  const handleContinue = () => {
+    if (onNavigate) {
+      onNavigate('/checkout-info');
+    }
+  };
 
   const [gwpExpanded, setGwpExpanded] = useState(true);
   const [ahcExpanded, setAhcExpanded] = useState(true);
@@ -297,7 +307,10 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              <button className="w-full rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] py-3.5 text-[14px] font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl">
+              <button
+                onClick={handleContinue} // ✅ THÊM onClick
+                className="w-full rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] py-3.5 text-[14px] font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl"
+              >
                 TIẾP TỤC
               </button>
             </div>

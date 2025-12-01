@@ -44,12 +44,21 @@ import CouponDetailPage from './pages/admin/coupon/CouponDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/analytic/AdminAnalytics';
 
+import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
+
+import OrderSuccessPage from './pages/user/OrderSuccessPage';
+import OTPModal from './components/user/ui/OTPModal';
+import BrandPage from './pages/user/BrandPage';
+
 type Page =
   | 'home'
   | 'stores'
+  | 'brands'
   | 'products'
   | 'product-detail'
   | 'checkout'
+  | 'checkout-info'
+  | 'order-success'
   | 'admin-dashboard'
   | 'admin-analytics'
   | 'admin-users'
@@ -89,7 +98,10 @@ function App() {
     }
 
     if (path === '/stores') return 'stores';
+    if (path === '/brands') return 'brands';
     if (path === '/checkout') return 'checkout';
+    if (path === '/checkout-info') return 'checkout-info';
+    if (path.startsWith('/order-success/')) return 'order-success';
 
     if (path.startsWith('/products') || path === '/products') return 'products';
     if (path.startsWith('/product/')) return 'product-detail';
@@ -167,6 +179,7 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showOTP, setShowOTP] = useState(false);
 
   const [_productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
@@ -178,6 +191,7 @@ function App() {
   const [imageProductId, setImageProductId] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
   const [couponId, setCouponId] = useState<string>(''); // THÊM
+  const [orderSuccessCode, setOrderSuccessCode] = useState<string>('');
 
   // Extract initial categorySlug from URL
   useEffect(() => {
@@ -272,6 +286,12 @@ function App() {
         console.log('✅ Coupon ID:', id);
       }
     }
+
+    if (to.startsWith('/order-success/')) {
+      const code = to.replace('/order-success/', '');
+      setOrderSuccessCode(code);
+      console.log('✅ Order Success Code:', code);
+    }
   };
 
   {
@@ -289,6 +309,11 @@ function App() {
         setCategorySlug(slug);
       } else if (path === '/products') {
         setCategorySlug('');
+      }
+
+      if (path.startsWith('/order-success/')) {
+        const code = path.replace('/order-success/', '');
+        setOrderSuccessCode(code);
       }
 
       // Update productId based on path
@@ -352,13 +377,41 @@ function App() {
           <Header
             onOpenStores={() => navigate('/stores')}
             onOpenLogin={() => setAuthOpen(true)}
+            onNavigate={navigate}
           />
         )}
 
         {page === 'home' && <HomePage />}
         {page === 'stores' && <StoreLocatorPage />}
+
+        {page === 'brands' && <BrandPage />}
         {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
-        {page === 'checkout' && <CheckoutPage />}
+        {page === 'checkout' && <CheckoutPage onNavigate={navigate} />}
+        {page === 'checkout-info' && (
+          <>
+            <CheckoutInfoPage
+              isLoggedIn={false}
+              onPlaceOrder={() => setShowOTP(true)}
+            />
+            <OTPModal
+              isOpen={showOTP}
+              onClose={() => setShowOTP(false)}
+              onVerify={() => {
+                setShowOTP(false);
+                navigate('/order-success/BW9HID6C');
+              }}
+            />
+          </>
+        )}
+
+        {/* ← THÊM PHẦN NÀY */}
+        {page === 'order-success' && (
+          <OrderSuccessPage
+            orderCode={orderSuccessCode}
+            onBack={() => navigate('/')}
+          />
+        )}
+
         {page === 'product-detail' && (
           <ProductDetailPage productSlug={productSlug} />
         )}
