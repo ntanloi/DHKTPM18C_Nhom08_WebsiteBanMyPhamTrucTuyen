@@ -34,6 +34,12 @@ public class Order {
 
     private String notes;
 
+    @Column(name = "coupon_id")
+    private Integer couponId;
+
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode;
+
     @Column(name = "discount_amount")
     private BigDecimal discountAmount;
 
@@ -79,4 +85,9 @@ public class Order {
     @OneToOne(mappedBy = "order")
     @JsonIgnore
     private RecipientInformation recipientInformation;
+
+    @ManyToOne
+    @JoinColumn(name = "coupon_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private Coupon coupon;
 }

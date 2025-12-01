@@ -29,6 +29,8 @@ public class OrderService {
     private final ShipmentRepository shipmentRepository;
     private final ProductVariantRepository productVariantRepository;
     private final NotificationService notificationService;
+    private final CouponService couponService;
+    private final CouponRepository couponRepository;
 
     @Transactional
     public OrderDetailResponse createOrder(CreateOrderRequest request) {
@@ -67,7 +69,27 @@ public class OrderService {
 
         order.setSubtotal(subtotal);
         
+        // Apply coupon if provided
         BigDecimal discountAmount = BigDecimal.ZERO;
+        Coupon appliedCoupon = null;
+        
+        if (request.getCouponId() != null) {
+            appliedCoupon = couponRepository.findById(request.getCouponId())
+                    .orElseThrow(() -> new RuntimeException("Coupon not found"));
+            
+            // Validate coupon for this user and order amount
+            couponService.validateCouponForUser(appliedCoupon.getCode(), request.getUserId(), subtotal);
+            
+            // Calculate discount
+            discountAmount = couponService.calculateDiscount(appliedCoupon, subtotal);
+            
+            // Set coupon info on order
+            order.setCouponId(appliedCoupon.getId());
+            order.setCouponCode(appliedCoupon.getCode());
+            
+            log.info("Applied coupon {} with discount {} to order", appliedCoupon.getCode(), discountAmount);
+        }
+        
         order.setDiscountAmount(discountAmount);
 
         BigDecimal shippingFee = BigDecimal.valueOf(30000.0);
@@ -79,6 +101,11 @@ public class OrderService {
         order.setEstimateDeliveryTo(LocalDate.now().plusDays(7));
 
         Order savedOrder = orderRepository.save(order);
+        
+        // Record coupon usage after order is saved
+        if (appliedCoupon != null) {
+            couponService.recordCouponUsage(appliedCoupon.getId(), request.getUserId(), savedOrder.getId(), discountAmount);
+        }
 
         for (OrderItem item : orderItems) {
             item.setOrderId(savedOrder.getId());

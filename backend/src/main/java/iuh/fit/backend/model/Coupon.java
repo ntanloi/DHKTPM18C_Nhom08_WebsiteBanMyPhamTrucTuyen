@@ -40,6 +40,15 @@ public class Coupon {
     @Column(name = "max_usage_value")
     private Integer maxUsageValue;
 
+    @Column(name = "usage_count")
+    private Integer usageCount = 0;
+
+    @Column(name = "max_usage_per_user")
+    private Integer maxUsagePerUser = 1;
+
+    @Column(name = "max_discount_amount", precision = 15, scale = 2)
+    private BigDecimal maxDiscountAmount;
+
     @Column(name = "valid_from")
     private LocalDateTime validFrom;
 
