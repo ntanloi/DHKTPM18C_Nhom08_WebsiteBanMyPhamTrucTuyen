@@ -157,7 +157,7 @@ export default function Header({
       <CartSidebar
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
-        onNavigate={onNavigate || (() => {})}
+        onNavigate={onNavigate || (() => {})} // ✅ ĐÃ ĐÚNG
       />
     </>
   );

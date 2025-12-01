@@ -6,6 +6,23 @@ import { categoriesService } from '../../../services/user.service';
 import type { Category } from '../../../types/Category';
 import { useNavigation } from '../../../context/NavigationContext';
 
+interface DropdownColumn {
+  title: string;
+  items: string[];
+}
+
+interface DropdownBanner {
+  bg: string;
+  title: string;
+  subtitle: string;
+}
+
+interface DropdownData {
+  type: 'multi-column' | 'mega';
+  title?: string;
+  columns: DropdownColumn[];
+  banners: DropdownBanner[];
+}
 
 const navbarDropdownData: Record<number, DropdownData> = {
   0: {
@@ -43,8 +60,6 @@ const navbarDropdownData: Record<number, DropdownData> = {
       },
     ],
   },
-
-  // Khuyến mãi hot (index 1)
   1: {
     type: 'mega',
     title: 'KHUYẾN MÃI HOT',
@@ -78,8 +93,6 @@ const navbarDropdownData: Record<number, DropdownData> = {
       },
     ],
   },
-
-  // Trang điểm (index 3)
   3: {
     type: 'multi-column',
     columns: [
@@ -117,8 +130,6 @@ const navbarDropdownData: Record<number, DropdownData> = {
       },
     ],
   },
-
-  // Chăm sóc da (index 4)
   4: {
     type: 'multi-column',
     columns: [
@@ -152,8 +163,6 @@ const navbarDropdownData: Record<number, DropdownData> = {
       },
     ],
   },
-
-  // Chăm sóc cơ thể (index 6)
   6: {
     type: 'multi-column',
     columns: [
@@ -197,28 +206,30 @@ export default function Navbar() {
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-  //API PROPERTIES
   const [navlist, setNavlist] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // ← THÊM
 
-  //NAVIGATE BY CATEGORIES
   const handleClickCategory = (item: Category) => {
-    // Đóng dropdown nếu đang mở
     setHoveredIndex(null);
-
-    // Navigate đến trang products với slug
     navigate.navigate(`/products/${item.slug}`);
   };
 
-  //API CALL
   const getListNav = async () => {
     try {
+      console.log('🔄 Fetching categories...'); // ← DEBUG
       const res = await categoriesService.getAll();
-      if (res) {
+      console.log('📊 Categories response:', res); // ← DEBUG
+
+      if (res && res.data) {
         setNavlist(res.data);
+        console.log('✅ Navlist set:', res.data.length, 'items'); // ← DEBUG
+      } else {
+        console.warn('⚠️ No data in response'); // ← DEBUG
       }
     } catch (err) {
-      console.log(err);
+      console.error('❌ Error loading categories:', err); // ← DEBUG
+    } finally {
+      setIsLoading(false); // ← THÊM
     }
   };
 
@@ -226,15 +237,14 @@ export default function Navbar() {
     getListNav();
   }, []);
 
-  // Hàm cuộn trái/phải
   const scrollLeft = () => {
     navRef.current?.scrollBy({ left: -300, behavior: 'smooth' });
   };
+
   const scrollRight = () => {
     navRef.current?.scrollBy({ left: 300, behavior: 'smooth' });
   };
 
-  // Theo dõi vị trí cuộn
   useEffect(() => {
     const handleScroll = () => {
       const nav = navRef.current;
@@ -247,14 +257,13 @@ export default function Navbar() {
 
     const nav = navRef.current;
     nav?.addEventListener('scroll', handleScroll);
-    handleScroll(); // chạy lần đầu khi mount
+    handleScroll();
 
     return () => {
       nav?.removeEventListener('scroll', handleScroll);
     };
-  }, [navlist]); // Thêm navlist để re-check khi data load
+  }, [navlist]);
 
-  // Clear timeout khi component unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -297,69 +306,94 @@ export default function Navbar() {
   const currentDropdownData =
     hoveredIndex !== null ? navbarDropdownData[hoveredIndex] : null;
 
+  // ← THÊM: Debug render
+  console.log(
+    '🎨 Navbar render - navlist length:',
+    navlist.length,
+    'isLoading:',
+    isLoading,
+  );
+
   return (
     <>
-      <div className="relative w-full">
-        {/* Container cho nav với buttons */}
+      <div className="relative w-full border-t border-b border-gray-200 bg-white">
+        {/* ← THÊM border để dễ thấy */}
         <div className="relative container mx-auto">
-          {/* Nút trái */}
-          {showLeft && (
-            <button
-              onClick={scrollLeft}
-              className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
-              aria-label="Scroll left"
-            >
-              <NextLeftNavIcon />
-            </button>
+          {/* Loading state */}
+          {isLoading && (
+            <div className="flex justify-center py-4">
+              <span className="text-gray-500">Đang tải...</span>
+            </div>
           )}
 
-          {/* Thanh nav */}
-          <nav
-            ref={navRef}
-            className="hide-scrollbar flex flex-nowrap items-center gap-8 overflow-x-auto scroll-smooth py-3"
-          >
-            {navlist.map((item, index) => {
-              const hasDropdown = navbarDropdownData[index] !== undefined;
+          {/* No data state */}
+          {!isLoading && navlist.length === 0 && (
+            <div className="flex justify-center py-4">
+              <span className="text-red-500">Không có danh mục</span>
+            </div>
+          )}
 
-              return (
-                <div
-                  key={index}
-                  onMouseEnter={() => hasDropdown && handleNavItemEnter(index)}
-                  onMouseLeave={hasDropdown ? handleNavItemLeave : undefined}
-                  className="relative shrink-0"
+          {/* Navbar content */}
+          {!isLoading && navlist.length > 0 && (
+            <>
+              {showLeft && (
+                <button
+                  onClick={scrollLeft}
+                  className="absolute top-1/2 -left-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
+                  aria-label="Scroll left"
                 >
-                  <div
-                    onClick={() => {
-                      // Navigate to products page with category slug
-                      handleClickCategory(item);
-                    }}
-                    className={`cursor-pointer rounded-lg border border-[#efefef] px-5 py-1 transition ${
-                      hasDropdown ? 'hover:bg-pink-100' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="inline-block whitespace-nowrap">
-                      {item.name}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </nav>
+                  <NextLeftNavIcon />
+                </button>
+              )}
 
-          {/* Nút phải */}
-          {showRight && (
-            <button
-              onClick={scrollRight}
-              className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
-              aria-label="Scroll right"
-            >
-              <NextRightNavIcon />
-            </button>
+              <nav
+                ref={navRef}
+                className="hide-scrollbar flex flex-nowrap items-center gap-8 overflow-x-auto scroll-smooth py-3"
+                style={{ minHeight: '60px' }} // ← THÊM: đảm bảo có height
+              >
+                {navlist.map((item, index) => {
+                  const hasDropdown = navbarDropdownData[index] !== undefined;
+
+                  return (
+                    <div
+                      key={item.id || index}
+                      onMouseEnter={() =>
+                        hasDropdown && handleNavItemEnter(index)
+                      }
+                      onMouseLeave={
+                        hasDropdown ? handleNavItemLeave : undefined
+                      }
+                      className="relative shrink-0"
+                    >
+                      <div
+                        onClick={() => handleClickCategory(item)}
+                        className={`cursor-pointer rounded-lg border border-[#efefef] px-5 py-1 transition ${
+                          hasDropdown ? 'hover:bg-pink-100' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="inline-block whitespace-nowrap">
+                          {item.name}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </nav>
+
+              {showRight && (
+                <button
+                  onClick={scrollRight}
+                  className="absolute top-1/2 -right-4 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-gray-500 p-1 text-white shadow-md transition hover:bg-gray-600"
+                  aria-label="Scroll right"
+                >
+                  <NextRightNavIcon />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Universal Dropdown */}
       <UniversalDropdown
         isVisible={hoveredIndex !== null && currentDropdownData !== null}
         data={currentDropdownData}

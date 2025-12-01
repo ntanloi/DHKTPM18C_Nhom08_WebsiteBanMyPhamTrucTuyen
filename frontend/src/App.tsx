@@ -44,12 +44,21 @@ import CouponDetailPage from './pages/admin/coupon/CouponDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/analytic/AdminAnalytics';
 
+import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
+
+import OrderSuccessPage from './pages/user/OrderSuccessPage';
+import OTPModal from './components/user/ui/OTPModal';
+import BrandPage from './pages/user/BrandPage';
+
 type Page =
   | 'home'
   | 'stores'
+  | 'brands'
   | 'products'
   | 'product-detail'
   | 'checkout'
+  | 'checkout-info'
+  | 'order-success'
   | 'admin-dashboard'
   | 'admin-analytics'
   | 'admin-users'
@@ -79,7 +88,6 @@ type Page =
   | 'admin-coupon-edit'
   | 'admin-coupon-detail';
 
-
 function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/admin' || path === '/admin/') return 'admin-dashboard';
@@ -90,7 +98,10 @@ function App() {
     }
 
     if (path === '/stores') return 'stores';
+    if (path === '/brands') return 'brands';
     if (path === '/checkout') return 'checkout';
+    if (path === '/checkout-info') return 'checkout-info';
+    if (path.startsWith('/order-success/')) return 'order-success';
 
     if (path.startsWith('/products') || path === '/products') return 'products';
     if (path.startsWith('/product/')) return 'product-detail';
@@ -168,6 +179,7 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showOTP, setShowOTP] = useState(false);
 
   const [productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
@@ -178,14 +190,14 @@ function App() {
   const [imageProductId, setImageProductId] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
   const [couponId, setCouponId] = useState<string>(''); // THÊM
+  const [orderSuccessCode, setOrderSuccessCode] = useState<string>('');
 
   // Extract initial categorySlug from URL
   useEffect(() => {
     const path = window.location.pathname;
     if (path.startsWith('/products/')) {
       const slug = path.replace('/products/', '');
-      setCategorySlug
-      (slug);
+      setCategorySlug(slug);
     }
   }, []);
 
@@ -201,6 +213,7 @@ function App() {
       setCategorySlug(slug);
     } else if (pathname === '/products') {
       setCategorySlug('');
+    }
 
     // Extract product ID from URL
     if (pathname.startsWith('/product/')) {
@@ -260,6 +273,12 @@ function App() {
         console.log('✅ Coupon ID:', id);
       }
     }
+
+    if (to.startsWith('/order-success/')) {
+      const code = to.replace('/order-success/', '');
+      setOrderSuccessCode(code);
+      console.log('✅ Order Success Code:', code);
+    }
   };
 
   useEffect(() => {
@@ -267,13 +286,17 @@ function App() {
       const path = window.location.pathname;
       setPage(pathToPage(path));
 
-
       // Update categorySlug when back/forward
       if (path.startsWith('/products/')) {
         const slug = path.replace('/products/', '');
         setCategorySlug(slug);
       } else if (path === '/products') {
         setCategorySlug('');
+      }
+
+      if (path.startsWith('/order-success/')) {
+        const code = path.replace('/order-success/', '');
+        setOrderSuccessCode(code);
       }
 
       // Update productId based on path
@@ -331,117 +354,153 @@ function App() {
   const isAdminPage = page.startsWith('admin-');
 
   return (
-
     <NavigationProvider navigate={navigate}>
       <div>
-      {!isAdminPage && (
-        <Header
-          onOpenStores={() => navigate('/stores')}
-          onOpenLogin={() => setAuthOpen(true)}
+        {!isAdminPage && (
+          <Header
+            onOpenStores={() => navigate('/stores')}
+            onOpenLogin={() => setAuthOpen(true)}
+            onNavigate={navigate}
+          />
+        )}
+
+        {page === 'home' && <HomePage />}
+        {page === 'stores' && <StoreLocatorPage />}
+        {page === 'brands' && <BrandPage />}
+        {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
+        {page === 'checkout' && <CheckoutPage onNavigate={navigate} />}
+        {page === 'checkout-info' && (
+          <>
+            <CheckoutInfoPage
+              isLoggedIn={false}
+              onPlaceOrder={() => setShowOTP(true)}
+            />
+            <OTPModal
+              isOpen={showOTP}
+              onClose={() => setShowOTP(false)}
+              onVerify={() => {
+                setShowOTP(false);
+                navigate('/order-success/BW9HID6C');
+              }}
+            />
+          </>
+        )}
+
+        {/* ← THÊM PHẦN NÀY */}
+        {page === 'order-success' && (
+          <OrderSuccessPage
+            orderCode={orderSuccessCode}
+            onBack={() => navigate('/')}
+          />
+        )}
+
+        {page === 'product-detail' && (
+          <ProductDetailPage productId={productId} />
+        )}
+
+        {page === 'product-detail' && (
+          <ProductDetailPage productId={productId} />
+        )}
+
+        {page === 'admin-dashboard' && <AdminDashboard onNavigate={navigate} />}
+
+        {page === 'admin-users' && <UserListPage onNavigate={navigate} />}
+        {page === 'admin-user-create' && (
+          <UserCreatePage onNavigate={navigate} />
+        )}
+        {page === 'admin-user-edit' && (
+          <UserEditPage userId={userId} onNavigate={navigate} />
+        )}
+        {page === 'admin-user-detail' && (
+          <UserDetailPage userId={userId} onNavigate={navigate} />
+        )}
+
+        {page === 'admin-categories' && (
+          <CategoryListPage onNavigate={navigate} />
+        )}
+        {page === 'admin-category-create' && (
+          <CategoryFormPage onNavigate={navigate} mode="create" />
+        )}
+        {page === 'admin-category-edit' && (
+          <CategoryFormPage
+            categoryId={categoryId}
+            onNavigate={navigate}
+            mode="edit"
+          />
+        )}
+
+        {page === 'admin-brands' && <BrandListPage onNavigate={navigate} />}
+        {page === 'admin-brand-create' && (
+          <BrandFormPage onNavigate={navigate} mode="create" />
+        )}
+        {page === 'admin-brand-edit' && (
+          <BrandFormPage brandId={brandId} onNavigate={navigate} mode="edit" />
+        )}
+
+        {page === 'admin-products' && (
+          <AdminProductListPage onNavigate={navigate} />
+        )}
+        {page === 'admin-product-create' && (
+          <ProductCreatePage onNavigate={navigate} />
+        )}
+        {page === 'admin-product-edit' && (
+          <ProductEditPage productId={adminProductId} onNavigate={navigate} />
+        )}
+        {page === 'admin-product-detail' && (
+          <AdminProductDetailPage
+            productId={adminProductId}
+            onNavigate={navigate}
+          />
+        )}
+
+        {page === 'admin-product-images' && (
+          <ProductImageManagePage
+            productId={imageProductId}
+            onNavigate={navigate}
+          />
+        )}
+
+        {page === 'admin-orders' && <OrderListPage onNavigate={navigate} />}
+        {page === 'admin-order-detail' && (
+          <OrderDetailPage orderId={orderId} onNavigate={navigate} />
+        )}
+        {page === 'admin-order-status-update' && (
+          <OrderStatusUpdatePage orderId={orderId} onNavigate={navigate} />
+        )}
+        {page === 'admin-order-shipment' && (
+          <OrderShipmentManagePage orderId={orderId} onNavigate={navigate} />
+        )}
+        {page === 'admin-payment-methods' && (
+          <PaymentMethodListPage onNavigate={navigate} />
+        )}
+        {page === 'admin-order-return' && (
+          <OrderReturnManagePage orderId={orderId} onNavigate={navigate} />
+        )}
+        {page === 'admin-returns' && <ReturnListPage onNavigate={navigate} />}
+
+        {page === 'admin-coupons' && <CouponListPage onNavigate={navigate} />}
+        {page === 'admin-coupon-create' && (
+          <CouponCreatePage onNavigate={navigate} />
+        )}
+        {page === 'admin-coupon-edit' && (
+          <CouponEditPage couponId={parseInt(couponId)} onNavigate={navigate} />
+        )}
+        {page === 'admin-coupon-detail' && (
+          <CouponDetailPage
+            couponId={parseInt(couponId)}
+            onNavigate={navigate}
+          />
+        )}
+        {page === 'admin-analytics' && <AdminAnalytics onNavigate={navigate} />}
+        {!isAdminPage && <Footer />}
+
+        <AuthModal
+          open={authOpen}
+          mode={authMode}
+          onClose={() => setAuthOpen(false)}
+          onSwitchMode={(m) => setAuthMode(m)}
         />
-      )}
-
-      {page === 'home' && <HomePage />}
-      {page === 'stores' && <StoreLocatorPage />}
-     {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
-      {page === 'checkout' && <CheckoutPage />}
-
-      {page === 'product-detail' && <ProductDetailPage productId={productId} />}
-
-      {page === 'admin-dashboard' && <AdminDashboard onNavigate={navigate} />}
-
-      {page === 'admin-users' && <UserListPage onNavigate={navigate} />}
-      {page === 'admin-user-create' && <UserCreatePage onNavigate={navigate} />}
-      {page === 'admin-user-edit' && (
-        <UserEditPage userId={userId} onNavigate={navigate} />
-      )}
-      {page === 'admin-user-detail' && (
-        <UserDetailPage userId={userId} onNavigate={navigate} />
-      )}
-
-      {page === 'admin-categories' && (
-        <CategoryListPage onNavigate={navigate} />
-      )}
-      {page === 'admin-category-create' && (
-        <CategoryFormPage onNavigate={navigate} mode="create" />
-      )}
-      {page === 'admin-category-edit' && (
-        <CategoryFormPage
-          categoryId={categoryId}
-          onNavigate={navigate}
-          mode="edit"
-        />
-      )}
-
-      {page === 'admin-brands' && <BrandListPage onNavigate={navigate} />}
-      {page === 'admin-brand-create' && (
-        <BrandFormPage onNavigate={navigate} mode="create" />
-      )}
-      {page === 'admin-brand-edit' && (
-        <BrandFormPage brandId={brandId} onNavigate={navigate} mode="edit" />
-      )}
-
-      {page === 'admin-products' && (
-        <AdminProductListPage onNavigate={navigate} />
-      )}
-      {page === 'admin-product-create' && (
-        <ProductCreatePage onNavigate={navigate} />
-      )}
-      {page === 'admin-product-edit' && (
-        <ProductEditPage productId={adminProductId} onNavigate={navigate} />
-      )}
-      {page === 'admin-product-detail' && (
-        <AdminProductDetailPage
-          productId={adminProductId}
-          onNavigate={navigate}
-        />
-      )}
-
-      {page === 'admin-product-images' && (
-        <ProductImageManagePage
-          productId={imageProductId}
-          onNavigate={navigate}
-        />
-      )}
-
-      {page === 'admin-orders' && <OrderListPage onNavigate={navigate} />}
-      {page === 'admin-order-detail' && (
-        <OrderDetailPage orderId={orderId} onNavigate={navigate} />
-      )}
-      {page === 'admin-order-status-update' && (
-        <OrderStatusUpdatePage orderId={orderId} onNavigate={navigate} />
-      )}
-      {page === 'admin-order-shipment' && (
-        <OrderShipmentManagePage orderId={orderId} onNavigate={navigate} />
-      )}
-      {page === 'admin-payment-methods' && (
-        <PaymentMethodListPage onNavigate={navigate} />
-      )}
-      {page === 'admin-order-return' && (
-        <OrderReturnManagePage orderId={orderId} onNavigate={navigate} />
-      )}
-      {page === 'admin-returns' && <ReturnListPage onNavigate={navigate} />}
-
-      {page === 'admin-coupons' && <CouponListPage onNavigate={navigate} />}
-      {page === 'admin-coupon-create' && (
-        <CouponCreatePage onNavigate={navigate} />
-      )}
-      {page === 'admin-coupon-edit' && (
-        <CouponEditPage couponId={parseInt(couponId)} onNavigate={navigate} />
-      )}
-      {page === 'admin-coupon-detail' && (
-        <CouponDetailPage couponId={parseInt(couponId)} onNavigate={navigate} />
-      )}
-      {page === 'admin-analytics' && <AdminAnalytics onNavigate={navigate} />}
-      {!isAdminPage && <Footer />}
-
-      <AuthModal
-        open={authOpen}
-        mode={authMode}
-        onClose={() => setAuthOpen(false)}
-        onSwitchMode={(m) => setAuthMode(m)}
-      />
-    </div>
+      </div>
     </NavigationProvider>
   );
 }
