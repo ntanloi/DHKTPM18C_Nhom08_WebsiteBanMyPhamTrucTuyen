@@ -306,13 +306,13 @@ INSERT INTO variant_attributes (id, product_variant_id, name, value) VALUES
 ON DUPLICATE KEY UPDATE name=VALUES(name), value=VALUES(value);
 
 -- PAYMENT METHODS
-INSERT INTO payment_method (id, name, code, is_active, payment_id, created_at, updated_at) VALUES
-(1, 'Thanh toán khi nhận hàng (COD)', 'COD', 1, NULL, NOW(), NOW()),
-(2, 'Chuyển khoản ngân hàng', 'BANK', 1, NULL, NOW(), NOW()),
-(3, 'Thẻ tín dụng/Ghi nợ', 'CARD', 1, NULL, NOW(), NOW()),
-(4, 'Ví Momo', 'MOMO', 1, NULL, NOW(), NOW()),
-(5, 'ZaloPay', 'ZALO', 1, NULL, NOW(), NOW()),
-(6, 'VNPay', 'VNPAY', 1, NULL, NOW(), NOW())
+INSERT INTO payment_method (id, name, code, is_active, created_at, updated_at) VALUES
+(1, 'Thanh toán khi nhận hàng (COD)', 'COD', 1, NOW(), NOW()),
+(2, 'Chuyển khoản ngân hàng', 'BANK', 1,  NOW(), NOW()),
+(3, 'Thẻ tín dụng/Ghi nợ', 'CARD', 1, NOW(), NOW()),
+(4, 'Ví Momo', 'MOMO', 1, NOW(), NOW()),
+(5, 'ZaloPay', 'ZALO', 1, NOW(), NOW()),
+(6, 'VNPay', 'VNPAY', 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE name=VALUES(name), code=VALUES(code);
 
 -- COUPONS (sample, cosmetics-focused)
@@ -358,10 +358,10 @@ INSERT INTO orders (id, user_id, status, subtotal, discount_amount, shipping_fee
 ON DUPLICATE KEY UPDATE status=VALUES(status), total_amount=VALUES(total_amount);
 
 -- ORDER ITEMS
-INSERT INTO order_items (id, order_id, product_variant_id, quantity) VALUES
-(1, 1, 204, 1),
-(2, 1, 208, 2),
-(3, 2, 216, 1)
+INSERT INTO order_items (id, order_id, product_variant_id, quantity, price) VALUES
+(1, 1, 204, 1, 200000),
+(2, 1, 208, 2, 600000),
+(3, 2, 216, 1, 1200000)
 ON DUPLICATE KEY UPDATE quantity=VALUES(quantity);
 
 -- RECIPIENT INFORMATION

@@ -63,4 +63,10 @@ public interface ReturnRepository extends JpaRepository<Return, Integer> {
      * Check if order already has a return request
      */
     boolean existsByOrderId(Integer orderId);
+    
+    /**
+     * Sum total refund amount for completed returns
+     */
+    @Query("SELECT COALESCE(SUM(r.refundAmount), 0) FROM Return r WHERE r.status = 'COMPLETED'")
+    java.math.BigDecimal sumRefundAmount();
 }
