@@ -168,7 +168,7 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  const [productId, setProductId] = useState<string>('');
+  const [_productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
   const [productSlug, setProductSlug] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
