@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class VariantAttributeResponse {
     private Integer id;
+    private Integer productVariantId;
     private String name;
     private String value;
 }
