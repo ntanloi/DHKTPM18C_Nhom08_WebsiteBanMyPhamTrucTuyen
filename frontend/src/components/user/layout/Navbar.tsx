@@ -14,14 +14,16 @@ interface DropdownColumn {
 interface DropdownBanner {
   bg: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  buttonText?: string;
+  image?: string;
 }
 
 interface DropdownData {
-  type: 'multi-column' | 'mega';
+  type: string;
   title?: string;
-  columns: DropdownColumn[];
-  banners: DropdownBanner[];
+  columns?: DropdownColumn[];
+  banners?: DropdownBanner[];
 }
 
 const navbarDropdownData: Record<number, DropdownData> = {

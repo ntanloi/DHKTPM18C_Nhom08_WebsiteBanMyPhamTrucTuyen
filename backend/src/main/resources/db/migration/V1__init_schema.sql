@@ -261,6 +261,7 @@ CREATE TABLE IF NOT EXISTS payment (
     provider_response TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    paid_at DATETIME,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (payment_method_id) REFERENCES payment_method(id),
     INDEX idx_order (order_id),

@@ -40,6 +40,9 @@ public class RecipientInformation {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "order_id")
+    private Integer orderId;  // Direct FK field for setting orderId
+
     @OneToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore

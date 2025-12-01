@@ -214,7 +214,7 @@ export const mockUserService = {
     return { ...mockUsers[index] };
   },
 
-  changePassword: async (userId: number, data: any): Promise<UserResponse> => {
+  changePassword: async (userId: number, _data: unknown): Promise<UserResponse> => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('User not found');

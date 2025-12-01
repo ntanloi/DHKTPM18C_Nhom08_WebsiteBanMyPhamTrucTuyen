@@ -10,7 +10,8 @@ services:
       - '3306:3306'
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+      # Note: Flyway migrations are handled by Spring Boot at runtime
+      # Do not mount to docker-entrypoint-initdb.d to avoid conflicts
     networks:
       - beautybox-network
     healthcheck:
@@ -54,6 +55,9 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE:-DEMO}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET:-DEMOSECRETKEY}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL:-http://localhost:3000/payment/callback}
     depends_on:
       mariadb:
         condition: service_healthy

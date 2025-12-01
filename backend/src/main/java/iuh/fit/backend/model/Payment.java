@@ -42,6 +42,9 @@ public class Payment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
     @OneToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore

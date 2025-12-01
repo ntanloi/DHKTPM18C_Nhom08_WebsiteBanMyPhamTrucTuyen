@@ -181,8 +181,9 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showOTP, setShowOTP] = useState(false);
 
-  const [productId, setProductId] = useState<string>('');
+  const [_productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
+  const [productSlug, setProductSlug] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [brandId, setBrandId] = useState<string>('');
@@ -199,6 +200,11 @@ function App() {
       const slug = path.replace('/products/', '');
       setCategorySlug(slug);
     }
+
+    if (path.startsWith('/product/')) {
+      const slug = path.replace('/product/', '');
+      setProductSlug(slug);
+    }
   }, []);
 
   const navigate = (to: string) => {
@@ -213,6 +219,13 @@ function App() {
       setCategorySlug(slug);
     } else if (pathname === '/products') {
       setCategorySlug('');
+    }
+
+    if (pathname.startsWith('/product/')) {
+      const slug = pathname.replace('/product/', '');
+      setProductSlug(slug);
+    } else if (pathname === '/product') {
+      setProductSlug('');
     }
 
     // Extract product ID from URL
@@ -280,6 +293,10 @@ function App() {
       console.log('✅ Order Success Code:', code);
     }
   };
+
+  {
+    console.log(productSlug);
+  }
 
   useEffect(() => {
     const onPop = () => {
@@ -366,6 +383,7 @@ function App() {
 
         {page === 'home' && <HomePage />}
         {page === 'stores' && <StoreLocatorPage />}
+
         {page === 'brands' && <BrandPage />}
         {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
         {page === 'checkout' && <CheckoutPage onNavigate={navigate} />}
@@ -395,11 +413,7 @@ function App() {
         )}
 
         {page === 'product-detail' && (
-          <ProductDetailPage productId={productId} />
-        )}
-
-        {page === 'product-detail' && (
-          <ProductDetailPage productId={productId} />
+          <ProductDetailPage productSlug={productSlug} />
         )}
 
         {page === 'admin-dashboard' && <AdminDashboard onNavigate={navigate} />}

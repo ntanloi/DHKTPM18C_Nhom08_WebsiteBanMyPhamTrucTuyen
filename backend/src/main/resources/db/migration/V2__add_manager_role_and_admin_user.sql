@@ -8,7 +8,7 @@ SELECT 'MANAGER'
 WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'MANAGER');
 
 -- Create default admin user
--- Password: Admin@123 (BCrypt hash)
+-- Password: Admin123@ (BCrypt hash)
 INSERT INTO users (email, password, full_name, is_active, email_verified_at, created_at, updated_at, role_id)
 SELECT 
     'admin@beautybox.com',
@@ -22,7 +22,7 @@ SELECT
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@beautybox.com');
 
 -- Create default manager user (optional)
--- Password: Manager@123 (BCrypt hash)
+-- Password: Manager123@ (BCrypt hash)
 INSERT INTO users (email, password, full_name, is_active, email_verified_at, created_at, updated_at, role_id)
 SELECT 
     'manager@beautybox.com',
