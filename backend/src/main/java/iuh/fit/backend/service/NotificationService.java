@@ -104,4 +104,19 @@ public class NotificationService {
         NotificationMessage notification = NotificationMessage.stockLow(productId, productName, quantity);
         sendToAdmins(notification);
     }
+
+    /**
+     * Send custom notification to admins with title, message, and type
+     */
+    public void sendToAdmins(String title, String message, String type) {
+        NotificationMessage notification = NotificationMessage.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .type(type)
+                .title(title)
+                .message(message)
+                .read(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        sendToAdmins(notification);
+    }
 }
