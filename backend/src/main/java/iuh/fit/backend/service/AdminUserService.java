@@ -108,6 +108,7 @@ public class AdminUserService {
         response.setEmailVerifiedAt(user.getEmailVerifiedAt());
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
+        response.setHasPassword(user.getPassword() != null && !user.getPassword().isEmpty());
         if (user.getRole() != null) {
             response.setRoleName(user.getRole().getName());
         }
