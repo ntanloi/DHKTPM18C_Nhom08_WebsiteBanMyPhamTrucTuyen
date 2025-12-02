@@ -1,4 +1,3 @@
-import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 interface CartItem {
@@ -62,8 +61,8 @@ export default function CheckoutInfoPage({
 
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [shippingMethod, setShippingMethod] = useState('standard');
-  const [showNote, setShowNote] = useState(false);
-  const [showInvoice, setShowInvoice] = useState(false);
+  const [_showNote, _setShowNote] = useState(false);
+  const [_showInvoice, _setShowInvoice] = useState(false);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
 
@@ -78,11 +77,6 @@ export default function CheckoutInfoPage({
   const updateQuantity = (id: string, delta: number) => {
     // Handle quantity update
     console.log('Update quantity:', id, delta);
-  };
-
-  const removeItem = (id: string) => {
-    // Handle remove item
-    console.log('Remove item:', id);
   };
 
   return (
