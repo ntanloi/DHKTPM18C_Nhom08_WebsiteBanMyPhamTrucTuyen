@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { authApi, tokenStorage, AuthResponse } from '../../../api/auth';
+import { authApi, tokenStorage } from '../../../api/auth';
+import type { AuthResponse } from '../../../api/auth';
+
 
 interface AuthModalProps {
   open: boolean;
