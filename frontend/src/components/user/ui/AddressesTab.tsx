@@ -38,7 +38,7 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
 
   const handleDelete = (id: number) => {
     if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-      alert('Đã xóa địa chỉ!');
+      alert(`Đã xóa địa chỉ với ID: ${id}!`);
     }
   };
 
@@ -46,54 +46,86 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
     <>
       <div className="rounded-lg bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Địa chỉ giao nhận</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Địa chỉ giao nhận
+          </h2>
           <button
             onClick={handleAdd}
-            className="rounded-lg bg-black px-6 py-2 text-white transition hover:bg-gray-800"
+            className="rounded-lg bg-[rgb(235,97,164)] px-6 py-2 font-medium text-white transition-colors duration-200 hover:bg-[rgb(235,97,164)]/90"
           >
             + Thêm địa chỉ
           </button>
         </div>
 
-        {addresses.map((address) => (
-          <div key={address.id} className="mb-4 rounded-lg border p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="font-semibold">{address.date}</span>
-                  {address.isDefault && (
-                    <span className="rounded bg-purple-100 px-2 py-1 text-xs text-purple-700">
-                      Mặc định
+        {addresses.length > 0 ? (
+          addresses.map((address) => (
+            <div
+              key={address.id}
+              className="mb-4 rounded-lg border border-gray-200 p-6 transition-shadow duration-200 hover:shadow-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="font-semibold text-gray-800">
+                      {address.date}
                     </span>
-                  )}
-                </div>
-                <div className="space-y-1 text-gray-700">
-                  <div className="font-semibold">{address.name}</div>
-                  <div>{address.phone}</div>
-                  <div>{address.email}</div>
-                  <div>
-                    {address.street}, {address.ward}, {address.district},{' '}
-                    {address.city}
+                    {address.isDefault && (
+                      <span className="rounded-full bg-[rgb(235,97,164)]/10 px-3 py-1 text-xs font-medium text-[rgb(235,97,164)]">
+                        Mặc định
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2 text-gray-700">
+                    <div className="font-medium text-gray-900">
+                      {address.name}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div>{address.phone}</div>
+                      <div className="text-gray-400">•</div>
+                      <div>{address.email}</div>
+                    </div>
+                    <div className="text-gray-600">
+                      {address.street}, {address.ward}, {address.district},{' '}
+                      {address.city}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(address)}
-                  className="p-2 text-gray-600 hover:text-purple-600"
-                >
-                  <Edit size={20} />
-                </button>
-                <button
-                  onClick={() => handleDelete(address.id)}
-                  className="p-2 text-gray-600 hover:text-red-600"
-                >
-                  <Trash2 size={20} />
-                </button>
+                <div className="ml-4 flex gap-2">
+                  <button
+                    onClick={() => handleEdit(address)}
+                    className="rounded-full p-2 text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-[rgb(235,97,164)]"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(address.id)}
+                    className="rounded-full p-2 text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-red-600"
+                    title="Xóa"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="py-12 text-center">
+            <div className="mb-4 text-6xl">📍</div>
+            <h3 className="mb-2 text-xl font-medium text-gray-700">
+              Chưa có địa chỉ
+            </h3>
+            <p className="mb-6 text-gray-500">
+              Thêm địa chỉ để nhận hàng thuận tiện hơn
+            </p>
+            <button
+              onClick={handleAdd}
+              className="rounded-lg bg-[rgb(235,97,164)] px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-[rgb(235,97,164)]/90"
+            >
+              + Thêm địa chỉ mới
+            </button>
           </div>
-        ))}
+        )}
       </div>
 
       <AddressModal
