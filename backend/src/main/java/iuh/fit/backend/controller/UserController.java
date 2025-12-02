@@ -89,6 +89,20 @@ public class UserController {
         }
     }
 
+    @PutMapping("/{userId}/set-password")
+    public ResponseEntity<?> setPassword(
+            @PathVariable Integer userId,
+            @RequestBody SetPasswordRequest request) {
+        try {
+            UserResponse response = userService.setPassword(userId, request.getPassword());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
     @PutMapping("/{userId}/deactivate")
     public ResponseEntity<?> deactivateUser(@PathVariable Integer userId) {
         try {

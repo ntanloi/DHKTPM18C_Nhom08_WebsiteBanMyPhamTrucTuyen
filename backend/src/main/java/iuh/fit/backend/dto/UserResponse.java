@@ -22,4 +22,5 @@ public class UserResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String roleName; // Admin feature: show user's role
+    private Boolean hasPassword; // Indicates if user has set password (for OTP-registered users)
 }

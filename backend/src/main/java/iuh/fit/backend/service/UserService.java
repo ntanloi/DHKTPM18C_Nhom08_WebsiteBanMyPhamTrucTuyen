@@ -107,6 +107,26 @@ public class UserService {
         return convertToUserResponse(updatedUser);
     }
 
+    /**
+     * Set password for user who registered via OTP (no existing password)
+     */
+    @Transactional
+    public UserResponse setPassword(Integer userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Only allow setting password if user doesn't have one
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            throw new RuntimeException("User already has a password. Use change-password instead.");
+        }
+
+        user.setPassword(newPassword); // Should be encrypted in production
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User updatedUser = userRepository.save(user);
+        return convertToUserResponse(updatedUser);
+    }
+
     @Transactional
     public void deactivateUser(Integer userId) {
         User user = userRepository.findById(userId)
@@ -144,6 +164,7 @@ public class UserService {
         response.setEmailVerifiedAt(user.getEmailVerifiedAt());
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
+        response.setHasPassword(user.getPassword() != null && !user.getPassword().isEmpty());
         return response;
     }
 }
