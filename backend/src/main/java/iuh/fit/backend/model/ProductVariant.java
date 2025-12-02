@@ -35,6 +35,15 @@ public class ProductVariant {
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
+    @Column(name = "low_stock_threshold")
+    private Integer lowStockThreshold = 10;
+
+    @Column(name = "reorder_point")
+    private Integer reorderPoint = 5;
+
+    @Column(name = "reorder_quantity")
+    private Integer reorderQuantity = 50;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     @JsonIgnore
