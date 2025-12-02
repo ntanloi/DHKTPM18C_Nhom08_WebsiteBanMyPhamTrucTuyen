@@ -49,6 +49,7 @@ import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
 import OrderSuccessPage from './pages/user/OrderSuccessPage';
 import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
+import AccountPage from './pages/user/AccountPage';
 
 type Page =
   | 'home'
@@ -59,6 +60,7 @@ type Page =
   | 'checkout'
   | 'checkout-info'
   | 'order-success'
+  | 'account'
   | 'admin-dashboard'
   | 'admin-analytics'
   | 'admin-users'
@@ -90,6 +92,7 @@ type Page =
 
 function App() {
   const pathToPage = (path: string): Page => {
+    if (path === '/account') return 'account';
     if (path === '/admin' || path === '/admin/') return 'admin-dashboard';
     if (path === '/admin/analytics') return 'admin-analytics';
 
@@ -380,10 +383,9 @@ function App() {
             onNavigate={navigate}
           />
         )}
-
         {page === 'home' && <HomePage />}
-        {page === 'stores' && <StoreLocatorPage />}
-
+        {page === 'stores' && <StoreLocatorPage />}{' '}
+        {page === 'account' && <AccountPage />}
         {page === 'brands' && <BrandPage />}
         {page === 'products' && <ProductListPage categorySlug={categorySlug} />}
         {page === 'checkout' && <CheckoutPage onNavigate={navigate} />}
@@ -403,7 +405,6 @@ function App() {
             />
           </>
         )}
-
         {/* ← THÊM PHẦN NÀY */}
         {page === 'order-success' && (
           <OrderSuccessPage
@@ -411,13 +412,10 @@ function App() {
             onBack={() => navigate('/')}
           />
         )}
-
         {page === 'product-detail' && (
           <ProductDetailPage productSlug={productSlug} />
         )}
-
         {page === 'admin-dashboard' && <AdminDashboard onNavigate={navigate} />}
-
         {page === 'admin-users' && <UserListPage onNavigate={navigate} />}
         {page === 'admin-user-create' && (
           <UserCreatePage onNavigate={navigate} />
@@ -428,7 +426,6 @@ function App() {
         {page === 'admin-user-detail' && (
           <UserDetailPage userId={userId} onNavigate={navigate} />
         )}
-
         {page === 'admin-categories' && (
           <CategoryListPage onNavigate={navigate} />
         )}
@@ -442,7 +439,6 @@ function App() {
             mode="edit"
           />
         )}
-
         {page === 'admin-brands' && <BrandListPage onNavigate={navigate} />}
         {page === 'admin-brand-create' && (
           <BrandFormPage onNavigate={navigate} mode="create" />
@@ -450,7 +446,6 @@ function App() {
         {page === 'admin-brand-edit' && (
           <BrandFormPage brandId={brandId} onNavigate={navigate} mode="edit" />
         )}
-
         {page === 'admin-products' && (
           <AdminProductListPage onNavigate={navigate} />
         )}
@@ -466,14 +461,12 @@ function App() {
             onNavigate={navigate}
           />
         )}
-
         {page === 'admin-product-images' && (
           <ProductImageManagePage
             productId={imageProductId}
             onNavigate={navigate}
           />
         )}
-
         {page === 'admin-orders' && <OrderListPage onNavigate={navigate} />}
         {page === 'admin-order-detail' && (
           <OrderDetailPage orderId={orderId} onNavigate={navigate} />
@@ -491,7 +484,6 @@ function App() {
           <OrderReturnManagePage orderId={orderId} onNavigate={navigate} />
         )}
         {page === 'admin-returns' && <ReturnListPage onNavigate={navigate} />}
-
         {page === 'admin-coupons' && <CouponListPage onNavigate={navigate} />}
         {page === 'admin-coupon-create' && (
           <CouponCreatePage onNavigate={navigate} />
@@ -507,7 +499,6 @@ function App() {
         )}
         {page === 'admin-analytics' && <AdminAnalytics onNavigate={navigate} />}
         {!isAdminPage && <Footer />}
-
         <AuthModal
           open={authOpen}
           mode={authMode}
