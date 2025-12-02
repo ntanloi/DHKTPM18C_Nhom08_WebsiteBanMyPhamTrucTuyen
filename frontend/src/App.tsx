@@ -9,6 +9,7 @@ import ProductListPage from './pages/user/ProductListPage';
 import ProductDetailPage from './pages/user/ProductDetailPage';
 import CheckoutPage from './pages/user/CheckoutPage';
 import { NavigationProvider } from './context/NavigationContext';
+import { AuthProvider } from './context/AuthContext';
 
 import UserListPage from './pages/admin/user/UserListPage';
 import UserCreatePage from './pages/admin/user/UserCreatePage';
@@ -371,8 +372,9 @@ function App() {
   const isAdminPage = page.startsWith('admin-');
 
   return (
-    <NavigationProvider navigate={navigate}>
-      <div>
+    <AuthProvider>
+      <NavigationProvider navigate={navigate}>
+        <div>
         {!isAdminPage && (
           <Header
             onOpenStores={() => navigate('/stores')}
@@ -516,6 +518,7 @@ function App() {
         />
       </div>
     </NavigationProvider>
+    </AuthProvider>
   );
 }
 
