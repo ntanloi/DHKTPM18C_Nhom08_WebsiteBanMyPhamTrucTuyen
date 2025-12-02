@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import Header from '../../components/user/layout/Header';
-import Footer from '../../components/user/layout/Footer';
 import Sidebar from '../../components/user/ui/Sidebar';
 import AccountTab from '../../components/user/ui/AccountTab';
 import OrdersTab from '../../components/user/ui/OrdersTab';
