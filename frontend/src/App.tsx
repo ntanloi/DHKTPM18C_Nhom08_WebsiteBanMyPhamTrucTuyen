@@ -45,11 +45,15 @@ import CouponDetailPage from './pages/admin/coupon/CouponDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/analytic/AdminAnalytics';
 
+import ChatManagementPage from './pages/admin/chat/ChatManagementPage';
+
 import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
+import PaymentCallbackPage from './pages/user/PaymentCallbackPage';
 
 import OrderSuccessPage from './pages/user/OrderSuccessPage';
 import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
+import ChatWidget from './components/user/ui/ChatWidget';
 
 type Page =
   | 'home'
@@ -60,8 +64,10 @@ type Page =
   | 'checkout'
   | 'checkout-info'
   | 'order-success'
+  | 'payment-callback'
   | 'admin-dashboard'
   | 'admin-analytics'
+  | 'admin-chat'
   | 'admin-users'
   | 'admin-user-create'
   | 'admin-user-edit'
@@ -93,6 +99,7 @@ function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/admin' || path === '/admin/') return 'admin-dashboard';
     if (path === '/admin/analytics') return 'admin-analytics';
+    if (path === '/admin/chat') return 'admin-chat';
 
     if (path.match(/^\/admin\/products\/\d+\/images$/)) {
       return 'admin-product-images';
@@ -103,6 +110,7 @@ function App() {
     if (path === '/checkout') return 'checkout';
     if (path === '/checkout-info') return 'checkout-info';
     if (path.startsWith('/order-success/')) return 'order-success';
+    if (path === '/payment/callback' || path.startsWith('/payment/callback?')) return 'payment-callback';
 
     if (path.startsWith('/products') || path === '/products') return 'products';
     if (path.startsWith('/product/')) return 'product-detail';
@@ -508,6 +516,12 @@ function App() {
           />
         )}
         {page === 'admin-analytics' && <AdminAnalytics onNavigate={navigate} />}
+        {page === 'admin-chat' && <ChatManagementPage />}
+        {page === 'payment-callback' && <PaymentCallbackPage onNavigate={navigate} />}
+        
+        {/* Chat Widget - hiển thị trên các trang user */}
+        {!isAdminPage && <ChatWidget />}
+        
         {!isAdminPage && <Footer />}
 
         <AuthModal
