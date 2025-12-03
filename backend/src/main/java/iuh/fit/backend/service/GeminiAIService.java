@@ -15,11 +15,9 @@ import iuh.fit.backend.model.Product;
 import iuh.fit.backend.repository.BrandRepository;
 import iuh.fit.backend.repository.CategoryRepository;
 import iuh.fit.backend.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class GeminiAIService {
 
@@ -33,11 +31,33 @@ public class GeminiAIService {
     @Value("${gemini.api.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}")
     private String apiUrl;
 
+    public GeminiAIService(ProductRepository productRepository, 
+                           CategoryRepository categoryRepository, 
+                           BrandRepository brandRepository) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.brandRepository = brandRepository;
+    }
+    
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("GeminiAIService initialized. API Key present: {}, API URL: {}", 
+            apiKey != null && !apiKey.isEmpty() && !apiKey.equals("your_gemini_api_key_here"),
+            apiUrl);
+        if (apiKey == null || apiKey.isEmpty()) {
+            log.warn("GEMINI_API_KEY is not configured! AI chat will not be available.");
+        }
+    }
+
     /**
      * Check if Gemini AI is configured and available
      */
     public boolean isAvailable() {
-        return apiKey != null && !apiKey.isEmpty() && !apiKey.equals("your_gemini_api_key_here");
+        boolean available = apiKey != null && !apiKey.isEmpty() && !apiKey.equals("your_gemini_api_key_here");
+        if (!available) {
+            log.debug("Gemini AI not available. API Key: '{}'", apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) + "..." : "null");
+        }
+        return available;
     }
 
     /**
@@ -72,31 +92,51 @@ public class GeminiAIService {
         StringBuilder context = new StringBuilder();
         String lowerMessage = userMessage.toLowerCase();
         
-        // Get relevant products
-        List<Product> products = productRepository.findAll();
-        List<Product> relevantProducts = products.stream()
-            .filter(p -> {
-                String productInfo = (p.getName() + " " + p.getDescription()).toLowerCase();
-                return containsAnyKeyword(lowerMessage, productInfo) || 
-                       containsAnyKeyword(productInfo, lowerMessage);
-            })
-            .limit(5)
-            .collect(Collectors.toList());
-        
-        if (!relevantProducts.isEmpty()) {
-            context.append("\n=== SẢN PHẨM LIÊN QUAN ===\n");
-            for (Product p : relevantProducts) {
-                // Get variant price if available
-                String priceInfo = "Liên hệ";
-                if (p.getProductVariant() != null && p.getProductVariant().getPrice() != null) {
-                    priceInfo = p.getProductVariant().getPrice().toString() + " VNĐ";
+        try {
+            // Get relevant products - limit to avoid too much data
+            List<Product> products = productRepository.findAll();
+            List<Product> relevantProducts = products.stream()
+                .filter(p -> {
+                    try {
+                        String productName = p.getName() != null ? p.getName().toLowerCase() : "";
+                        String productDesc = p.getDescription() != null ? p.getDescription().toLowerCase() : "";
+                        String productInfo = productName + " " + productDesc;
+                        return containsAnyKeyword(lowerMessage, productInfo) || 
+                               containsAnyKeyword(productInfo, lowerMessage);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .limit(5)
+                .collect(Collectors.toList());
+            
+            if (!relevantProducts.isEmpty()) {
+                context.append("\n=== SẢN PHẨM LIÊN QUAN ===\n");
+                for (Product p : relevantProducts) {
+                    try {
+                        String priceInfo = "Liên hệ";
+                        // Safely get price info
+                        if (p.getProductVariant() != null && p.getProductVariant().getPrice() != null) {
+                            priceInfo = p.getProductVariant().getPrice().toString() + " VNĐ";
+                        }
+                        
+                        String description = "";
+                        if (p.getDescription() != null) {
+                            description = p.getDescription().substring(0, Math.min(100, p.getDescription().length()));
+                        }
+                        
+                        context.append(String.format("- %s: %s (Giá: %s)\n", 
+                            p.getName() != null ? p.getName() : "Sản phẩm", 
+                            description,
+                            priceInfo));
+                    } catch (Exception e) {
+                        // Skip this product if there's an error
+                        log.debug("Error processing product: {}", e.getMessage());
+                    }
                 }
-                
-                context.append(String.format("- %s: %s (Giá: %s)\n", 
-                    p.getName(), 
-                    p.getDescription() != null ? p.getDescription().substring(0, Math.min(100, p.getDescription().length())) : "",
-                    priceInfo));
             }
+        } catch (Exception e) {
+            log.warn("Error building product context: {}", e.getMessage());
         }
         
         // Get categories

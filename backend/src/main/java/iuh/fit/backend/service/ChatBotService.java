@@ -112,31 +112,45 @@ public class ChatBotService {
 
     /**
      * Search FAQ database for matching response
+     * Uses strict matching to avoid false positives
      */
     private Optional<String> findFaqResponse(String message) {
         try {
-            // Try fulltext search first
-            List<ChatFaq> faqs = chatFaqRepository.searchByKeyword(message);
-            
-            if (faqs.isEmpty()) {
-                // Fallback to LIKE search
-                faqs = chatFaqRepository.searchByKeywordLike(message);
+            // Skip FAQ search for very short messages (likely greetings or unclear)
+            if (message.length() < 5) {
+                return Optional.empty();
             }
             
-            if (!faqs.isEmpty()) {
-                return Optional.of(faqs.get(0).getAnswer());
-            }
-            
-            // Search by checking individual keywords
+            // Search by checking individual keywords with stricter matching
             List<ChatFaq> allFaqs = chatFaqRepository.findByIsActiveTrueOrderByPriorityDesc();
+            ChatFaq bestMatch = null;
+            int bestMatchScore = 0;
+            
             for (ChatFaq faq : allFaqs) {
                 String[] keywords = faq.getKeywords().toLowerCase().split(",");
+                int matchScore = 0;
+                
                 for (String keyword : keywords) {
-                    if (message.contains(keyword.trim())) {
-                        return Optional.of(faq.getAnswer());
+                    String trimmedKeyword = keyword.trim();
+                    // Only match keywords with at least 3 characters to avoid false positives
+                    if (trimmedKeyword.length() >= 3 && message.contains(trimmedKeyword)) {
+                        // Longer keyword matches are more significant
+                        matchScore += trimmedKeyword.length();
                     }
                 }
+                
+                // Require minimum match score (at least one meaningful keyword)
+                if (matchScore > bestMatchScore && matchScore >= 4) {
+                    bestMatchScore = matchScore;
+                    bestMatch = faq;
+                }
             }
+            
+            if (bestMatch != null) {
+                log.debug("FAQ matched with score {}: {}", bestMatchScore, bestMatch.getQuestion());
+                return Optional.of(bestMatch.getAnswer());
+            }
+            
         } catch (Exception e) {
             log.error("Error searching FAQ: {}", e.getMessage());
         }
