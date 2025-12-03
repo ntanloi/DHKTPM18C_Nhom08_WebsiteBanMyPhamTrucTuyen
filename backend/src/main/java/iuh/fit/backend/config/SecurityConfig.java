@@ -105,6 +105,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/payments/vnpay/callback").permitAll()
                         .requestMatchers("/api/payments/vnpay/ipn").permitAll()
                         
+                        // Guest Chat endpoints (public for chatbot)
+                        .requestMatchers("/api/chat/guest/**").permitAll()
+                        
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
 
