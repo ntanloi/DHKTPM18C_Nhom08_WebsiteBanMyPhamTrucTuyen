@@ -1,6 +1,7 @@
 .env
 
 !README.md
+!README.vi.md
 *.md
 
 # Scraper artifacts

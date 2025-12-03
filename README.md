@@ -1,8 +1,8 @@
-<div align="center">
+﻿<div align="center">
 
-# 🌸 BeautyBox - Website Bán Mỹ Phẩm Trực Tuyến
+# 🌸 BeautyBox - Online Cosmetics E-commerce Platform
 
-### DHKTPM18C - Nhóm 08
+### DHKTPM18C - Group 08 | WWW - Web Programming with Java
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
@@ -15,8 +15,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white" />
   <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
   <img src="https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/VNPay-Integrated-1A1F71?style=for-the-badge" />
 </p>
 
 <p align="center">
@@ -29,85 +29,97 @@
 </p>
 
 <p align="center">
-  <i>Nền tảng thương mại điện tử mỹ phẩm hiện đại với trải nghiệm mua sắm tuyệt vời</i>
+  <i>A modern e-commerce platform for cosmetics with seamless shopping experience</i>
 </p>
+
+**🌐 Language:** [English](#) | [Tiếng Việt](./README.vi.md)
 
 ---
 
 </div>
 
-## 📋 Mục Lục
+## 📋 Table of Contents
 
-- [Giới Thiệu](#-giới-thiệu)
-- [Tính Năng](#-tính-năng)
-- [Công Nghệ](#-công-nghệ)
-- [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống)
-- [Cài Đặt](#-cài-đặt)
-- [Cấu Hình](#-cấu-hình)
-- [Chạy Ứng Dụng](#-chạy-ứng-dụng)
+- [About](#-about)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Running the Application](#-running-the-application)
 - [API Documentation](#-api-documentation)
-- [Nhóm Phát Triển](#-nhóm-phát-triển)
-- [Giấy Phép](#-giấy-phép)
+- [Project Structure](#-project-structure)
+- [Development Team](#-development-team)
+- [License](#-license)
 
-## 🎯 Giới Thiệu
+## 🎯 About
 
-**BeautyBox** là nền tảng thương mại điện tử chuyên về mỹ phẩm, được xây dựng với mục tiêu mang đến trải nghiệm mua sắm trực tuyến hiện đại và tiện lợi nhất cho khách hàng. Dự án được phát triển như một phần của chương trình đào tạo tại Trường Đại học Công nghiệp TP.HCM (IUH).
+**BeautyBox** is a full-stack e-commerce platform specialized in cosmetics and beauty products. This project is developed as part of the **WWW - Web Programming with Java** course at the **Industrial University of Ho Chi Minh City (IUH)**.
 
-## ✨ Tính Năng
+### 📚 Course Information
 
-### 🛒 Khách Hàng
-| Tính năng | Mô tả |
-|-----------|-------|
-| 🔐 **Xác thực OTP** | Đăng nhập/Đăng ký qua email với mã OTP |
-| 🔑 **Đăng nhập mật khẩu** | Hỗ trợ đăng nhập truyền thống |
-| 🔍 **Tìm kiếm sản phẩm** | Tìm kiếm theo tên, thương hiệu, danh mục |
-| 🎨 **Lọc sản phẩm** | Lọc theo giá, thương hiệu, đánh giá |
-| 🛍️ **Giỏ hàng** | Quản lý sản phẩm trong giỏ hàng |
-| ❤️ **Danh sách yêu thích** | Lưu sản phẩm yêu thích |
-| 💳 **Thanh toán VNPay** | Tích hợp cổng thanh toán VNPay |
-| 📦 **Theo dõi đơn hàng** | Cập nhật trạng thái đơn hàng real-time |
-| 🎁 **Mã giảm giá** | Áp dụng coupon giảm giá |
+| | |
+|---|---|
+| **Course** | WWW - Web Programming with Java |
+| **Instructor** | MSc. Đặng Thị Thu Hà |
+| **University** | Industrial University of Ho Chi Minh City (IUH) |
+| **Class** | DHKTPM18C |
+| **Group** | 08 |
 
-### 👨‍💼 Quản Trị Viên
-| Tính năng | Mô tả |
-|-----------|-------|
-| 📊 **Dashboard** | Thống kê tổng quan doanh số |
-| 📈 **Analytics** | Phân tích dữ liệu chi tiết |
-| 📦 **Quản lý sản phẩm** | CRUD sản phẩm, hình ảnh |
-| 🏷️ **Quản lý danh mục** | Phân loại sản phẩm |
-| 🏢 **Quản lý thương hiệu** | Quản lý brand |
-| 👥 **Quản lý người dùng** | Quản lý tài khoản khách hàng |
-| 📋 **Quản lý đơn hàng** | Xử lý, cập nhật đơn hàng |
-| 🔄 **Quản lý đổi trả** | Xử lý yêu cầu hoàn trả |
-| 🎫 **Quản lý coupon** | Tạo và quản lý mã giảm giá |
+## ✨ Features
 
-## 🛠 Công Nghệ
+### 🛒 Customer Features
+| Feature | Description |
+|---------|-------------|
+| 📧 **OTP Authentication** | Secure login/register via email OTP |
+| 🔒 **Password Login** | Traditional password-based authentication |
+| 🔍 **Product Search** | Search by name, brand, category |
+| 🎨 **Advanced Filtering** | Filter by price, brand, rating |
+| 🛍️ **Shopping Cart** | Manage cart items with real-time updates |
+| ❤️ **Wishlist** | Save favorite products |
+| 💳 **VNPay Payment** | Integrated VNPay payment gateway |
+| 📦 **Order Tracking** | Real-time order status updates |
+| 🎁 **Discount Coupons** | Apply promotional coupons |
+
+### 👨‍💼 Admin Features
+| Feature | Description |
+|---------|-------------|
+| 📊 **Dashboard** | Sales overview and statistics |
+| 📈 **Analytics** | Detailed data analysis |
+| 📦 **Product Management** | CRUD products with images |
+| 🏷️ **Category Management** | Product categorization |
+| 🏢 **Brand Management** | Manage brands |
+| 👥 **User Management** | Customer account management |
+| 📋 **Order Management** | Process and update orders |
+| 🔄 **Return Management** | Handle return requests |
+| 🎫 **Coupon Management** | Create and manage coupons |
+
+## 🛠 Tech Stack
 
 ### Backend
-```
-├── Java 21
-├── Spring Boot 3.5.7
-│   ├── Spring Security + JWT
-│   ├── Spring Data JPA
-│   ├── Spring Mail (OTP)
-│   └── Spring Validation
-├── MariaDB 11.6
-├── Redis (Session & Cache)
-├── Flyway (Database Migration)
-└── VNPay Payment Gateway
-```
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Java | 21 | Core language |
+| Spring Boot | 3.5.7 | Framework |
+| Spring Security | - | Authentication & Authorization |
+| Spring Data JPA | - | Data persistence |
+| Spring Mail | - | Email/OTP service |
+| MariaDB | 11.6 | Primary database |
+| Redis | 7+ | Session & OTP cache |
+| Flyway | - | Database migration |
+| JWT | - | Token-based auth |
 
 ### Frontend
-```
-├── React 19
-├── TypeScript 5.9
-├── Vite 7.x
-├── Tailwind CSS 4.x
-├── Axios
-└── Context API (State Management)
-```
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 19 | UI library |
+| TypeScript | 5.9 | Type-safe JavaScript |
+| Vite | 7.x | Build tool |
+| Tailwind CSS | 4.x | Styling |
+| Axios | - | HTTP client |
+| React Context | - | State management |
 
-## 🏗 Kiến Trúc Hệ Thống
+## 🏗 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -118,7 +130,7 @@
 │                           │                                      │
 │                    Vite Dev Server                               │
 │                      (Port 3000)                                 │
-└─────────────────────────────┬───────────────────────────────────┘
+└─────────────────────────────────────┬───────────────────────────┘
                               │ HTTP/REST API
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -133,7 +145,7 @@
 │  │  └────────────┘  └────────────┘  └────────────────────┘  │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                      (Port 8080)                                 │
-└───────────────┬─────────────────────────────┬───────────────────┘
+└───────────────┬─────────────────────────────────┬───────────────┘
                 │                             │
                 ▼                             ▼
 ┌───────────────────────────┐   ┌───────────────────────────┐
@@ -146,26 +158,27 @@
 └───────────────────────────┘   └───────────────────────────┘
 ```
 
-## 📁 Cấu Trúc Thư Mục
+## 📁 Project Structure
 
 ```
 DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen/
 │
 ├── 📂 backend/                          # Spring Boot Backend
 │   ├── 📂 src/main/java/iuh/fit/backend/
-│   │   ├── 📂 config/                   # Cấu hình ứng dụng
+│   │   ├── 📂 config/                   # Configuration classes
 │   │   ├── 📂 controller/               # REST Controllers
 │   │   ├── 📂 dto/                      # Data Transfer Objects
-│   │   ├── 📂 exception/                # Xử lý ngoại lệ
-│   │   ├── 📂 model/                    # Entity models
+│   │   ├── 📂 exception/                # Exception handling
+│   │   ├── 📂 model/                    # JPA Entities
 │   │   ├── 📂 repository/               # JPA Repositories
-│   │   ├── 📂 security/                 # JWT & Security config
+│   │   ├── 📂 security/                 # Security & JWT
 │   │   ├── 📂 service/                  # Business logic
 │   │   └── 📂 util/                     # Utility classes
 │   ├── 📂 src/main/resources/
-│   │   ├── 📂 db/migration/             # Flyway migrations
+│   │   ├── 📂 db/migration/             # Flyway migrations (V1-V12)
 │   │   ├── 📂 templates/                # Email templates
 │   │   └── 📄 application.properties    # App configuration
+│   ├── 📄 compose.yaml                  # Docker Compose
 │   └── 📄 pom.xml                       # Maven dependencies
 │
 ├── 📂 frontend/                         # React Frontend
@@ -175,78 +188,157 @@ DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen/
 │   │   ├── 📂 components/               # React components
 │   │   │   ├── 📂 admin/                # Admin components
 │   │   │   └── 📂 user/                 # User components
-│   │   ├── 📂 context/                  # React Context
-│   │   ├── 📂 hooks/                    # Custom hooks
+│   │   ├── 📂 context/                  # React Context (Auth)
+│   │   ├── 📂 hooks/                    # Custom hooks (useAuth)
 │   │   ├── 📂 pages/                    # Page components
-│   │   ├── 📂 services/                 # API services
-│   │   ├── 📂 types/                    # TypeScript types
-│   │   └── 📂 utils/                    # Helper functions
-│   ├── 📄 .env                          # Environment variables
+│   │   ├── 📂 lib/                      # API client setup
+│   │   └── 📂 types/                    # TypeScript types
+│   ├── 📄 .env.example                  # Environment template
 │   ├── 📄 package.json                  # NPM dependencies
 │   ├── 📄 vite.config.ts                # Vite configuration
 │   └── 📄 tailwind.config.js            # Tailwind configuration
 │
-└── 📄 README.md                         # Documentation
+├── 📄 README.md                         # English documentation
+└── 📄 README.vi.md                      # Vietnamese documentation
 ```
 
-## 🔧 Cài Đặt
+## 🔧 Installation
 
-### Yêu Cầu Hệ Thống
+### Prerequisites
 
-| Phần mềm | Phiên bản | Bắt buộc |
-|----------|-----------|----------|
+| Software | Version | Required |
+|----------|---------|----------|
 | Java JDK | 21+ | ✅ |
 | Node.js | 18+ | ✅ |
 | MariaDB | 10.6+ | ✅ |
 | Redis | 7+ | ⚠️ Optional |
 | Maven | 3.8+ | ✅ |
+| Docker | Latest | ⚠️ Optional |
 | Git | Latest | ✅ |
 
-### Bước 1: Clone Repository
+### Manual Setup
+
+#### Step 1: Clone Repository
 
 ```bash
 git clone https://github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen.git
 cd DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen
 ```
 
-### Bước 2: Cài Đặt Database
+#### Step 2: Database Setup
 
 ```sql
--- Tạo database
+-- Create database
 CREATE DATABASE beautyboxdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tạo user (optional)
+-- Create user (optional)
 CREATE USER 'beautybox'@'localhost' IDENTIFIED BY 'your_password';
 GRANT ALL PRIVILEGES ON beautyboxdb.* TO 'beautybox'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-### Bước 3: Cài Đặt Backend
+#### Step 3: Backend Setup
 
 ```bash
 cd backend
 
-# Cài đặt dependencies
+# Install dependencies
 ./mvnw clean install -DskipTests
 
-# Hoặc trên Windows
+# On Windows
 mvnw.cmd clean install -DskipTests
 ```
 
-### Bước 4: Cài Đặt Frontend
+#### Step 4: Frontend Setup
 
 ```bash
 cd frontend
 
-# Cài đặt dependencies
+# Install dependencies
 npm install
 ```
 
-## ⚙️ Cấu Hình
+### 🐳 Docker Setup (Recommended)
+
+The fastest way to get started with all services:
+
+#### Create Environment File
+
+Create a `.env` file in the `backend` directory:
+
+```env
+# Database
+DB_USERNAME=root
+DB_PASSWORD=root
+
+# Redis
+REDIS_PASSWORD=redis123
+
+# JWT (generate a secure random string, min 32 chars)
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+
+# Mail (Gmail SMTP)
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# VNPay (sandbox credentials)
+VNPAY_TMN_CODE=YOUR_TMN_CODE
+VNPAY_HASH_SECRET=YOUR_HASH_SECRET
+VNPAY_RETURN_URL=http://localhost:3000/payment/callback
+```
+
+#### Start All Services
+
+```bash
+cd backend
+
+# Start MariaDB, Redis, and Backend
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f backend
+```
+
+#### Start Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+#### Docker Services
+
+| Service | Container Name | Port | Description |
+|---------|---------------|------|-------------|
+| MariaDB | beautybox-mariadb | 3306 | Primary database |
+| Redis | beautybox-redis | 6379 | Cache & session |
+| Backend | beautybox-backend | 8080 | Spring Boot API |
+
+#### Docker Commands
+
+```bash
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (clean start)
+docker-compose down -v
+
+# Rebuild backend
+docker-compose up -d --build backend
+
+# View specific service logs
+docker-compose logs -f mariadb
+```
+
+## ⚙️ Configuration
 
 ### Backend Configuration
 
-Tạo file `backend/src/main/resources/application-local.properties`:
+Create `backend/src/main/resources/application-local.properties`:
 
 ```properties
 # Database
@@ -254,7 +346,7 @@ spring.datasource.url=jdbc:mariadb://localhost:3306/beautyboxdb
 spring.datasource.username=root
 spring.datasource.password=your_password
 
-# JWT Secret (generate a secure random string)
+# JWT Secret (min 32 characters)
 jwt.secret=your-super-secret-jwt-key-min-32-characters
 
 # Mail Configuration (Gmail SMTP)
@@ -272,16 +364,16 @@ vnpay.hash-secret=YOUR_HASH_SECRET
 
 ### Frontend Configuration
 
-Tạo file `frontend/.env`:
+Create `frontend/.env`:
 
 ```env
 VITE_PORT=3000
 VITE_API_URL=http://localhost:8080/api
 ```
 
-## 🚀 Chạy Ứng Dụng
+## 🚀 Running the Application
 
-### Khởi Động Backend
+### Start Backend
 
 ```bash
 cd backend
@@ -289,11 +381,11 @@ cd backend
 # Development mode
 ./mvnw spring-boot:run
 
-# Hoặc với profile
+# With specific profile
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-### Khởi Động Frontend
+### Start Frontend
 
 ```bash
 cd frontend
@@ -301,11 +393,11 @@ cd frontend
 # Development mode
 npm run dev
 
-# Build production
+# Build for production
 npm run build
 ```
 
-### Truy Cập Ứng Dụng
+### Access the Application
 
 | Service | URL |
 |---------|-----|
@@ -314,33 +406,34 @@ npm run build
 
 ## 📚 API Documentation
 
-### Authentication Endpoints
+### Authentication
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/send-otp` | Gửi mã OTP |
-| POST | `/api/auth/verify-otp` | Xác thực OTP |
-| POST | `/api/auth/login` | Đăng nhập bằng password |
-| POST | `/api/auth/register` | Đăng ký tài khoản |
-| POST | `/api/auth/refresh` | Refresh token |
+| POST | `/api/auth/send-otp` | Send OTP to email |
+| POST | `/api/auth/verify-otp` | Verify OTP and login |
+| POST | `/api/auth/login` | Password login |
+| POST | `/api/auth/register` | Register new account |
+| POST | `/api/auth/refresh` | Refresh access token |
+| POST | `/api/user/set-password` | Set password for OTP users |
 
-### Product Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/products` | Danh sách sản phẩm |
-| GET | `/api/products/{id}` | Chi tiết sản phẩm |
-| GET | `/api/products/slug/{slug}` | Sản phẩm theo slug |
-| POST | `/api/admin/products` | Tạo sản phẩm (Admin) |
-| PUT | `/api/admin/products/{id}` | Cập nhật sản phẩm |
-
-### Order Endpoints
+### Products
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/orders` | Tạo đơn hàng |
-| GET | `/api/orders/{id}` | Chi tiết đơn hàng |
-| GET | `/api/orders/user` | Đơn hàng của user |
+| GET | `/api/products` | List all products |
+| GET | `/api/products/{id}` | Get product by ID |
+| GET | `/api/products/slug/{slug}` | Get product by slug |
+| POST | `/api/admin/products` | Create product (Admin) |
+| PUT | `/api/admin/products/{id}` | Update product (Admin) |
+
+### Orders
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/orders` | Create order |
+| GET | `/api/orders/{id}` | Get order details |
+| GET | `/api/orders/user` | Get user's orders |
 
 ## 📊 Database Schema
 
@@ -358,7 +451,21 @@ erDiagram
     orders ||--o| shipments : has
 ```
 
-## 👨‍💻 Nhóm Phát Triển
+## 👨‍💻 Development Team
+
+### Instructor
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <b>MSc. Đặng Thị Thu Hà</b><br />
+      <sub>Course Instructor</sub><br />
+      <sub>Industrial University of Ho Chi Minh City</sub>
+    </td>
+  </tr>
+</table>
+
+### Team Members
 
 <table align="center">
   <tr>
@@ -387,12 +494,14 @@ erDiagram
   </tr>
 </table>
 
-## 📄 Giấy Phép
+## 📄 License
 
-Dự án này được phát triển cho mục đích học tập tại **Trường Đại học Công nghiệp TP.HCM (IUH)**.
+This project is developed for educational purposes at **Industrial University of Ho Chi Minh City (IUH)**.
 
 ```
-Copyright © 2025 DHKTPM18C - Nhóm 08
+Copyright © 2025 DHKTPM18C - Group 08
+Course: WWW - Web Programming with Java
+Instructor: MSc. Đặng Thị Thu Hà
 Industrial University of Ho Chi Minh City
 All rights reserved for educational purposes.
 ```
@@ -401,10 +510,11 @@ All rights reserved for educational purposes.
 
 <div align="center">
 
-**⭐ Nếu dự án hữu ích, hãy cho chúng tôi một star!**
+**⭐ If you find this project helpful, please give us a star!**
 
 [![GitHub stars](https://img.shields.io/github/stars/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen?style=social)](https://github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen/stargazers)
 
-**🔗 Repository:** [https://github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen](https://github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen)
+**🔗 Repository:** [github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen](https://github.com/DHKTPM18C-Nhom08/DHKTPM18C_Nhom08_WebsiteBanMyPhamTrucTuyen)
 
 </div>
+
