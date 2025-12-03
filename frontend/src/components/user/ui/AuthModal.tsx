@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { authApi, tokenStorage } from '../../../api/auth';
+import { authApi } from '../../../api/auth';
 import type { AuthResponse } from '../../../api/auth';
+import { useAuth } from '../../../hooks/useAuth';
 
 
 interface AuthModalProps {
@@ -8,7 +9,6 @@ interface AuthModalProps {
   mode?: 'login' | 'register';
   onClose: () => void;
   onSwitchMode?: (m: 'login' | 'register') => void;
-  onAuthSuccess?: (user: { userId: number; email: string; role: string }) => void;
 }
 
 type LoginMethod = 'otp' | 'password';
@@ -19,8 +19,9 @@ export default function AuthModal({
   mode = 'login', 
   onClose, 
   onSwitchMode,
-  onAuthSuccess 
 }: AuthModalProps) {
+  const { login } = useAuth();
+  
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,23 +70,8 @@ export default function AuthModal({
   if (!open) return null;
 
   const handleAuthSuccess = (response: AuthResponse) => {
-    // Save tokens and user info
-    tokenStorage.saveTokens(response.accessToken, response.refreshToken);
-    tokenStorage.saveUser({
-      userId: response.userId,
-      email: response.email,
-      role: response.role,
-    });
-
-    // Notify parent component
-    if (onAuthSuccess) {
-      onAuthSuccess({
-        userId: response.userId,
-        email: response.email,
-        role: response.role,
-      });
-    }
-
+    // Use auth context to login (saves tokens and user info)
+    login(response);
     onClose();
   };
 
