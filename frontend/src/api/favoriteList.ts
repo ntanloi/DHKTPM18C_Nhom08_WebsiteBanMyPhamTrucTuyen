@@ -3,7 +3,7 @@ import axios from 'axios';
 import { mockFavoriteService } from '../mocks/favoriteData';
 
 const API_BASE_URL = '/api/favorites';
-const USE_MOCK = true; // Set to false when backend is ready
+const USE_MOCK = false; // Set to true for development without backend
 
 export interface FavoriteListRequest {
   userId: number;

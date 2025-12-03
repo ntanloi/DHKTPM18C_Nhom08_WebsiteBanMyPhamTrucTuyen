@@ -2,7 +2,7 @@ import axios from 'axios';
 import { mockUserService } from '../mocks/userData';
 
 const API_BASE_URL = '/api/users';
-const USE_MOCK = true; //them de test
+const USE_MOCK = false; // Set to true for development without backend
 
 export interface CreateUserRequest {
   fullName: string;

@@ -222,6 +222,6 @@ export const mockReturnService = {
 };
 
 // Service wrapper with feature flag
-const USE_MOCK = true;
+const USE_MOCK = false; // Set to true for development without backend
 
 export const returnService = USE_MOCK ? mockReturnService : mockReturnService; // Replace with real service when available

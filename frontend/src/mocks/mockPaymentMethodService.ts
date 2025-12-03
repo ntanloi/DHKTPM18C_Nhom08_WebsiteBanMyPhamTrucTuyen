@@ -202,7 +202,7 @@ export const mockPaymentMethodService = {
 };
 
 // Service wrapper with feature flag
-const USE_MOCK = true;
+const USE_MOCK = false; // Set to true for development without backend
 
 export const paymentMethodService = USE_MOCK
   ? mockPaymentMethodService

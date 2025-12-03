@@ -2,7 +2,7 @@ import axios from 'axios';
 import { mockCategoryService } from '../mocks/productData';
 
 const API_BASE_URL = '/api/categories';
-const USE_MOCK = true;
+const USE_MOCK = false; // Set to true for development without backend
 
 export interface CategoryRequest {
   name: string;

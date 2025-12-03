@@ -2,7 +2,7 @@ import axios from 'axios';
 import { mockAddressService } from '../mocks/userData';
 
 const API_BASE_URL = '/api/addresses';
-const USE_MOCK = true; // Đổi thành false khi có backend thật
+const USE_MOCK = false; // Set to true for development without backend
 
 export interface CreateAddressRequest {
   recipientName: string;
