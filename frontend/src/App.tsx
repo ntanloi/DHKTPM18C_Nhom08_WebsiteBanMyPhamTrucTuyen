@@ -54,7 +54,8 @@ import OrderSuccessPage from './pages/user/OrderSuccessPage';
 import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
 import ChatWidget from './components/user/ui/ChatWidget';
-import AccountPage from './pages/user/Account
+import AccountPage from './pages/user/AccountPage';
+
 type Page =
   | 'home'
   | 'stores'
@@ -93,7 +94,8 @@ type Page =
   | 'admin-coupons'
   | 'admin-coupon-create'
   | 'admin-coupon-edit'
-  | 'admin-coupon-detail';
+  | 'admin-coupon-detail'
+  | 'payment-callback';
 
 function App() {
   const pathToPage = (path: string): Page => {
