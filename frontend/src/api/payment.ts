@@ -25,6 +25,8 @@ export interface PaymentMethod {
   description?: string;
   isActive: boolean;
   icon?: string;
+  isRecommended?: boolean;
+  sortOrder?: number;
 }
 
 export interface PaymentInfo {

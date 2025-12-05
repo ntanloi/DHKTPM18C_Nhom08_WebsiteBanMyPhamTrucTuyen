@@ -105,6 +105,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/payments/vnpay/callback").permitAll()
                         .requestMatchers("/api/payments/vnpay/ipn").permitAll()
                         
+                        // Payment methods - public for checkout
+                        .requestMatchers(HttpMethod.GET, "/api/payment-methods").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payment-methods/**").permitAll()
+                        
                         // Guest Chat endpoints (public for chatbot)
                         .requestMatchers("/api/chat/guest/**").permitAll()
                         

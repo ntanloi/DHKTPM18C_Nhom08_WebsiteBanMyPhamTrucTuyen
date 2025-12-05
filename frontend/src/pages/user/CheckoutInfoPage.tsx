@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { createVNPayPayment } from '../../api/payment';
+import { useState, useEffect } from 'react';
+import { createVNPayPayment, getPaymentMethods, PaymentMethod } from '../../api/payment';
 
 interface CartItem {
   id: string;
@@ -60,11 +60,45 @@ export default function CheckoutInfoPage({
     note: '',
   });
 
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [_showNote, _setShowNote] = useState(false);
   const [_showInvoice, _setShowInvoice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Fetch payment methods from API
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      try {
+        setLoadingPaymentMethods(true);
+        const methods = await getPaymentMethods();
+        setPaymentMethods(methods);
+        
+        // Set default payment method
+        if (methods.length > 0) {
+          const recommended = methods.find(m => m.isRecommended);
+          setPaymentMethod(recommended?.code || methods[0].code);
+        }
+      } catch (error) {
+        console.error('Error fetching payment methods:', error);
+        // Fallback to COD if API fails
+        setPaymentMethods([{
+          id: 1,
+          name: 'Thanh toán khi nhận hàng',
+          code: 'COD',
+          description: 'Thanh toán bằng tiền mặt khi nhận hàng',
+          isActive: true,
+          icon: 'cash'
+        }]);
+      } finally {
+        setLoadingPaymentMethods(false);
+      }
+    };
+
+    fetchPaymentMethods();
+  }, []);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
 
@@ -115,7 +149,7 @@ export default function CheckoutInfoPage({
       // For demo, use a mock order ID
       const mockOrderId = Math.floor(Math.random() * 10000);
 
-      if (paymentMethod === 'vnpay') {
+      if (paymentMethod === 'VNPAY') {
         await handleVNPayPayment(mockOrderId);
       } else {
         // COD or other payment methods
@@ -334,188 +368,97 @@ export default function CheckoutInfoPage({
                 Phương thức thanh toán
               </h2>
 
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="cod"
-                    checked={paymentMethod === 'cod'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mt-1 h-4 w-4 accent-pink-600"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">
-                      Trả tiền mặt khi nhận hàng (COD)
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Không chuyển khoản trước khi nhận hàng vào tài khoản mình
-                      không được thông báo
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="zalopay"
-                    checked={paymentMethod === 'zalopay'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="h-4 w-4 accent-pink-600"
-                  />
-                  <span className="flex-1 text-gray-900">
-                    ZaloPay & Chuyển khoản Ngân Hàng
-                  </span>
-                  <img
-                    src="https://cdn.zalopay.vn/web/assets/images/logo_zalopay.svg"
-                    alt="ZaloPay"
-                    className="h-6"
-                  />
-                </label>
-
-                {/* VNPay Payment Option */}
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-blue-200 bg-blue-50 p-4 transition hover:bg-blue-100">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="vnpay"
-                    checked={paymentMethod === 'vnpay'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mt-1 h-4 w-4 accent-pink-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">
-                        Thanh toán qua VNPay
-                      </span>
-                      <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
-                        Khuyên dùng
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-600">
-                      Quét mã QR hoặc thanh toán qua thẻ ATM/Visa/MasterCard
-                    </p>
-                  </div>
-                  <img
-                    src="https://vnpay.vn/wp-content/uploads/2019/09/logo-vnpay-768x254.png"
-                    alt="VNPay"
-                    className="h-8 object-contain"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="aftee"
-                    checked={paymentMethod === 'aftee'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mt-1 h-4 w-4 accent-pink-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-900">
-                        AFTEE - Mua sắm thuận tiện, trả sau linh hoạt
-                      </span>
-                      <span className="rounded bg-green-500 px-2 py-0.5 text-xs font-bold text-white">
-                        Hoàn tiền 3%
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Trả sau miễn phí trong 30 ngày với mã số điện thoại
-                    </p>
-                  </div>
-                  <img
-                    src="https://aftee.vn/logo.png"
-                    alt="AFTEE"
-                    className="h-6"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="payoo"
-                    checked={paymentMethod === 'payoo'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="h-4 w-4 accent-pink-600"
-                  />
-                  <span className="flex-1 text-gray-900">
-                    Thẻ ATM/ Visa/ Master/ JCB/ QR Pay/ Ví điện tử khác qua
-                    Payoo
-                  </span>
-                  <img
-                    src="https://www.payoo.vn/assets/images/logo.svg"
-                    alt="Payoo"
-                    className="h-6"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="momo"
-                    checked={paymentMethod === 'momo'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="h-4 w-4 accent-pink-600"
-                  />
-                  <span className="flex-1 text-gray-900">Ví MoMo</span>
-                  <div className="flex h-6 items-center rounded bg-pink-600 px-2 text-xs font-bold text-white">
-                    MOMO
-                  </div>
-                </label>
-
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="fundiin"
-                    checked={paymentMethod === 'fundiin'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mt-1 h-4 w-4 accent-pink-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-900">
-                        Fundiin - Mua trước trả sau 0% lãi suất
-                      </span>
-                      <span className="rounded bg-orange-500 px-2 py-0.5 text-xs font-bold text-white">
-                        💰 Giảm 50%
-                      </span>
-                    </div>
-                  </div>
-                  <img
-                    src="https://fundiin.vn/logo.png"
-                    alt="Fundiin"
-                    className="h-6"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="momo-installment"
-                    checked={paymentMethod === 'momo-installment'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="h-4 w-4 accent-pink-600"
-                  />
-                  <span className="flex-1 text-gray-900">
-                    Ví Trả Sau - MoMo
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <div className="flex h-6 items-center rounded bg-pink-600 px-2 text-xs font-bold text-white">
-                      MOMO
-                    </div>
-                    <div className="flex h-6 items-center rounded bg-purple-600 px-2 text-xs font-bold text-white">
-                      TRẢ SAU
-                    </div>
-                  </div>
-                </label>
-              </div>
+              {loadingPaymentMethods ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"></div>
+                  <span className="ml-3 text-gray-600">Đang tải phương thức thanh toán...</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paymentMethods.map((method) => (
+                    <label
+                      key={method.id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg p-4 transition ${
+                        method.isRecommended
+                          ? 'border-2 border-blue-200 bg-blue-50 hover:bg-blue-100'
+                          : 'border border-gray-200 hover:bg-gray-50'
+                      } ${paymentMethod === method.code ? 'ring-2 ring-pink-500' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.code}
+                        checked={paymentMethod === method.code}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mt-1 h-4 w-4 accent-pink-600"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{method.name}</span>
+                          {method.isRecommended && (
+                            <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
+                              Khuyên dùng
+                            </span>
+                          )}
+                        </div>
+                        {method.description && (
+                          <p className="mt-1 text-xs text-gray-500">{method.description}</p>
+                        )}
+                      </div>
+                      {/* Payment method icons */}
+                      {method.code === 'VNPAY' && (
+                        <img
+                          src="https://vnpay.vn/wp-content/uploads/2019/09/logo-vnpay-768x254.png"
+                          alt="VNPay"
+                          className="h-8 object-contain"
+                        />
+                      )}
+                      {method.code === 'ZALOPAY' && (
+                        <img
+                          src="https://cdn.zalopay.vn/web/assets/images/logo_zalopay.svg"
+                          alt="ZaloPay"
+                          className="h-6"
+                        />
+                      )}
+                      {method.code === 'MOMO' && (
+                        <div className="flex h-6 items-center rounded bg-pink-600 px-2 text-xs font-bold text-white">
+                          MOMO
+                        </div>
+                      )}
+                      {method.code === 'BANK_TRANSFER' && (
+                        <svg
+                          className="h-6 w-6 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          />
+                        </svg>
+                      )}
+                      {method.code === 'COD' && (
+                        <svg
+                          className="h-6 w-6 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Shipping Methods */}
