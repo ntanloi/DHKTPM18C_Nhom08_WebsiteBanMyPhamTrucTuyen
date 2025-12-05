@@ -1,0 +1,478 @@
+import { useState, useEffect, useRef } from 'react';
+import { MessageCircle, X, Send, Bot, Loader2, Star, ChevronDown } from 'lucide-react';
+
+interface Message {
+  id: string;
+  content: string;
+  senderType: 'CUSTOMER' | 'BOT' | 'SYSTEM';
+  createdAt: string;
+}
+
+interface GuestChatResponse {
+  sessionId: string;
+  message: string;
+  senderType: string;
+  quickReplies?: string[];
+  canTransferToHuman?: boolean;
+  requiresLogin?: boolean;
+}
+
+// API base URL
+const API_BASE = 'http://localhost:8080/api/chat/guest';
+
+export default function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [quickReplies, setQuickReplies] = useState<string[]>([]);
+  const [showAllReplies, setShowAllReplies] = useState(false);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  // Initialize chat when opened
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      initializeChat();
+    }
+  }, [isOpen, sessionId]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current && !isLoading) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, isLoading]);
+
+  const initializeChat = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: null }),
+      });
+      
+      const data: GuestChatResponse = await response.json();
+      
+      setSessionId(data.sessionId);
+      setQuickReplies(data.quickReplies || []);
+      
+      // Add welcome message with typing animation
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+        setMessages([{
+          id: `bot-${Date.now()}`,
+          content: data.message,
+          senderType: 'BOT',
+          createdAt: new Date().toISOString(),
+        }]);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error initializing chat:', error);
+      setMessages([{
+        id: `error-${Date.now()}`,
+        content: 'Xin lỗi, không thể kết nối với hệ thống chat. Vui lòng thử lại sau.',
+        senderType: 'SYSTEM',
+        createdAt: new Date().toISOString(),
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || !sessionId || isSending) return;
+
+    const messageContent = inputValue.trim();
+    setInputValue('');
+    setIsSending(true);
+
+    // Add customer message
+    const customerMsg: Message = {
+      id: `customer-${Date.now()}`,
+      content: messageContent,
+      senderType: 'CUSTOMER',
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, customerMsg]);
+
+    // Show typing indicator
+    setIsTyping(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: messageContent }),
+      });
+      
+      const data: GuestChatResponse = await response.json();
+      
+      // Simulate typing delay for more natural feel
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+      
+      setIsTyping(false);
+      
+      // Add bot response
+      const botMsg: Message = {
+        id: `bot-${Date.now()}`,
+        content: data.message,
+        senderType: 'BOT',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, botMsg]);
+      
+      // Update quick replies
+      if (data.quickReplies) {
+        setQuickReplies(data.quickReplies);
+      }
+      
+      // Show login prompt if required
+      if (data.requiresLogin) {
+        setTimeout(() => {
+          setMessages((prev) => [...prev, {
+            id: `system-${Date.now()}`,
+            content: '💡 Tip: Đăng nhập để được hỗ trợ từ nhân viên tư vấn!',
+            senderType: 'SYSTEM',
+            createdAt: new Date().toISOString(),
+          }]);
+        }, 1500);
+      }
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setIsTyping(false);
+      setMessages((prev) => [...prev, {
+        id: `error-${Date.now()}`,
+        content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.',
+        senderType: 'SYSTEM',
+        createdAt: new Date().toISOString(),
+      }]);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleQuickReply = (reply: string) => {
+    setInputValue(reply);
+    setShowAllReplies(false);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleEndChat = () => {
+    setShowRating(true);
+  };
+
+  const handleSubmitRating = async () => {
+    // For guest chat, just close the session
+    setSessionId(null);
+    setMessages([]);
+    setShowRating(false);
+    setRating(0);
+    setFeedback('');
+    setIsOpen(false);
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getSenderColor = (senderType: string) => {
+    switch (senderType) {
+      case 'CUSTOMER':
+        return 'bg-gradient-to-r from-pink-500 to-purple-600 text-white';
+      case 'BOT':
+        return 'bg-white text-gray-800 shadow-sm border border-gray-100';
+      case 'SYSTEM':
+        return 'bg-yellow-50 text-yellow-800 text-center text-sm italic border border-yellow-100';
+      default:
+        return 'bg-gray-100';
+    }
+  };
+
+  // Typing indicator component
+  const TypingIndicator = () => (
+    <div className="flex justify-start">
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white">
+          <Bot className="h-4 w-4" />
+        </div>
+        <div className="rounded-2xl bg-white px-4 py-3 shadow-sm border border-gray-100">
+          <div className="flex gap-1">
+            <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+            <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+            <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Chat Bubble Button */}
+      {!isOpen && (
+        <button
+          onClick={handleOpen}
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl animate-bounce"
+          style={{ animationDuration: '2s' }}
+          title="Chat với BeautyBot"
+        >
+          <MessageCircle className="h-6 w-6" />
+          {/* Pulse effect */}
+          <span className="absolute inset-0 rounded-full bg-pink-500 opacity-30 animate-ping"></span>
+        </button>
+      )}
+
+      {/* Chat Window */}
+      {isOpen && (
+        <div className="fixed bottom-6 right-6 z-50 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100">
+          {/* Header */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-3 text-white">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                <Bot className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold">BeautyBot</h3>
+                <p className="text-xs text-white/80 flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+                  Trợ lý tư vấn 24/7
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEndChat}
+                className="rounded-lg bg-white/20 px-3 py-1 text-xs font-medium transition hover:bg-white/30"
+              >
+                Kết thúc
+              </button>
+              <button
+                onClick={handleClose}
+                className="rounded-full p-1 transition hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white p-4">
+            {isLoading ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-pink-100 to-purple-100">
+                  <Bot className="h-8 w-8 text-pink-500 animate-pulse" />
+                </div>
+                <p className="text-sm text-gray-500">Đang kết nối...</p>
+              </div>
+            ) : showRating ? (
+              /* Rating Screen */
+              <div className="flex h-full flex-col items-center justify-center gap-4 p-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-pink-100 to-purple-100">
+                  <Star className="h-8 w-8 text-pink-500" />
+                </div>
+                <div className="text-center">
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    Đánh giá cuộc trò chuyện
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Phản hồi của bạn giúp chúng tôi cải thiện
+                  </p>
+                </div>
+                
+                {/* Star Rating */}
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      className="transition hover:scale-110"
+                    >
+                      <Star
+                        className={`h-8 w-8 ${
+                          star <= rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Feedback */}
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Nhận xét của bạn (không bắt buộc)"
+                  className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
+                  rows={3}
+                />
+
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setShowRating(false)}
+                    className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Quay lại
+                  </button>
+                  <button
+                    onClick={handleSubmitRating}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+                  >
+                    Hoàn tất
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Messages List */
+              <div className="space-y-4">
+                {messages.length === 0 && !isTyping && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-pink-100 to-purple-100 mb-3">
+                      <Bot className="h-8 w-8 text-pink-500" />
+                    </div>
+                    <p className="text-gray-500 text-sm">Đang khởi tạo...</p>
+                  </div>
+                )}
+                
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.senderType === 'CUSTOMER' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {message.senderType === 'SYSTEM' ? (
+                      <div className={`w-full rounded-xl px-4 py-2 ${getSenderColor(message.senderType)}`}>
+                        {message.content}
+                      </div>
+                    ) : (
+                      <div
+                        className={`flex max-w-[85%] gap-2 ${
+                          message.senderType === 'CUSTOMER' ? 'flex-row-reverse' : ''
+                        }`}
+                      >
+                        {/* Avatar */}
+                        {message.senderType === 'BOT' && (
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white">
+                            <Bot className="h-4 w-4" />
+                          </div>
+                        )}
+                        
+                        {/* Message Bubble */}
+                        <div className="flex flex-col">
+                          <div
+                            className={`rounded-2xl px-4 py-2.5 ${getSenderColor(message.senderType)}`}
+                          >
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                          </div>
+                          <p className={`mt-1 text-xs text-gray-400 ${message.senderType === 'CUSTOMER' ? 'text-right' : ''}`}>
+                            {formatTime(message.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {/* Typing Indicator */}
+                {isTyping && <TypingIndicator />}
+                
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Quick Replies */}
+          {!showRating && messages.length > 0 && quickReplies.length > 0 && (
+            <div className="border-t border-gray-100 bg-white px-4 py-2">
+              <div className="flex flex-wrap gap-2">
+                {(showAllReplies ? quickReplies : quickReplies.slice(0, 3)).map((reply) => (
+                  <button
+                    key={reply}
+                    onClick={() => handleQuickReply(reply)}
+                    className="rounded-full border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-600 transition hover:bg-pink-100 hover:border-pink-300"
+                  >
+                    {reply}
+                  </button>
+                ))}
+                {quickReplies.length > 3 && !showAllReplies && (
+                  <button 
+                    onClick={() => setShowAllReplies(true)}
+                    className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100"
+                  >
+                    +{quickReplies.length - 3} <ChevronDown className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Input */}
+          {!showRating && (
+            <div className="border-t border-gray-100 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Nhập tin nhắn..."
+                  className="flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition"
+                  disabled={isSending || isLoading}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!inputValue.trim() || isSending || isLoading}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white transition hover:opacity-90 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              <p className="mt-2 text-center text-xs text-gray-400">
+                Gõ "nhân viên" để kết nối với tư vấn viên
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

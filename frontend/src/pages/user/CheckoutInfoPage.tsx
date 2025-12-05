@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createVNPayPayment } from '../../api/payment';
 
 interface CartItem {
   id: string;
@@ -63,6 +64,7 @@ export default function CheckoutInfoPage({
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [_showNote, _setShowNote] = useState(false);
   const [_showInvoice, _setShowInvoice] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
 
@@ -77,6 +79,54 @@ export default function CheckoutInfoPage({
   const updateQuantity = (id: string, delta: number) => {
     // Handle quantity update
     console.log('Update quantity:', id, delta);
+  };
+
+  // Handle VNPay payment
+  const handleVNPayPayment = async (orderId: number) => {
+    try {
+      const response = await createVNPayPayment({
+        orderId,
+        amount: total,
+        orderInfo: `Thanh toan don hang #${orderId} - BeautyBox`,
+        language: 'vn',
+      });
+
+      if (response.success && response.paymentUrl) {
+        // Redirect to VNPay payment page
+        window.location.href = response.paymentUrl;
+      } else {
+        alert('Có lỗi khi tạo thanh toán VNPay: ' + response.message);
+      }
+    } catch (error) {
+      console.error('VNPay payment error:', error);
+      alert('Có lỗi xảy ra khi tạo thanh toán');
+    }
+  };
+
+  // Handle place order
+  const handlePlaceOrder = async () => {
+    setIsProcessing(true);
+    
+    try {
+      // TODO: Create order first via API
+      // const order = await createOrder({ ... });
+      // const orderId = order.id;
+      
+      // For demo, use a mock order ID
+      const mockOrderId = Math.floor(Math.random() * 10000);
+
+      if (paymentMethod === 'vnpay') {
+        await handleVNPayPayment(mockOrderId);
+      } else {
+        // COD or other payment methods
+        onPlaceOrder?.();
+      }
+    } catch (error) {
+      console.error('Place order error:', error);
+      alert('Có lỗi xảy ra khi đặt hàng');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -321,6 +371,36 @@ export default function CheckoutInfoPage({
                     src="https://cdn.zalopay.vn/web/assets/images/logo_zalopay.svg"
                     alt="ZaloPay"
                     className="h-6"
+                  />
+                </label>
+
+                {/* VNPay Payment Option */}
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-blue-200 bg-blue-50 p-4 transition hover:bg-blue-100">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="vnpay"
+                    checked={paymentMethod === 'vnpay'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mt-1 h-4 w-4 accent-pink-600"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">
+                        Thanh toán qua VNPay
+                      </span>
+                      <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
+                        Khuyên dùng
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-600">
+                      Quét mã QR hoặc thanh toán qua thẻ ATM/Visa/MasterCard
+                    </p>
+                  </div>
+                  <img
+                    src="https://vnpay.vn/wp-content/uploads/2019/09/logo-vnpay-768x254.png"
+                    alt="VNPay"
+                    className="h-8 object-contain"
                   />
                 </label>
 
@@ -584,10 +664,11 @@ export default function CheckoutInfoPage({
               </div>
 
               <button
-                onClick={onPlaceOrder}
-                className="mb-4 w-full rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 py-3.5 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl"
+                onClick={handlePlaceOrder}
+                disabled={isProcessing}
+                className="mb-4 w-full rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 py-3.5 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ĐẶT HÀNG
+                {isProcessing ? 'ĐANG XỬ LÝ...' : paymentMethod === 'vnpay' ? 'THANH TOÁN VỚI VNPAY' : 'ĐẶT HÀNG'}
               </button>
 
               <p className="mb-4 text-center text-xs text-gray-500">

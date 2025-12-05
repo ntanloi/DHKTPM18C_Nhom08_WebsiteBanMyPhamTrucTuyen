@@ -2,7 +2,7 @@ import axios from 'axios';
 import { mockBrandService } from '../mocks/productData';
 
 const API_BASE_URL = '/api/brands';
-const USE_MOCK = true;
+const USE_MOCK = false; // Set to true for development without backend
 
 export interface BrandRequest {
   name: string;
