@@ -15,6 +15,8 @@ public class ChatRoomResponse {
     private String customerName;
     private Integer managerId;
     private String managerName;
+    private Integer supportId;  // Support staff ID (alias for managerId when handled by support)
+    private String supportName;
     private RoomType roomType;
     private RoomStatus status;
     private ChatMessageResponse lastMessage;

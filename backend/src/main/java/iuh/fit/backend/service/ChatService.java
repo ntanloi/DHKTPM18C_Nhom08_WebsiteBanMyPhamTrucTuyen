@@ -227,6 +227,29 @@ public class ChatService {
     }
 
     /**
+     * Send message from support staff
+     */
+    @Transactional
+    public ChatMessageResponse sendSupportMessage(Integer supportId, ChatMessageRequest request) {
+        String roomId = request.getRoomId();
+        
+        ChatRoom room = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new ResourceNotFoundException("Chat room not found"));
+        
+        if (!supportId.equals(room.getManagerId())) {
+            throw new IllegalArgumentException("You are not assigned to this room");
+        }
+        
+        ChatMessage message = saveMessage(
+            roomId, supportId, SenderType.SUPPORT,
+            request.getContent(),
+            request.getMessageType() != null ? request.getMessageType() : MessageType.TEXT
+        );
+        
+        return mapToMessageResponse(message);
+    }
+
+    /**
      * Get message history
      */
     public List<ChatMessageResponse> getMessages(String roomId, int page, int size) {
@@ -287,12 +310,29 @@ public class ChatService {
         // Count unread messages (from customer)
         long unreadCount = chatMessageRepository.countUnreadMessages(room.getId(), SenderType.CUSTOMER);
         
+        // Determine if handler is support or manager based on role
+        String managerName = null;
+        String supportName = null;
+        Integer supportId = null;
+        
+        if (manager != null) {
+            String roleName = manager.getRole() != null ? manager.getRole().getName() : "";
+            if ("SUPPORT".equals(roleName)) {
+                supportId = room.getManagerId();
+                supportName = manager.getFullName();
+            } else {
+                managerName = manager.getFullName();
+            }
+        }
+        
         return ChatRoomResponse.builder()
             .id(room.getId())
             .customerId(room.getCustomerId())
             .customerName(customer != null ? customer.getFullName() : null)
             .managerId(room.getManagerId())
-            .managerName(manager != null ? manager.getFullName() : null)
+            .managerName(managerName)
+            .supportId(supportId)
+            .supportName(supportName)
             .roomType(room.getRoomType())
             .status(room.getStatus())
             .lastMessage(lastMessage)
@@ -316,6 +356,11 @@ public class ChatService {
             senderName = "BeautyBot";
         } else if (message.getSenderType() == SenderType.SYSTEM) {
             senderName = "System";
+        }
+        
+        // For support messages, show as support staff
+        if (message.getSenderType() == SenderType.SUPPORT && senderName == null) {
+            senderName = "Nhân viên tư vấn";
         }
         
         return ChatMessageResponse.builder()

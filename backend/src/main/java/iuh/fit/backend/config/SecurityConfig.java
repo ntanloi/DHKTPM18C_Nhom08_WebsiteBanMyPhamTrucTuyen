@@ -108,6 +108,9 @@ public class SecurityConfig {
                         // Guest Chat endpoints (public for chatbot)
                         .requestMatchers("/api/chat/guest/**").permitAll()
                         
+                        // Support Chat endpoints (for support staff to manage customer chats)
+                        .requestMatchers("/api/chat/support/**").hasAnyRole("SUPPORT", "MANAGER", "ADMIN")
+                        
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
 
