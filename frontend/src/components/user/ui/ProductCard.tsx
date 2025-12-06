@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Heart, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useProductDetail } from '../../../hooks/useProductDetail';
+import { useCart } from '../../../context/CartContext';
+import { useNavigation } from '../../../context/NavigationContext';
 
 interface ProductCardProps {
   id: number;
@@ -32,6 +34,10 @@ const QuickViewModal = ({
 
   const { product, variants, selectedVariant, loading, error, selectVariant } =
     useProductDetail(productId, 'id');
+  
+  const { addToCart } = useCart();
+  const { navigate } = useNavigation();
+  const [isAdding, setIsAdding] = useState(false);
 
   console.log(product);
 
@@ -308,9 +314,33 @@ const QuickViewModal = ({
                 </div>
 
                 <button
+                  onClick={async () => {
+                    if (!selectedVariant || !product) return;
+                    
+                    setIsAdding(true);
+                    try {
+                      const price = selectedVariant.salePrice || selectedVariant.price;
+                      const imageUrl = product.images && product.images.length > 0 
+                        ? product.images[0] 
+                        : 'https://via.placeholder.com/400';
+                      await addToCart(
+                        selectedVariant.id,
+                        quantity,
+                        product.name,
+                        selectedVariant.name,
+                        price,
+                        imageUrl
+                      );
+                      alert('Đã thêm sản phẩm vào giỏ hàng');
+                    } catch (error: any) {
+                      alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng');
+                    } finally {
+                      setIsAdding(false);
+                    }
+                  }}
                   className="flex min-w-[150px] flex-1 items-center justify-center gap-2 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                   disabled={
-                    !selectedVariant || selectedVariant.stockQuantity === 0
+                    !selectedVariant || selectedVariant.stockQuantity === 0 || isAdding
                   }
                 >
                   <svg
@@ -326,16 +356,40 @@ const QuickViewModal = ({
                       d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                     />
                   </svg>
-                  Thêm vào giỏ
+                  {isAdding ? 'Đang thêm...' : 'Thêm vào giỏ'}
                 </button>
 
                 <button
+                  onClick={async () => {
+                    if (!selectedVariant || !product) return;
+                    
+                    setIsAdding(true);
+                    try {
+                      const price = selectedVariant.salePrice || selectedVariant.price;
+                      const imageUrl = product.images && product.images.length > 0 
+                        ? product.images[0] 
+                        : 'https://via.placeholder.com/400';
+                      await addToCart(
+                        selectedVariant.id,
+                        quantity,
+                        product.name,
+                        selectedVariant.name,
+                        price,
+                        imageUrl
+                      );
+                      navigate('/checkout');
+                    } catch (error: any) {
+                      alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng');
+                    } finally {
+                      setIsAdding(false);
+                    }
+                  }}
                   className="rounded-full bg-gradient-to-r from-yellow-400 to-purple-500 px-6 py-3 text-sm font-semibold whitespace-nowrap text-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={
-                    !selectedVariant || selectedVariant.stockQuantity === 0
+                    !selectedVariant || selectedVariant.stockQuantity === 0 || isAdding
                   }
                 >
-                  MUA NGAY
+                  {isAdding ? 'Đang xử lý...' : 'MUA NGAY'}
                 </button>
 
                 <button className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100">

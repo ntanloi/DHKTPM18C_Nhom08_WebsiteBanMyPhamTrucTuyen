@@ -31,6 +31,10 @@ public class OrderService {
     private final NotificationService notificationService;
     private final CouponService couponService;
     private final CouponRepository couponRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    
+    private static final Integer GUEST_USER_ID = 0;
 
     @Transactional
     public OrderDetailResponse createOrder(CreateOrderRequest request) {
@@ -58,6 +62,8 @@ public class OrderService {
             orderItem.setQuantity(itemRequest.getQuantity());
 
             BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
+            orderItem.setPrice(price); // Set price for order item
+            
             // FIX: BigDecimal.add() returns a new object, must reassign
             subtotal = subtotal.add(price.multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
 
@@ -77,8 +83,10 @@ public class OrderService {
             appliedCoupon = couponRepository.findById(request.getCouponId())
                     .orElseThrow(() -> new RuntimeException("Coupon not found"));
             
-            // Validate coupon for this user and order amount
-            couponService.validateCouponForUser(appliedCoupon.getCode(), request.getUserId(), subtotal);
+            // Validate coupon for this user and order amount (skip user validation for guest)
+            if (request.getUserId() != null) {
+                couponService.validateCouponForUser(appliedCoupon.getCode(), request.getUserId(), subtotal);
+            }
             
             // Calculate discount
             discountAmount = couponService.calculateDiscount(appliedCoupon, subtotal);
@@ -102,8 +110,8 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         
-        // Record coupon usage after order is saved
-        if (appliedCoupon != null) {
+        // Record coupon usage after order is saved (only for logged in users)
+        if (appliedCoupon != null && request.getUserId() != null) {
             couponService.recordCouponUsage(appliedCoupon.getId(), request.getUserId(), savedOrder.getId(), discountAmount);
         }
 
@@ -150,12 +158,14 @@ public class OrderService {
         shipment.setUpdatedAt(LocalDateTime.now());
         shipmentRepository.save(shipment);
 
-        // Send real-time notification for new order
-        try {
-            notificationService.notifyOrderCreated(savedOrder.getId(), request.getUserId());
-            log.info("Order created notification sent for order: {}", savedOrder.getId());
-        } catch (Exception e) {
-            log.warn("Failed to send order created notification: {}", e.getMessage());
+        // Send real-time notification for new order (only if user is logged in)
+        if (request.getUserId() != null) {
+            try {
+                notificationService.notifyOrderCreated(savedOrder.getId(), request.getUserId());
+                log.info("Order created notification sent for order: {}", savedOrder.getId());
+            } catch (Exception e) {
+                log.warn("Failed to send order created notification: {}", e.getMessage());
+            }
         }
 
         return getOrderDetail(savedOrder.getId());
@@ -373,5 +383,44 @@ public class OrderService {
         response.setCreatedAt(order.getCreatedAt());
         response.setUpdatedAt(order.getUpdatedAt());
         return response;
+    }
+    
+    @Transactional
+    public OrderDetailResponse createGuestOrder(CreateOrderRequest request) {
+        // Create a new guest user for this order
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new RuntimeException("USER role not found"));
+        
+        // Use recipient info to create guest user
+        String guestEmail = request.getRecipientInfo().getRecipientEmail();
+        String guestFullName = request.getRecipientInfo().getRecipientFirstName() + " " + 
+                               request.getRecipientInfo().getRecipientLastName();
+        String guestPhone = request.getRecipientInfo().getRecipientPhone();
+        
+        // Check if user with this email already exists
+        User guestUser = userRepository.findByEmail(guestEmail).orElse(null);
+        
+        if (guestUser == null) {
+            // Create new guest user
+            guestUser = new User();
+            guestUser.setEmail(guestEmail);
+            guestUser.setPassword("$2a$10$guestUserNoPassword"); // Dummy password, guest can't login
+            guestUser.setFullName(guestFullName);
+            guestUser.setPhoneNumber(guestPhone);
+            guestUser.setRole(userRole);
+            guestUser.setIsActive(true);
+            guestUser.setCreatedAt(LocalDateTime.now());
+            guestUser.setUpdatedAt(LocalDateTime.now());
+            guestUser = userRepository.save(guestUser);
+            log.info("Created new guest user with email: {} and ID: {}", guestEmail, guestUser.getId());
+        } else {
+            log.info("Using existing user with email: {} and ID: {}", guestEmail, guestUser.getId());
+        }
+        
+        // Set userId for the order
+        request.setUserId(guestUser.getId());
+        
+        // Create order using existing logic
+        return createOrder(request);
     }
 }

@@ -160,12 +160,27 @@ public class ProductService {
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
 
+        // Set category name
         if (product.getCategory() != null) {
             response.setCategoryName(product.getCategory().getName());
         }
 
+        // Set brand name
         if (product.getBrand() != null) {
             response.setBrandName(product.getBrand().getName());
+        }
+
+        // Calculate average rating and review count
+        if (product.getReviews() != null && !product.getReviews().isEmpty()) {
+            double avgRating = product.getReviews().stream()
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+            response.setAverageRating(avgRating);
+            response.setReviewCount((long) product.getReviews().size());
+        } else {
+            response.setAverageRating(0.0);
+            response.setReviewCount(0L);
         }
 
         return response;
@@ -227,5 +242,31 @@ public class ProductService {
         response.setVariants(variantResponses);
 
         return response;
+    }
+
+    public List<ProductResponse> searchProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllProducts();
+        }
+
+        List<Product> products = productRepository.searchByKeywordAdvanced(keyword.trim());
+
+        return products.stream()
+                .map(this::convertToProductResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getSearchSuggestions(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // Return top 8 popular products
+            return productRepository.findAll().stream()
+                    .limit(8)
+                    .map(Product::getName)
+                    .collect(Collectors.toList());
+        }
+
+        // Return matching product names
+        List<String> suggestions = productRepository.findProductNamesByKeyword(keyword.trim());
+        return suggestions.stream().limit(8).collect(Collectors.toList());
     }
 }

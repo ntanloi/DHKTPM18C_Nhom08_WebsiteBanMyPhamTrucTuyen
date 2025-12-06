@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Share2, Star } from 'lucide-react';
 import { useProductDetail } from '../../hooks/useProductDetail';
+import { useCart } from '../../context/CartContext';
+import { AuthContext } from '../../context/auth-context';
+import { useNavigation } from '../../context/NavigationContext';
 
 interface ProductDetailPageProps {
   productSlug?: string;
@@ -16,6 +19,7 @@ const ProductDetailPage = ({
   const [deliveryMethod, setDeliveryMethod] = useState('home');
   const [activeTab, setActiveTab] = useState('intro');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Determine which identifier to use (prefer slug over id)
   const identifier = productSlug || productId;
@@ -23,6 +27,14 @@ const ProductDetailPage = ({
 
   const { product, variants, selectedVariant, loading, error, selectVariant } =
     useProductDetail(identifier || null, identifierType);
+  
+  const { addToCart } = useCart();
+  const authContext = useContext(AuthContext);
+  if (!authContext) {
+    throw new Error('ProductDetailPage must be used within AuthProvider');
+  }
+  const { user } = authContext;
+  const { navigate } = useNavigation();
 
   // Reset states when product changes
   useEffect(() => {
@@ -99,6 +111,78 @@ const ProductDetailPage = ({
     product.images && product.images.length > 0
       ? product.images
       : ['https://via.placeholder.com/400'];
+
+  const handleAddToCart = async () => {
+    if (!selectedVariant) {
+      alert('Vui lòng chọn phiên bản sản phẩm');
+      return;
+    }
+
+    if (selectedVariant.stockQuantity === 0) {
+      alert('Sản phẩm đã hết hàng');
+      return;
+    }
+
+    if (quantity > selectedVariant.stockQuantity) {
+      alert(`Chỉ còn ${selectedVariant.stockQuantity} sản phẩm trong kho`);
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const price = selectedVariant.salePrice || selectedVariant.price;
+      const imageUrl = product.images && product.images.length > 0 ? product.images[0] : '';
+      await addToCart(
+        selectedVariant.id, 
+        quantity,
+        product.name,
+        selectedVariant.name,
+        price,
+        imageUrl
+      );
+      alert('Đã thêm sản phẩm vào giỏ hàng');
+    } catch (error: any) {
+      alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!selectedVariant) {
+      alert('Vui lòng chọn phiên bản sản phẩm');
+      return;
+    }
+
+    if (selectedVariant.stockQuantity === 0) {
+      alert('Sản phẩm đã hết hàng');
+      return;
+    }
+
+    if (quantity > selectedVariant.stockQuantity) {
+      alert(`Chỉ còn ${selectedVariant.stockQuantity} sản phẩm trong kho`);
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const price = selectedVariant.salePrice || selectedVariant.price;
+      const imageUrl = product.images && product.images.length > 0 ? product.images[0] : '';
+      await addToCart(
+        selectedVariant.id, 
+        quantity,
+        product.name,
+        selectedVariant.name,
+        price,
+        imageUrl
+      );
+      navigate('/checkout');
+    } catch (error: any) {
+      alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -349,8 +433,9 @@ const ProductDetailPage = ({
             </div>
 
             <button
+              onClick={handleAddToCart}
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-black px-6 py-3 text-base font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
-              disabled={!selectedVariant || selectedVariant.stockQuantity === 0}
+              disabled={!selectedVariant || selectedVariant.stockQuantity === 0 || isAddingToCart}
             >
               <svg
                 className="h-5 w-5"
@@ -365,14 +450,15 @@ const ProductDetailPage = ({
                   d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                 />
               </svg>
-              Thêm vào giỏ
+              {isAddingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
             </button>
 
             <button
+              onClick={handleBuyNow}
               className="rounded-full bg-gradient-to-r from-yellow-400 to-purple-500 px-8 py-3 text-base font-semibold whitespace-nowrap text-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!selectedVariant || selectedVariant.stockQuantity === 0}
+              disabled={!selectedVariant || selectedVariant.stockQuantity === 0 || isAddingToCart}
             >
-              MUA NGAY
+              {isAddingToCart ? 'Đang xử lý...' : 'MUA NGAY'}
             </button>
 
             <button
