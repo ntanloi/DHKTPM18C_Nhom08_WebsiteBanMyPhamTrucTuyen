@@ -1,14 +1,24 @@
 package iuh.fit.backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import iuh.fit.backend.security.JwtHandshakeInterceptor;
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
+    
+    @Value("${cors.allowed.origins:http://localhost:3000,http://localhost:5173}")
+    private String allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -22,13 +32,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket endpoint with SockJS fallback
+        // WebSocket endpoint with JWT authentication and proper CORS
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins(allowedOrigins.split(","))
+                .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
         
-        // Pure WebSocket endpoint (no SockJS)
+        // Pure WebSocket endpoint (no SockJS) with authentication
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins(allowedOrigins.split(","))
+                .addInterceptors(jwtHandshakeInterceptor);
     }
 }
