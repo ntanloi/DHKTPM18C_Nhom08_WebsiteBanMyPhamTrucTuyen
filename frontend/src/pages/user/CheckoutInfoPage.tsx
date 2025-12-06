@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { createVNPayPayment, getPaymentMethods, PaymentMethod } from '../../api/payment';
+import { createVNPayPayment, getPaymentMethods } from '../../api/payment';
+import type { PaymentMethod } from '../../api/payment';
 
 interface CartItem {
   id: string;
