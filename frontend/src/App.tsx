@@ -56,6 +56,7 @@ import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
 import ChatWidget from './components/user/ui/ChatWidget';
 import AccountPage from './pages/user/AccountPage';
+import SupportChatPage from './pages/support/SupportChatPage';
 
 type Page =
   | 'home'
@@ -68,6 +69,7 @@ type Page =
   | 'checkout-info'
   | 'order-success'
   | 'account'
+  | 'support-chat'
   | 'admin-dashboard'
   | 'admin-analytics'
   | 'admin-chat'
@@ -102,6 +104,7 @@ type Page =
 function App() {
   const pathToPage = (path: string): Page => {
     if (path === '/account') return 'account';
+    if (path === '/support/chat') return 'support-chat';
     if (path === '/admin' || path === '/admin/') return 'admin-dashboard';
     if (path === '/admin/analytics') return 'admin-analytics';
     if (path === '/admin/chat') return 'admin-chat';
@@ -422,7 +425,7 @@ function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const isAdminPage = page.startsWith('admin-');
+  const isAdminPage = page.startsWith('admin-') || page === 'support-chat';
 
   return (
     <AuthProvider>

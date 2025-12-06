@@ -39,7 +39,7 @@ public class ChatRestController {
      * Initialize or get customer's chat room
      */
     @PostMapping("/rooms/init")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER')")
     public ResponseEntity<ChatRoomResponse> initRoom(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
@@ -51,7 +51,7 @@ public class ChatRestController {
      * Get room information
      */
     @GetMapping("/rooms/{roomId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<ChatRoomResponse> getRoomInfo(
             @PathVariable String roomId) {
         
@@ -62,7 +62,7 @@ public class ChatRestController {
      * Get current customer's rooms
      */
     @GetMapping("/rooms/my")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER')")
     public ResponseEntity<List<ChatRoomResponse>> getMyRooms(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
@@ -73,7 +73,7 @@ public class ChatRestController {
      * Send message (fallback when WebSocket unavailable)
      */
     @PostMapping("/rooms/{roomId}/messages")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<ChatMessageResponse> sendMessage(
             @PathVariable String roomId,
             @RequestBody ChatMessageRequest request,
@@ -89,6 +89,8 @@ public class ChatRestController {
             response = chatService.sendCustomerMessage(userDetails.getId(), request);
         } else if (room.getManagerId() != null && room.getManagerId().equals(userDetails.getId())) {
             response = chatService.sendManagerMessage(userDetails.getId(), request);
+        } else if (room.getSupportId() != null && room.getSupportId().equals(userDetails.getId())) {
+            response = chatService.sendSupportMessage(userDetails.getId(), request);
         } else {
             return ResponseEntity.status(403).build();
         }
@@ -100,7 +102,7 @@ public class ChatRestController {
      * Get message history
      */
     @GetMapping("/rooms/{roomId}/messages")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(
             @PathVariable String roomId,
             @RequestParam(defaultValue = "0") int page,
@@ -113,7 +115,7 @@ public class ChatRestController {
      * Close room and submit rating
      */
     @PostMapping("/rooms/{roomId}/close")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER', 'ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<ChatRoomResponse> closeRoom(
             @PathVariable String roomId,
             @RequestBody(required = false) Map<String, Object> body) {
@@ -131,7 +133,7 @@ public class ChatRestController {
      * Get pending rooms list
      */
     @GetMapping("/manager/rooms/pending")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<List<ChatRoomResponse>> getPendingRooms() {
         return ResponseEntity.ok(chatService.getPendingRooms());
     }
@@ -140,7 +142,7 @@ public class ChatRestController {
      * Get manager's rooms
      */
     @GetMapping("/manager/rooms/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<List<ChatRoomResponse>> getManagerRooms(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
@@ -151,7 +153,7 @@ public class ChatRestController {
      * Accept room for support
      */
     @PostMapping("/manager/rooms/{roomId}/accept")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<ChatRoomResponse> acceptRoom(
             @PathVariable String roomId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -163,7 +165,7 @@ public class ChatRestController {
      * Get pending room count
      */
     @GetMapping("/manager/rooms/pending/count")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<Map<String, Long>> getPendingRoomCount() {
         return ResponseEntity.ok(Map.of("count", chatService.countPendingRooms()));
     }
@@ -172,13 +174,13 @@ public class ChatRestController {
      * Manager sends message
      */
     @PostMapping("/manager/rooms/{roomId}/messages")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<ChatMessageResponse> sendManagerMessage(
             @PathVariable String roomId,
             @RequestBody ChatMessageRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         request.setRoomId(roomId);
-        return ResponseEntity.ok(chatService.sendManagerMessage(userDetails.getId(), request));
+        return ResponseEntity.ok(chatService.sendSupportMessage(userDetails.getId(), request));
     }
 }
