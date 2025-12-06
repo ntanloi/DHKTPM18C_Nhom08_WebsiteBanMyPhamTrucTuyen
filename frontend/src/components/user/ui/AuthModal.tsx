@@ -69,10 +69,20 @@ export default function AuthModal({
 
   if (!open) return null;
 
-  const handleAuthSuccess = (response: AuthResponse) => {
-    // Use auth context to login (saves tokens and user info)
-    login(response);
-    onClose();
+  const handleAuthSuccess = async (response: AuthResponse) => {
+    try {
+      // Use auth context to login (saves tokens and user info)
+      login(response);
+      
+      // Small delay to ensure state updates complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Close modal and reset state
+      onClose();
+    } catch (error) {
+      setError('Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.');
+      setIsLoading(false);
+    }
   };
 
   // Send OTP
@@ -109,11 +119,10 @@ export default function AuthModal({
 
     try {
       const response = await authApi.verifyOtp({ email, code: otpCode });
-      handleAuthSuccess(response);
+      await handleAuthSuccess(response);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -130,11 +139,10 @@ export default function AuthModal({
 
     try {
       const response = await authApi.login({ email, password });
-      handleAuthSuccess(response);
+      await handleAuthSuccess(response);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Email hoặc mật khẩu không đúng');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -156,11 +164,10 @@ export default function AuthModal({
 
     try {
       const response = await authApi.register({ email, password, fullName });
-      handleAuthSuccess(response);
+      await handleAuthSuccess(response);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
-    } finally {
       setIsLoading(false);
     }
   };
