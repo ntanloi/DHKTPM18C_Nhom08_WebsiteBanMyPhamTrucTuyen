@@ -32,14 +32,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Skip filter chỉ cho auth endpoints để tránh unnecessary processing
+     * Skip filter cho các public endpoints để tránh overhead
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
-        return matcher.match("/api/auth/**", path)
-                || matcher.match("/swagger-ui/**", path)
-                || matcher.match("/v3/api-docs/**", path);
+        String method = request.getMethod();
+        
+        // Auth endpoints
+        if (matcher.match("/api/auth/**", path)) return true;
+        
+        // Swagger/OpenAPI
+        if (matcher.match("/swagger-ui/**", path)) return true;
+        if (matcher.match("/v3/api-docs/**", path)) return true;
+        
+        // Public read-only endpoints
+        if ("GET".equals(method)) {
+            if (matcher.match("/api/products/**", path)) return true;
+            if (matcher.match("/api/categories/**", path)) return true;
+            if (matcher.match("/api/brands/**", path)) return true;
+            if (matcher.match("/api/product-variants/**", path)) return true;
+            if (matcher.match("/api/product-images/**", path)) return true;
+            if (matcher.match("/api/payment-methods/**", path)) return true;
+        }
+        
+        // Guest chat endpoints
+        if (matcher.match("/api/chat/guest/**", path)) return true;
+        
+        // Payment callbacks
+        if (matcher.match("/api/payments/vnpay/callback", path)) return true;
+        if (matcher.match("/api/payments/vnpay/ipn", path)) return true;
+        
+        // WebSocket
+        if (matcher.match("/ws/**", path)) return true;
+        
+        return false;
     }
 
     @Override
