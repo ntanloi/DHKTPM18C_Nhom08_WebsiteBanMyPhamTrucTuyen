@@ -2,7 +2,8 @@ package iuh.fit.backend.model.enums;
 
 public enum SenderType {
     CUSTOMER,   // Customer user
-    MANAGER,    // Support staff
+    MANAGER,    // Manager staff
+    SUPPORT,    // Support staff (nhân viên tư vấn)
     BOT,        // Automated bot
     SYSTEM      // System notification
 }

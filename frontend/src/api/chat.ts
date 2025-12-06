@@ -4,7 +4,7 @@ import api from '../lib/api';
 
 export type RoomType = 'BOT' | 'HUMAN';
 export type RoomStatus = 'OPEN' | 'PENDING' | 'ASSIGNED' | 'CLOSED';
-export type SenderType = 'CUSTOMER' | 'MANAGER' | 'BOT' | 'SYSTEM';
+export type SenderType = 'CUSTOMER' | 'MANAGER' | 'SUPPORT' | 'BOT' | 'SYSTEM';
 export type MessageType = 'TEXT' | 'IMAGE' | 'PRODUCT' | 'ORDER' | 'SYSTEM';
 
 export interface ChatMessage {
@@ -26,6 +26,8 @@ export interface ChatRoom {
   customerName?: string;
   managerId?: number;
   managerName?: string;
+  supportId?: number;
+  supportName?: string;
   roomType: RoomType;
   status: RoomStatus;
   lastMessage?: ChatMessage;
