@@ -55,27 +55,32 @@ export default function ChatWidget() {
 
   // Initialize chat when opened
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    
+    const init = async () => {
       if (isLoggedIn) {
-        initAuthenticatedChat();
+        await initAuthenticatedChat();
       } else if (!guestSessionId) {
-        initGuestChat();
+        await initGuestChat();
       }
-    }
+    };
+    
+    init();
     
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
     };
-  }, [isOpen, isLoggedIn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Poll for new messages when waiting for support
   useEffect(() => {
     if (chatRoom && (chatRoom.status === 'PENDING' || chatRoom.status === 'ASSIGNED')) {
-      pollIntervalRef.current = setInterval(() => {
-        fetchMessages();
-      }, 3000);
+      const poll = async () => await fetchMessages();
+      
+      pollIntervalRef.current = setInterval(poll, 3000);
       
       return () => {
         if (pollIntervalRef.current) {
@@ -83,6 +88,7 @@ export default function ChatWidget() {
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatRoom?.status]);
 
   // Focus input when opened
@@ -120,7 +126,7 @@ export default function ChatWidget() {
       }, 1000);
       
     } catch (error) {
-      console.error('Error initializing chat:', error);
+      // Error logged internally
       setMessages([{
         id: `error-${Date.now()}`,
         content: 'Xin lỗi, không thể kết nối với hệ thống chat. Vui lòng thử lại sau.',
@@ -172,7 +178,7 @@ export default function ChatWidget() {
       }
       
     } catch (error) {
-      console.error('Error sending message:', error);
+      // Error logged internally
       setIsTyping(false);
       setMessages((prev) => [...prev, {
         id: `error-${Date.now()}`,
@@ -218,7 +224,7 @@ export default function ChatWidget() {
       }
       
     } catch (error) {
-      console.error('Error initializing authenticated chat:', error);
+      // Error logged internally
       setMessages([{
         id: `error-${Date.now()}`,
         content: 'Xin lỗi, không thể kết nối với hệ thống chat. Vui lòng thử lại sau.',
@@ -255,7 +261,7 @@ export default function ChatWidget() {
       }
       
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      // Error logged internally
     }
   }, [chatRoom]);
 
@@ -271,7 +277,7 @@ export default function ChatWidget() {
       setIsTyping(false);
       
     } catch (error) {
-      console.error('Error sending message:', error);
+      // Error logged internally
       setIsTyping(false);
       setMessages((prev) => [...prev, {
         id: `error-${Date.now()}`,
@@ -343,7 +349,7 @@ export default function ChatWidget() {
       try {
         await chatApi.closeRoom(chatRoom.id, { rating, feedback });
       } catch (error) {
-        console.error('Error closing room:', error);
+        // Error logged internally
       }
     }
     

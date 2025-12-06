@@ -111,9 +111,8 @@ export default function CheckoutInfoPage({
   const shipping = 0;
   const total = subtotal - discount + shipping;
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = (_id: string, _delta: number) => {
     // Handle quantity update
-    console.log('Update quantity:', id, delta);
   };
 
   // Handle VNPay payment

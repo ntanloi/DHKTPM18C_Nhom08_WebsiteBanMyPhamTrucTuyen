@@ -72,11 +72,11 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
       if (!refreshToken) {
-        // No refresh token, logout user
+        // No refresh token, clear auth state but don't redirect
+        // Let the calling page decide if redirect is needed
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        window.location.href = '/login';
         return Promise.reject(error);
       }
 
@@ -103,12 +103,11 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh token failed, logout user
+        // Refresh token failed, clear auth state
         processQueue(refreshError as Error, null);
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
