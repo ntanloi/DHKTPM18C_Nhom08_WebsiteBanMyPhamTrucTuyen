@@ -1,102 +1,79 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
-
-interface CartItem {
-  id: string;
-  sku: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  quantity: number;
-  selected: boolean;
-  gift?: {
-    name: string;
-    image: string;
-    quantity: number;
-  };
-}
+import { useState, useEffect } from 'react';
+import { useCart } from '../../../context/CartContext';
 
 interface CartSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (path: string) => void; // Thêm prop này
+  onNavigate: (path: string) => void;
 }
-
-// Mock data
-const mockCartItems: CartItem[] = [
-  {
-    id: '1',
-    sku: '11112251',
-    name: 'Bảng Phấn Mắt 9 Ô Thuần Chay Amuse Eye Color Palette 11g',
-    image:
-      'https://image.hsv-tech.io/150x0/bbx/common/e75ba095-a52f-4ee2-a866-d3bd8b3b1ce3.webp',
-    price: 593100,
-    originalPrice: 659000,
-    quantity: 1,
-    selected: true,
-    gift: {
-      name: '(GWP) Gương Trang Điểm Amuse My Amuse Mirror 87g',
-      image:
-        'https://image.hsv-tech.io/150x0/bbx/common/4873f479-daba-4074-bd62-be3de38377dd.webp',
-      quantity: 1,
-    },
-  },
-  {
-    id: '2',
-    sku: '11112251',
-    name: 'Bảng Phấn Mắt 9 Ô Thuần Chay Amuse Eye Color Palette 11g',
-    image:
-      'https://image.hsv-tech.io/150x0/bbx/common/e75ba095-a52f-4ee2-a866-d3bd8b3b1ce3.webp',
-    price: 593100,
-    originalPrice: 659000,
-    quantity: 1,
-    selected: true,
-    gift: {
-      name: '(GWP) Gương Trang Điểm Amuse My Amuse Mirror 87g',
-      image:
-        'https://image.hsv-tech.io/150x0/bbx/common/4873f479-daba-4074-bd62-be3de38377dd.webp',
-      quantity: 1,
-    },
-  },
-];
 
 export default function CartSidebar({
   isOpen,
   onClose,
   onNavigate,
 }: CartSidebarProps) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
+  const { cart, loading, updateQuantity: updateCartQuantity, removeItem: removeCartItem, fetchCart } = useCart();
   const [activeTab, setActiveTab] = useState<'delivery' | 'pickup'>('delivery');
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
-  const selectAll = cartItems.length > 0 && cartItems.every((i) => i.selected);
+  // Fetch cart khi mở sidebar
+  useEffect(() => {
+    if (isOpen) {
+      fetchCart();
+    }
+  }, [isOpen]);
+
+  // Select all items by default khi cart thay đổi
+  useEffect(() => {
+    if (cart?.cartItems) {
+      setSelectedItems(new Set(cart.cartItems.map(item => item.id)));
+    }
+  }, [cart?.cartItems]);
+
+  const cartItems = cart?.cartItems || [];
+  const selectAll = cartItems.length > 0 && cartItems.every((item) => selectedItems.has(item.id));
 
   const handleSelectAll = (checked: boolean) => {
-    setCartItems((items) => items.map((i) => ({ ...i, selected: checked })));
+    if (checked) {
+      setSelectedItems(new Set(cartItems.map(item => item.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
   };
 
-  const toggleItem = (id: string) => {
-    setCartItems((items) =>
-      items.map((i) => (i.id === id ? { ...i, selected: !i.selected } : i)),
-    );
+  const toggleItem = (id: number) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
   };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item,
-      ),
-    );
+    try {
+      await updateCartQuantity(id, newQuantity);
+    } catch (error: any) {
+      alert(error.message || 'Không thể cập nhật số lượng');
+    }
   };
 
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((i) => i.id !== id));
+  const handleRemoveItem = async (id: number) => {
+    if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+      try {
+        await removeCartItem(id);
+      } catch (error: any) {
+        alert(error.message || 'Không thể xóa sản phẩm');
+      }
+    }
   };
 
   const totalAmount = cartItems.reduce((sum, item) => {
-    if (!item.selected) return sum;
-    return sum + item.price * item.quantity;
+    if (!selectedItems.has(item.id)) return sum;
+    return sum + item.subtotal;
   }, 0);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
@@ -154,9 +131,30 @@ export default function CartSidebar({
 
         {/* Content */}
         <div className="hide-scrollbar flex-1 overflow-y-auto bg-white">
-          {cartItems.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-gray-500">
-              Bạn chưa có sản phẩm nào trong giỏ hàng
+          {loading && cartItems.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-500">Đang tải giỏ hàng...</p>
+              </div>
+            </div>
+          ) : cartItems.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-gray-500 px-6">
+              <svg
+                className="h-20 w-20 text-gray-300 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+              <p className="text-base font-medium mb-2">Giỏ hàng trống</p>
+              <p className="text-sm text-center">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
             </div>
           ) : (
             <div className="px-6">
@@ -184,42 +182,46 @@ export default function CartSidebar({
                     <div className="flex flex-row items-center gap-3">
                       <input
                         type="checkbox"
-                        checked={item.selected}
+                        checked={selectedItems.has(item.id)}
                         onChange={() => toggleItem(item.id)}
                         className="mt-1 h-4 w-4 cursor-pointer accent-[#ab2328]"
                       />
 
                       <div className="flex flex-1 gap-3">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="h-20 w-20 rounded object-cover p-1"
-                        />
+                        <div className="h-20 w-20 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                          <img 
+                            src={item.imageUrl || 'https://via.placeholder.com/80'} 
+                            alt={item.productName}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
 
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex items-start justify-between">
                             <h3 className="flex-1 pr-2 text-sm leading-tight font-medium">
-                              {item.name}
+                              {item.productName}
                             </h3>
                             <button
-                              onClick={() => removeItem(item.id)}
-                              className="text-gray-400 hover:text-gray-600"
+                              onClick={() => handleRemoveItem(item.id)}
+                              disabled={loading}
+                              className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                             >
                               <X size={18} />
                             </button>
                           </div>
 
                           <p className="mb-3 text-xs text-gray-500">
-                            SKU: {item.sku}
+                            Phân loại: {item.variantName}
                           </p>
 
                           <div className="flex items-center justify-between">
                             <div className="flex max-w-20 rounded-full border border-gray-300">
                               <button
                                 onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
+                                  handleUpdateQuantity(item.id, item.quantity - 1)
                                 }
-                                className="rounded-l-full px-2 hover:bg-gray-100"
+                                disabled={loading || item.quantity <= 1}
+                                className="rounded-l-full px-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 -
                               </button>
@@ -228,50 +230,29 @@ export default function CartSidebar({
                               </span>
                               <button
                                 onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
+                                  handleUpdateQuantity(item.id, item.quantity + 1)
                                 }
-                                className="rounded-r-full px-2 hover:bg-gray-100"
+                                disabled={loading}
+                                className="rounded-r-full px-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +
                               </button>
                             </div>
 
-                            <div className="flex flex-row items-end gap-x-1 font-medium">
-                              {item.originalPrice && (
-                                <span className="text-sm text-gray-400 line-through">
-                                  {formatPrice(item.originalPrice)}
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-bold">
+                                {formatPrice(item.subtotal)}
+                              </span>
+                              {item.quantity > 1 && (
+                                <span className="text-xs text-gray-500">
+                                  {formatPrice(item.price)} x {item.quantity}
                                 </span>
                               )}
-                              <span className="text-xs font-bold">
-                                {formatPrice(item.price)}
-                              </span>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {item.gift && (
-                      <div className="mt-3 ml-8 flex items-start gap-3 rounded-lg bg-pink-50 p-3">
-                        <img
-                          src={item.gift.image}
-                          alt={item.gift.name}
-                          className="h-14 w-14 rounded object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <span className="mb-1 inline-block rounded bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-                            Quà Tặng
-                          </span>
-                          <p className="mt-1 text-sm">{item.gift.name}</p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            SKU: {item.sku.replace('11112251', '11112291')}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-600">
-                            x{item.gift.quantity}
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

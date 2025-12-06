@@ -14,6 +14,7 @@ import Navbar from './Navbar';
 import SearchDropdown from '../ui/SearchDropdown';
 import CartSidebar from '../ui/CartSidebar';
 import { useAuth } from '../../../hooks/useAuth';
+import { useCart } from '../../../context/CartContext';
 
 interface HeaderProps {
   onOpenStores?: () => void;
@@ -27,6 +28,7 @@ export default function Header({
   onNavigate,
 }: HeaderProps) {
   const { user, isLoggedIn, logout } = useAuth();
+  const { getCartItemCount } = useCart();
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -34,7 +36,7 @@ export default function Header({
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Đóng dropdown khi click ra ngoài
+  // Close dropdown when click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -55,7 +57,34 @@ export default function Header({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Xử lý đăng xuất
+  // Handle search submission
+  const handleSearchSubmit = (keyword: string) => {
+    if (!keyword.trim()) return;
+
+    console.log('🔍 Searching for:', keyword);
+
+    // Close dropdown and clear input
+    setSearchFocused(false);
+    setSearchValue('');
+
+    // Navigate to search page with query
+    const searchURL = `/search?q=${encodeURIComponent(keyword.trim())}`;
+
+    if (onNavigate) {
+      onNavigate(searchURL);
+    } else {
+      // Fallback if onNavigate is not provided
+      window.location.href = searchURL;
+    }
+  };
+
+  // Handle form submit (Enter key)
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearchSubmit(searchValue);
+  };
+
+  // Handle logout
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
@@ -64,7 +93,7 @@ export default function Header({
   return (
     <>
       <header>
-        {/* sale */}
+        {/* Sale banner */}
         <div className="color-brand h-[26.85px]">
           <ul className="mx-auto flex justify-center gap-5 px-20 text-white">
             <li>Freeship 15K mọi đơn hàng</li>
@@ -82,45 +111,51 @@ export default function Header({
 
           {/* Search */}
           <div className="relative mx-8 max-w-[400px] flex-1" ref={searchRef}>
-            <div className="flex h-10 w-full items-center gap-2 rounded-[42px] border border-transparent bg-[rgb(246,246,246)] py-2.5 pr-1 pl-[11px] transition focus-within:border-pink-300">
-              <span className="search">
-                <SearchIcon />
-              </span>
+            <form onSubmit={handleFormSubmit}>
+              <div className="flex h-10 w-full items-center gap-2 rounded-[42px] border border-transparent bg-[rgb(246,246,246)] py-2.5 pr-1 pl-[11px] transition focus-within:border-pink-300">
+                <span className="search">
+                  <SearchIcon />
+                </span>
 
-              {/* Input */}
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                className="flex-1 border-none bg-transparent outline-none"
-                placeholder="Mua 1 Tặng 1 Kem Chống Nắng"
-              />
+                {/* Input */}
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  className="flex-1 border-none bg-transparent outline-none"
+                  placeholder="Tìm kiếm sản phẩm..."
+                />
 
-              {/* Icon camera (nếu có) */}
-              <button className="rounded-full bg-white p-1 transition hover:bg-gray-50">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                {/* Camera icon */}
+                <button
+                  type="button"
+                  className="rounded-full bg-white p-1 transition hover:bg-gray-50"
                 >
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </button>
-            </div>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </button>
+              </div>
+            </form>
 
             {/* Search Dropdown */}
             <SearchDropdown
               isVisible={searchFocused}
               searchValue={searchValue}
+              onSearch={handleSearchSubmit}
             />
           </div>
 
-          {/* He thong */}
+          {/* Menu section */}
           <div className="flex items-center justify-between">
             {/* Menu Item 1 */}
             <div className="flex items-center justify-between gap-3 border-r px-5">
@@ -144,7 +179,7 @@ export default function Header({
             {/* Menu Item 2 */}
             <div className="flex items-center justify-between gap-3 pl-5">
               {isLoggedIn && user ? (
-                // Đã đăng nhập - Hiển thị user menu
+                // Logged in - Show user menu
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
@@ -175,14 +210,16 @@ export default function Header({
 
                   {/* User Dropdown Menu */}
                   {showUserMenu && (
-                    <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
+                    <div className="absolute top-full right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
                       {/* User Info */}
                       <div className="border-b border-gray-100 px-4 py-3">
                         <p className="text-sm font-semibold text-gray-900">
                           {user.email}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {user.role === 'ADMIN' ? 'Quản trị viên' : 'Khách hàng'}
+                          {user.role === 'ADMIN'
+                            ? 'Quản trị viên'
+                            : 'Khách hàng'}
                         </p>
                       </div>
 
@@ -191,12 +228,22 @@ export default function Header({
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            // Navigate to profile page
+                            onNavigate?.('/account');
                           }}
                           className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                         >
-                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <svg
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
                           </svg>
                           Tài khoản của tôi
                         </button>
@@ -208,8 +255,18 @@ export default function Header({
                           }}
                           className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                         >
-                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          <svg
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
                           </svg>
                           Đơn hàng của tôi
                         </button>
@@ -222,9 +279,24 @@ export default function Header({
                             }}
                             className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                           >
-                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <svg
+                              className="h-5 w-5 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
                             </svg>
                             Quản trị hệ thống
                           </button>
@@ -237,8 +309,18 @@ export default function Header({
                           onClick={handleLogout}
                           className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                         >
-                          <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <svg
+                            className="h-5 w-5 text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
                           </svg>
                           Đăng xuất
                         </button>
@@ -247,7 +329,7 @@ export default function Header({
                   )}
                 </div>
               ) : (
-                // Chưa đăng nhập - Hiển thị nút đăng nhập
+                // Not logged in - Show login button
                 <MenuItem
                   icon={<AccountIcon />}
                   title="Đăng nhập"
@@ -264,9 +346,14 @@ export default function Header({
 
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="transition-colors hover:text-pink-500"
+                className="relative transition-colors hover:text-pink-500"
               >
                 <CartIcon />
+                {getCartItemCount() > 0 && (
+                  <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                    {getCartItemCount()}
+                  </span>
+                )}
               </button>
             </div>
           </div>

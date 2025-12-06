@@ -80,6 +80,21 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+    // NEW SEARCH ENDPOINTS
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponse>> searchProducts(
+            @RequestParam(required = false, defaultValue = "") String keyword) {
+        List<ProductResponse> products = productService.searchProducts(keyword);
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/search/suggestions")
+    public ResponseEntity<List<String>> getSearchSuggestions(
+            @RequestParam(required = false, defaultValue = "") String keyword) {
+        List<String> suggestions = productService.getSearchSuggestions(keyword);
+        return ResponseEntity.ok(suggestions);
+    }
+
     @PostMapping
     public ResponseEntity<?> createProduct(@RequestBody ProductRequest request) {
         try {

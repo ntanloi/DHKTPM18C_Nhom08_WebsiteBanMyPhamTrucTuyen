@@ -1,54 +1,127 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import CancelOrderModal from '../../components/user/ui/CancelOrderModal';
+import { getOrderDetail, type OrderDetailResponse } from '../../api/order';
 
 interface OrderSuccessPageProps {
   orderCode: string;
   onBack: () => void;
 }
 
+interface OrderInfo {
+  code: string;
+  customer: string;
+  customerId?: string;
+  address: string;
+  paymentMethod: string;
+  deliveryDate: string;
+  items: Array<{
+    id: number;
+    name: string;
+    size: string;
+    sku?: string;
+    quantity: number;
+    price: number;
+    image: string;
+  }>;
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+}
+
 export default function OrderSuccessPage({
   orderCode,
   onBack,
 }: OrderSuccessPageProps) {
-  const orderInfo = {
-    code: orderCode,
-    customer: 'Nguyen Tan Loi',
-    customerId: '7197ab0597c5453dce02dc70db38bcf1:86d3e497d1df70c70550',
-    address: '206/16 - đường số 20, Phường 5, Quận Gò Vấp, Hồ Chí Minh',
-    paymentMethod: 'Trả tiền mặt khi nhận hàng (COD)',
-    deliveryDate: '12/04/2025 - 12/07/2025',
-    items: [
-      {
-        id: 1,
-        name: 'Kem Chống Nắng Lâu Trôi THE FACE SHOP Natural Sun Eco Power Long-Lasting Sun Cream Spf50+ Pa+++',
-        size: '20ml',
-        sku: '56001542',
-        quantity: 1,
-        price: 279000,
-        image:
-          'https://image.hsv-tech.io/150x0/bbx/common/e75ba095-a52f-4ee2-a866-d3bd8b3b1ce3.webp',
-      },
-      {
-        id: 2,
-        name: 'Kem Chống Nắng Lâu Trôi THE FACE SHOP Natural Sun Eco Power Long-Lasting Sun Cream Spf50+ Pa+++',
-        size: '20ml',
-        sku: '56001542',
-        quantity: 1,
-        price: 279000,
-        image:
-          'https://image.hsv-tech.io/150x0/bbx/common/e75ba095-a52f-4ee2-a866-d3bd8b3b1ce3.webp',
-      },
-    ],
-    subtotal: 558000,
-    discount: 272000,
-    shipping: 0,
-    total: 286000,
-  };
-
+  const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadOrderDetail = async () => {
+      try {
+        setLoading(true);
+        const orderId = parseInt(orderCode);
+        const orderDetail: OrderDetailResponse = await getOrderDetail(orderId);
+        
+        // Transform API response to OrderInfo format
+        const transformedInfo: OrderInfo = {
+          code: orderDetail.id.toString(),
+          customer: orderDetail.recipientInfo 
+            ? `${orderDetail.recipientInfo.recipientFirstName} ${orderDetail.recipientInfo.recipientLastName}`
+            : 'Khách hàng',
+          customerId: orderDetail.recipientInfo?.recipientEmail || '',
+          address: orderDetail.recipientInfo?.shippingRecipientAddress || 'Địa chỉ giao hàng',
+          paymentMethod: orderDetail.paymentInfo?.status === 'PENDING' 
+            ? 'Trả tiền mặt khi nhận hàng (COD)' 
+            : 'Thanh toán online',
+          deliveryDate: orderDetail.estimateDeliveryFrom && orderDetail.estimateDeliveryTo
+            ? `${new Date(orderDetail.estimateDeliveryFrom).toLocaleDateString('vi-VN')} - ${new Date(orderDetail.estimateDeliveryTo).toLocaleDateString('vi-VN')}`
+            : 'Đang cập nhật',
+          items: orderDetail.orderItems.map(item => ({
+            id: item.id,
+            name: item.productName || 'Sản phẩm',
+            size: item.variantName || 'Phiên bản',
+            sku: item.productVariantId?.toString() || '000000',
+            quantity: item.quantity,
+            price: item.price || 0,
+            image: 'https://via.placeholder.com/80', // TODO: Add image from product variant
+          })),
+          subtotal: orderDetail.subtotal || 0,
+          discount: orderDetail.discountAmount || 0,
+          shipping: orderDetail.shippingFee || 0,
+          total: orderDetail.totalAmount || 0,
+        };
+        
+        setOrderInfo(transformedInfo);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error loading order detail:', err);
+        setError(err.message || 'Không thể tải thông tin đơn hàng');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderCode) {
+      loadOrderDetail();
+    }
+  }, [orderCode]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải thông tin đơn hàng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !orderInfo) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <Package size={48} className="mx-auto mb-2" />
+            <p className="text-lg font-semibold">Không thể tải thông tin đơn hàng</p>
+            <p className="text-sm text-gray-600 mt-2">{error}</p>
+          </div>
+          <button
+            onClick={onBack}
+            className="mt-4 rounded-full bg-pink-600 px-6 py-2 text-white hover:bg-pink-700"
+          >
+            Quay lại trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-12">

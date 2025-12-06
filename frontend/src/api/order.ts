@@ -1,16 +1,28 @@
-import axios from 'axios';
+import api from '../lib/api';
 
-const API_BASE_URL = '/api/orders';
+const API_BASE_URL = '/orders';
+
+export interface OrderItemRequest {
+  productVariantId: number;
+  quantity: number;
+}
+
+export interface RecipientInfoRequest {
+  recipientFirstName: string;
+  recipientLastName: string;
+  recipientPhone: string;
+  recipientEmail: string;
+  shippingRecipientAddress: string;
+  isAnotherReceiver: boolean;
+}
 
 export interface CreateOrderRequest {
   userId: number;
-  subtotal: number;
-  totalAmount: number;
+  orderItems: OrderItemRequest[];
   notes?: string;
-  discountAmount?: number;
-  shippingFee: number;
-  estimateDeliveryFrom: string;
-  estimateDeliveryTo: string;
+  couponId?: number;
+  recipientInfo: RecipientInfoRequest;
+  paymentMethodId: number;
 }
 
 export interface UpdateOrderStatusRequest {
@@ -19,9 +31,13 @@ export interface UpdateOrderStatusRequest {
 
 export interface OrderItemResponse {
   id: number;
-  orderId: number;
+  orderId?: number;
   productVariantId: number;
   quantity: number;
+  price?: number;
+  productName?: string;
+  variantName?: string;
+  subtotal?: number;
 }
 
 export interface OrderResponse {
@@ -39,6 +55,23 @@ export interface OrderResponse {
   updatedAt: string;
 }
 
+export interface RecipientInfoResponse {
+  recipientFirstName: string;
+  recipientLastName: string;
+  recipientPhone: string;
+  recipientEmail: string;
+  shippingRecipientAddress: string;
+  isAnotherReceiver: boolean;
+}
+
+export interface PaymentInfoResponse {
+  id: number;
+  amount: number;
+  status: string;
+  transactionCode?: string;
+  createdAt: string;
+}
+
 export interface OrderDetailResponse {
   id: number;
   userId: number;
@@ -53,33 +86,35 @@ export interface OrderDetailResponse {
   createdAt: string;
   updatedAt: string;
   orderItems: OrderItemResponse[];
+  recipientInfo?: RecipientInfoResponse;
+  paymentInfo?: PaymentInfoResponse;
 }
 
 export const createOrder = async (
   request: CreateOrderRequest,
 ): Promise<OrderDetailResponse> => {
-  const response = await axios.post<OrderDetailResponse>(API_BASE_URL, request);
+  const response = await api.post<OrderDetailResponse>(API_BASE_URL, request);
   return response.data;
 };
 
 export const getOrderDetail = async (
   orderId: number,
 ): Promise<OrderDetailResponse> => {
-  const response = await axios.get<OrderDetailResponse>(
+  const response = await api.get<OrderDetailResponse>(
     `${API_BASE_URL}/${orderId}`,
   );
   return response.data;
 };
 
 export const getAllOrders = async (): Promise<OrderResponse[]> => {
-  const response = await axios.get<OrderResponse[]>(API_BASE_URL);
+  const response = await api.get<OrderResponse[]>(API_BASE_URL);
   return response.data;
 };
 
 export const getOrdersByUserId = async (
   userId: number,
 ): Promise<OrderResponse[]> => {
-  const response = await axios.get<OrderResponse[]>(
+  const response = await api.get<OrderResponse[]>(
     `${API_BASE_URL}/user/${userId}`,
   );
   return response.data;
@@ -88,7 +123,7 @@ export const getOrdersByUserId = async (
 export const getOrdersByStatus = async (
   status: string,
 ): Promise<OrderResponse[]> => {
-  const response = await axios.get<OrderResponse[]>(
+  const response = await api.get<OrderResponse[]>(
     `${API_BASE_URL}/status/${status}`,
   );
   return response.data;
@@ -98,7 +133,7 @@ export const updateOrderStatus = async (
   orderId: number,
   request: UpdateOrderStatusRequest,
 ): Promise<OrderResponse> => {
-  const response = await axios.put<OrderResponse>(
+  const response = await api.put<OrderResponse>(
     `${API_BASE_URL}/${orderId}/status`,
     request,
   );
@@ -106,7 +141,7 @@ export const updateOrderStatus = async (
 };
 
 export const cancelOrder = async (orderId: number): Promise<OrderResponse> => {
-  const response = await axios.put<OrderResponse>(
+  const response = await api.put<OrderResponse>(
     `${API_BASE_URL}/${orderId}/cancel`,
   );
   return response.data;
@@ -115,8 +150,24 @@ export const cancelOrder = async (orderId: number): Promise<OrderResponse> => {
 export const deleteOrder = async (
   orderId: number,
 ): Promise<{ message: string }> => {
-  const response = await axios.delete<{ message: string }>(
+  const response = await api.delete<{ message: string }>(
     `${API_BASE_URL}/${orderId}`,
   );
+  return response.data;
+};
+
+// ==================== Guest Order APIs ====================
+
+export interface CreateGuestOrderRequest {
+  orderItems: OrderItemRequest[];
+  notes?: string;
+  recipientInfo: RecipientInfoRequest;
+  paymentMethodId: number;
+}
+
+export const createGuestOrder = async (
+  request: CreateGuestOrderRequest,
+): Promise<OrderDetailResponse> => {
+  const response = await api.post<OrderDetailResponse>(`${API_BASE_URL}/guest`, request);
   return response.data;
 };
