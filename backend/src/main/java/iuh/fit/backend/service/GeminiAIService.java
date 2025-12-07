@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import iuh.fit.backend.model.Brand;
 import iuh.fit.backend.model.Category;
 import iuh.fit.backend.model.Product;
+import iuh.fit.backend.model.ProductVariant;
 import iuh.fit.backend.repository.BrandRepository;
 import iuh.fit.backend.repository.CategoryRepository;
 import iuh.fit.backend.repository.ProductRepository;
@@ -115,9 +116,12 @@ public class GeminiAIService {
                 for (Product p : relevantProducts) {
                     try {
                         String priceInfo = "Liên hệ";
-                        // Safely get price info
-                        if (p.getProductVariant() != null && p.getProductVariant().getPrice() != null) {
-                            priceInfo = p.getProductVariant().getPrice().toString() + " VNĐ";
+                        // Safely get price info from first variant
+                        if (p.getProductVariants() != null && !p.getProductVariants().isEmpty()) {
+                            ProductVariant firstVariant = p.getProductVariants().get(0);
+                            if (firstVariant.getPrice() != null) {
+                                priceInfo = firstVariant.getPrice().toString() + " VNĐ";
+                            }
                         }
                         
                         String description = "";

@@ -138,8 +138,8 @@ export const NextRightNavIcon = (_props: React.SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      fill-rule="evenodd"
-      clip-rule="evenodd"
+      fillRule="evenodd"
+      clipRule="evenodd"
       d="M0.391846 14.504L1.80785 15.92L9.72785 8L1.80785 0.0800047L0.391846 1.496L6.89585 8L0.391846 14.504Z"
       fill="currentColor"
     ></path>
@@ -157,9 +157,9 @@ export const NextLeftNavIcon = (_props: React.SVGProps<SVGSVGElement>) => (
     <g
       id="Page-1"
       stroke="none"
-      stroke-width="1"
+      strokeWidth="1"
       fill="none"
-      fill-rule="evenodd"
+      fillRule="evenodd"
     >
       <g
         id="Arrow-Forward-iOS-1"

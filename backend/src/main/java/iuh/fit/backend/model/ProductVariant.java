@@ -44,7 +44,7 @@ public class ProductVariant {
     @Column(name = "reorder_quantity")
     private Integer reorderQuantity = 50;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     @JsonIgnore
     private Product product;

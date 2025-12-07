@@ -1,4 +1,6 @@
 -- V1: Initialize BeautyBox database schema
+CREATE DATABASE IF NOT EXISTS beautyboxdb
+    DEFAULT CHARACTER SET = 'utf8mb4';
 
 -- Roles table
 CREATE TABLE IF NOT EXISTS roles (
