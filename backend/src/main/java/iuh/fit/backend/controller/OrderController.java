@@ -107,6 +107,8 @@ public class OrderController {
         }
     }
 
+    // Cancel order - User can cancel their own, Admin/Manager can cancel any
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Integer orderId) {
         try {
@@ -119,6 +121,8 @@ public class OrderController {
         }
     }
 
+    // Delete order - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{orderId}")
     public ResponseEntity<?> deleteOrder(@PathVariable Integer orderId) {
         try {
