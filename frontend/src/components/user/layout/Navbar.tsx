@@ -1,7 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
 import { NextLeftNavIcon, NextRightNavIcon } from '../../../assets/icons/index';
-import UniversalDropdown from '../ui/UniversalDropdown';
-
 import { categoriesService } from '../../../services/user.service';
 import type { Category } from '../../../types/Category';
 import { useNavigation } from '../../../context/NavigationContext';
@@ -207,7 +205,7 @@ export default function Navbar() {
 
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [_hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [navlist, setNavlist] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true); // ← THÊM
 
@@ -290,23 +288,6 @@ export default function Navbar() {
       setHoveredIndex(null);
     }, 150);
   };
-
-  const handleDropdownEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  };
-
-  const handleDropdownLeave = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setHoveredIndex(null);
-  };
-
-  const currentDropdownData =
-    hoveredIndex !== null ? navbarDropdownData[hoveredIndex] : null;
 
   // ← THÊM: Debug render
   console.log(
@@ -395,13 +376,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      <UniversalDropdown
-        isVisible={hoveredIndex !== null && currentDropdownData !== null}
-        data={currentDropdownData}
-        onMouseEnter={handleDropdownEnter}
-        onMouseLeave={handleDropdownLeave}
-      />
     </>
   );
 }

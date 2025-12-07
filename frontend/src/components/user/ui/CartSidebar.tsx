@@ -13,7 +13,13 @@ export default function CartSidebar({
   onClose,
   onNavigate,
 }: CartSidebarProps) {
-  const { cart, loading, updateQuantity: updateCartQuantity, removeItem: removeCartItem, fetchCart } = useCart();
+  const {
+    cart,
+    loading,
+    updateQuantity: updateCartQuantity,
+    removeItem: removeCartItem,
+    fetchCart,
+  } = useCart();
   const [activeTab, setActiveTab] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
@@ -27,16 +33,18 @@ export default function CartSidebar({
   // Select all items by default khi cart thay đổi
   useEffect(() => {
     if (cart?.cartItems) {
-      setSelectedItems(new Set(cart.cartItems.map(item => item.id)));
+      setSelectedItems(new Set(cart.cartItems.map((item) => item.id)));
     }
   }, [cart?.cartItems]);
 
   const cartItems = cart?.cartItems || [];
-  const selectAll = cartItems.length > 0 && cartItems.every((item) => selectedItems.has(item.id));
+  const selectAll =
+    cartItems.length > 0 &&
+    cartItems.every((item) => selectedItems.has(item.id));
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedItems(new Set(cartItems.map(item => item.id)));
+      setSelectedItems(new Set(cartItems.map((item) => item.id)));
     } else {
       setSelectedItems(new Set());
     }
@@ -134,14 +142,14 @@ export default function CartSidebar({
           {loading && cartItems.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
                 <p className="text-sm text-gray-500">Đang tải giỏ hàng...</p>
               </div>
             </div>
           ) : cartItems.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-gray-500 px-6">
+            <div className="flex h-full flex-col items-center justify-center px-6 text-gray-500">
               <svg
-                className="h-20 w-20 text-gray-300 mb-4"
+                className="mb-4 h-20 w-20 text-gray-300"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -153,8 +161,10 @@ export default function CartSidebar({
                   d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                 />
               </svg>
-              <p className="text-base font-medium mb-2">Giỏ hàng trống</p>
-              <p className="text-sm text-center">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
+              <p className="mb-2 text-base font-medium">Giỏ hàng trống</p>
+              <p className="text-center text-sm">
+                Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm
+              </p>
             </div>
           ) : (
             <div className="px-6">
@@ -188,9 +198,11 @@ export default function CartSidebar({
                       />
 
                       <div className="flex flex-1 gap-3">
-                        <div className="h-20 w-20 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-                          <img 
-                            src={item.imageUrl || 'https://via.placeholder.com/80'} 
+                        <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded bg-gray-100">
+                          <img
+                            src={
+                              item.imageUrl || 'https://via.placeholder.com/80'
+                            }
                             alt={item.productName}
                             className="h-full w-full object-cover"
                           />
@@ -218,10 +230,13 @@ export default function CartSidebar({
                             <div className="flex max-w-20 rounded-full border border-gray-300">
                               <button
                                 onClick={() =>
-                                  handleUpdateQuantity(item.id, item.quantity - 1)
+                                  handleUpdateQuantity(
+                                    item.id,
+                                    item.quantity - 1,
+                                  )
                                 }
                                 disabled={loading || item.quantity <= 1}
-                                className="rounded-l-full px-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="rounded-l-full px-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 -
                               </button>
@@ -230,10 +245,13 @@ export default function CartSidebar({
                               </span>
                               <button
                                 onClick={() =>
-                                  handleUpdateQuantity(item.id, item.quantity + 1)
+                                  handleUpdateQuantity(
+                                    item.id,
+                                    item.quantity + 1,
+                                  )
                                 }
                                 disabled={loading}
-                                className="rounded-r-full px-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="rounded-r-full px-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 +
                               </button>

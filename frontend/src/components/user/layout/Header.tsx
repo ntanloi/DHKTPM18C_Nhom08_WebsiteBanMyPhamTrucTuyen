@@ -3,7 +3,6 @@ import logo from '../../../assets/images/logo.png';
 import {
   AccountIcon,
   CartIcon,
-  HeartIcon,
   MagazineIcon,
   MoreIcon,
   SearchIcon,
@@ -16,6 +15,7 @@ import CartSidebar from '../ui/CartSidebar';
 import NotificationBell from '../../NotificationBell';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../context/CartContext';
+import FavoriteSidebar, { HeartIconWithBadge } from '../ui/FavoriteList';
 
 interface HeaderProps {
   onOpenStores?: () => void;
@@ -33,6 +33,7 @@ export default function Header({
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFavoriteOpen, setIsFavoriteOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -338,12 +339,10 @@ export default function Header({
                 />
               )}
 
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="transition-colors hover:text-pink-500"
-              >
-                <HeartIcon />
-              </button>
+              <HeartIconWithBadge
+                count={2} // Số lượng yêu thích
+                onClick={() => setIsFavoriteOpen(true)}
+              />
 
               {/* Notification Bell */}
               {isLoggedIn && <NotificationBell />}
@@ -365,6 +364,12 @@ export default function Header({
 
         <Navbar />
       </header>
+
+      <FavoriteSidebar
+        isOpen={isFavoriteOpen}
+        onClose={() => setIsFavoriteOpen(false)}
+        onNavigate={onNavigate}
+      />
 
       {/* Cart Sidebar */}
       <CartSidebar

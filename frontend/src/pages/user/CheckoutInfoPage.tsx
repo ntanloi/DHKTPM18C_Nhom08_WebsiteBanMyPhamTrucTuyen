@@ -1,20 +1,40 @@
 import { useState, useEffect, useContext } from 'react';
 import { useCart } from '../../context/CartContext';
 import { AuthContext } from '../../context/auth-context';
-import { createOrder, createGuestOrder, getOrderDetail, type CreateOrderRequest, type CreateGuestOrderRequest } from '../../api/order';
-import { createVNPayPayment, getPaymentMethods, type PaymentMethod } from '../../api/payment';
+import {
+  createOrder,
+  createGuestOrder,
+  getOrderDetail,
+  type CreateOrderRequest,
+  type CreateGuestOrderRequest,
+} from '../../api/order';
+import {
+  createVNPayPayment,
+  getPaymentMethods,
+  type PaymentMethod,
+} from '../../api/payment';
 import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
+import { Toast, type ToastType } from '../../components/user/ui/Toast';
 import VNPayPaymentModal from '../../components/user/payment/VNPayPaymentModal';
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
 
-export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) {
-  const { provinces, districts, wards, fetchDistricts, fetchWards } = useAddress();
-  const { cart, loading: cartLoading, updateQuantity, removeItem, clearCart } = useCart();
+export default function CheckoutInfoPage({
+  onNavigate,
+}: CheckoutInfoPageProps) {
+  const { provinces, districts, wards, fetchDistricts, fetchWards } =
+    useAddress();
+  const {
+    cart,
+    loading: cartLoading,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCart();
   const authContext = useContext(AuthContext);
   if (!authContext) {
     throw new Error('CheckoutInfoPage must be used within AuthProvider');
@@ -34,7 +54,8 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number>(1); // Default COD
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] =
+    useState<number>(1); // Default COD
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,18 +65,35 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
   const [vnpayPaymentUrl, setVnpayPaymentUrl] = useState('');
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
 
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: ToastType;
+  }>({
+    show: false,
+    message: '',
+    type: 'info',
+  });
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  };
+
   // Load payment methods
   useEffect(() => {
     const loadPaymentMethods = async () => {
       try {
         const methods = await getPaymentMethods();
         console.log('✅ Payment methods loaded:', methods);
-        
+
         if (methods && methods.length > 0) {
-          setPaymentMethods(methods.filter(m => m.isActive));
-          
+          setPaymentMethods(methods.filter((m) => m.isActive));
+
           // Set default to COD if available
-          const codMethod = methods.find(m => m.code === 'COD');
+          const codMethod = methods.find((m) => m.code === 'COD');
           if (codMethod) {
             setSelectedPaymentMethodId(codMethod.id);
           }
@@ -67,7 +105,8 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
               id: 1,
               name: 'Thanh toán khi nhận hàng (COD)',
               code: 'COD',
-              description: 'Không chuyển khoản bất kỳ khoản tiền nào khi chưa nhận được hàng',
+              description:
+                'Không chuyển khoản bất kỳ khoản tiền nào khi chưa nhận được hàng',
               isActive: true,
             },
             {
@@ -106,14 +145,15 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
         }
       } catch (error) {
         console.error('❌ Error loading payment methods:', error);
-        
+
         // Use fallback data on error
         const fallbackMethods: PaymentMethod[] = [
           {
             id: 1,
             name: 'Thanh toán khi nhận hàng (COD)',
             code: 'COD',
-            description: 'Không chuyển khoản bất kỳ khoản tiền nào khi chưa nhận được hàng',
+            description:
+              'Không chuyển khoản bất kỳ khoản tiền nào khi chưa nhận được hàng',
             isActive: true,
           },
           {
@@ -164,7 +204,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
       const nameParts = fullName.split(' ');
       const firstName = nameParts[nameParts.length - 1] || '';
       const lastName = nameParts.slice(0, -1).join(' ') || '';
-      
+
       setFormData((prev) => ({
         ...prev,
         recipientFirstName: firstName,
@@ -214,12 +254,12 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
-      alert('Vui lòng điền đầy đủ thông tin');
+      showToast('Vui lòng điền đầy đủ thông tin', 'warning');
       return;
     }
 
     if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
-      alert('Giỏ hàng trống');
+      showToast('Giỏ hàng trống', 'warning');
       return;
     }
 
@@ -230,14 +270,16 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
       if (!user) {
         // Guest checkout - Hỗ trợ tất cả payment methods
-        const selectedMethod = paymentMethods.find(m => m.id === selectedPaymentMethodId);
-        
+        const selectedMethod = paymentMethods.find(
+          (m) => m.id === selectedPaymentMethodId,
+        );
+
         if (!selectedMethod) {
-          alert('Vui lòng chọn phương thức thanh toán');
+          showToast('Vui lòng chọn phương thức thanh toán', 'warning');
           setIsProcessing(false);
           return;
         }
-        
+
         // Nếu chọn thanh toán online (VNPay, Momo, ZaloPay...)
         // Lưu thông tin tạm vào localStorage để tạo order sau khi thanh toán thành công
         if (selectedMethod.code !== 'COD') {
@@ -259,9 +301,12 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
             paymentMethodId: selectedPaymentMethodId,
             totalAmount: cart.totalAmount,
           };
-          
-          localStorage.setItem('pending_guest_order', JSON.stringify(tempGuestOrder));
-          
+
+          localStorage.setItem(
+            'pending_guest_order',
+            JSON.stringify(tempGuestOrder),
+          );
+
           // Redirect đến trang thanh toán (VNPay, Momo, ZaloPay...)
           if (selectedMethod.code === 'VNPAY') {
             // Tạo temporary order ID để tracking
@@ -275,14 +320,22 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
             if (vnpayResponse.success && vnpayResponse.paymentUrl) {
               // Lưu cart items để restore nếu thanh toán thất bại
-              localStorage.setItem('pending_cart', JSON.stringify(cart.cartItems));
+              localStorage.setItem(
+                'pending_cart',
+                JSON.stringify(cart.cartItems),
+              );
               window.location.href = vnpayResponse.paymentUrl;
             } else {
-              throw new Error(vnpayResponse.message || 'Không thể tạo thanh toán VNPay');
+              throw new Error(
+                vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
+              );
             }
           } else {
             // TODO: Implement other payment gateways (Momo, ZaloPay, etc.)
-            alert(`Phương thức thanh toán ${selectedMethod.name} đang được phát triển`);
+            showToast(
+              `Phương thức thanh toán ${selectedMethod.name} đang được phát triển`,
+              'info',
+            );
             setIsProcessing(false);
           }
           return;
@@ -334,7 +387,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
       const order = await createOrder(orderRequest);
 
       // Check if payment method requires online payment (VNPay, Momo, ZaloPay, etc.)
-      const selectedMethod = paymentMethods.find(m => m.id === selectedPaymentMethodId);
+      const selectedMethod = paymentMethods.find(
+        (m) => m.id === selectedPaymentMethodId,
+      );
       if (selectedMethod?.code === 'VNPAY') {
         const vnpayResponse = await createVNPayPayment({
           orderId: order.id,
@@ -349,7 +404,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
           setVnpayPaymentUrl(vnpayResponse.paymentUrl);
           setShowVNPayModal(true);
         } else {
-          throw new Error(vnpayResponse.message || 'Không thể tạo thanh toán VNPay');
+          throw new Error(
+            vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
+          );
         }
       } else {
         await clearCart();
@@ -357,7 +414,12 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
       }
     } catch (error: any) {
       console.error('Place order error:', error);
-      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi đặt hàng');
+      showToast(
+        error.response?.data?.error ||
+          error.message ||
+          'Có lỗi xảy ra khi đặt hàng',
+        'error',
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -366,8 +428,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
   const handleUpdateQuantity = async (cartItemId: number, quantity: number) => {
     try {
       await updateQuantity(cartItemId, quantity);
+      showToast('Đã cập nhật số lượng', 'success');
     } catch (error: any) {
-      alert(error.message || 'Không thể cập nhật số lượng');
+      showToast(error.message || 'Không thể cập nhật số lượng', 'error');
     }
   };
 
@@ -375,8 +438,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
     if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
       try {
         await removeItem(cartItemId);
+        showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'success');
       } catch (error: any) {
-        alert(error.message || 'Không thể xóa sản phẩm');
+        showToast(error.message || 'Không thể xóa sản phẩm', 'error');
       }
     }
   };
@@ -410,14 +474,14 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
   if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">
             Giỏ hàng trống
           </h2>
           <button
             onClick={() => onNavigate?.('/products')}
-            className="rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] px-8 py-3 text-white font-semibold"
+            className="rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] px-8 py-3 font-semibold text-white"
           >
             Tiếp tục mua sắm
           </button>
@@ -428,8 +492,33 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
   return (
     <div className="min-h-screen bg-white">
+      <style>
+        {`
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+`}
+      </style>
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'info' })}
+        />
+      )}
       {/* Breadcrumb */}
-      <div className="bg-white border-b">
+      <div className="bg-white">
         <div className="mx-auto max-w-[1200px] px-6 py-3">
           <div className="flex items-center text-sm text-gray-500">
             <span>Trang chủ</span>
@@ -462,12 +551,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                       placeholder="Tên *"
                       value={formData.recipientFirstName}
                       onChange={(e) =>
-                        setFormData({ ...formData, recipientFirstName: e.target.value })
+                        setFormData({
+                          ...formData,
+                          recipientFirstName: e.target.value,
+                        })
                       }
                       className={`w-full rounded-lg border ${errors.recipientFirstName ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                     />
                     {errors.recipientFirstName && (
-                      <p className="mt-1 text-xs text-red-500">{errors.recipientFirstName}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.recipientFirstName}
+                      </p>
                     )}
                   </div>
                   <div>
@@ -476,12 +570,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                       placeholder="Họ *"
                       value={formData.recipientLastName}
                       onChange={(e) =>
-                        setFormData({ ...formData, recipientLastName: e.target.value })
+                        setFormData({
+                          ...formData,
+                          recipientLastName: e.target.value,
+                        })
                       }
                       className={`w-full rounded-lg border ${errors.recipientLastName ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                     />
                     {errors.recipientLastName && (
-                      <p className="mt-1 text-xs text-red-500">{errors.recipientLastName}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.recipientLastName}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -493,12 +592,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                       placeholder="Số điện thoại *"
                       value={formData.recipientPhone}
                       onChange={(e) =>
-                        setFormData({ ...formData, recipientPhone: e.target.value })
+                        setFormData({
+                          ...formData,
+                          recipientPhone: e.target.value,
+                        })
                       }
                       className={`w-full rounded-lg border ${errors.recipientPhone ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                     />
                     {errors.recipientPhone && (
-                      <p className="mt-1 text-xs text-red-500">{errors.recipientPhone}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.recipientPhone}
+                      </p>
                     )}
                   </div>
                   <div>
@@ -507,12 +611,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                       placeholder="Email *"
                       value={formData.recipientEmail}
                       onChange={(e) =>
-                        setFormData({ ...formData, recipientEmail: e.target.value })
+                        setFormData({
+                          ...formData,
+                          recipientEmail: e.target.value,
+                        })
                       }
                       className={`w-full rounded-lg border ${errors.recipientEmail ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                     />
                     {errors.recipientEmail && (
-                      <p className="mt-1 text-xs text-red-500">{errors.recipientEmail}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.recipientEmail}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -532,16 +641,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                     onChange={(e) => {
                       const provinceName = e.target.value;
 
-                      setFormData(prev => ({
+                      setFormData((prev) => ({
                         ...prev,
                         province: provinceName,
-                        district: "",
-                        ward: ""
-                      }))
+                        district: '',
+                        ward: '',
+                      }));
 
-
-                      const province = provinces.find(p => p.name === provinceName)
-                      if(province) {
+                      const province = provinces.find(
+                        (p) => p.name === provinceName,
+                      );
+                      if (province) {
                         fetchDistricts(province.code);
                       }
                     }}
@@ -555,7 +665,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                     ))}
                   </select>
                   {errors.province && (
-                    <p className="mt-1 text-xs text-red-500">{errors.province}</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.province}
+                    </p>
                   )}
                 </div>
 
@@ -569,15 +681,17 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                         setFormData((prev) => ({
                           ...prev,
                           district: districtName,
-                          ward: ""
-                        }))
+                          ward: '',
+                        }));
 
-                        const district = districts.find(d => d.name === districtName);
+                        const district = districts.find(
+                          (d) => d.name === districtName,
+                        );
 
-                        if(district) fetchWards(district.code)
+                        if (district) fetchWards(district.code);
                       }}
                       disabled={!formData.province}
-                      className={`w-full rounded-lg border ${errors.district ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                      className={`w-full rounded-lg border ${errors.district ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100`}
                     >
                       <option value="">Chọn Quận/Huyện *</option>
                       {districts.map((district) => (
@@ -587,17 +701,22 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                       ))}
                     </select>
                     {errors.district && (
-                      <p className="mt-1 text-xs text-red-500">{errors.district}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.district}
+                      </p>
                     )}
                   </div>
                   <div>
                     <select
                       value={formData.ward}
-                      onChange={(e) => 
-                        setFormData((prev) => ({ ...prev, ward: e.target.value }))
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          ward: e.target.value,
+                        }))
                       }
                       disabled={!formData.district}
-                      className={`w-full rounded-lg border ${errors.ward ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                      className={`w-full rounded-lg border ${errors.ward ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100`}
                     >
                       <option value="">Chọn Phường/Xã *</option>
                       {wards.map((ward) => (
@@ -623,7 +742,9 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                     className={`w-full rounded-lg border ${errors.address ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                   />
                   {errors.address && (
-                    <p className="mt-1 text-xs text-red-500">{errors.address}</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.address}
+                    </p>
                   )}
                 </div>
 
@@ -649,13 +770,13 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
 
               {loadingPaymentMethods ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-pink-600"></div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {paymentMethods.map((method) => {
                     const isSelected = selectedPaymentMethodId === method.id;
-                    
+
                     return (
                       <label
                         key={method.id}
@@ -686,7 +807,8 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                           )}
                           {!method.description && method.code === 'COD' && (
                             <p className="mt-1 text-xs text-gray-600">
-                              Không chuyển khoản bất kỳ khoản tiền nào khi chưa nhận được hàng
+                              Không chuyển khoản bất kỳ khoản tiền nào khi chưa
+                              nhận được hàng
                             </p>
                           )}
                         </div>
@@ -710,7 +832,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                 Đơn hàng
               </h2>
 
-              <div className="mb-5 space-y-4 max-h-[400px] overflow-y-auto">
+              <div className="mb-5 max-h-[400px] space-y-4 overflow-y-auto">
                 {cart.cartItems.map((item) => (
                   <CartItemCard
                     key={item.id}
@@ -734,9 +856,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                   <span className="font-bold text-gray-900">Miễn phí</span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2 text-base">
-                  <span className="font-semibold text-gray-900">
-                    Tổng cộng
-                  </span>
+                  <span className="font-semibold text-gray-900">Tổng cộng</span>
                   <span className="text-xl font-bold text-pink-600">
                     {formatPrice(cart.totalAmount)}
                   </span>
@@ -746,7 +866,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
               <button
                 onClick={handlePlaceOrder}
                 disabled={isProcessing || cartLoading || loadingPaymentMethods}
-                className="mb-4 w-full rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 py-3.5 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mb-4 w-full rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 py-3.5 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition hover:opacity-95 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isProcessing
                   ? 'ĐANG XỬ LÝ...'
