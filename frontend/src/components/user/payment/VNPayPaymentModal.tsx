@@ -12,6 +12,8 @@ interface VNPayPaymentModalProps {
   onCheckStatus: () => Promise<{ isPaid: boolean; status: string }>;
 }
 
+const COUNTDOWN_SECONDS = 15 * 60; // 15 minutes
+
 export default function VNPayPaymentModal({
   isOpen,
   paymentUrl,
@@ -22,12 +24,20 @@ export default function VNPayPaymentModal({
   onSuccess,
   onCheckStatus,
 }: VNPayPaymentModalProps) {
-  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(COUNTDOWN_SECONDS);
   const [isChecking, setIsChecking] = useState(false);
+
+  // Reset timer mỗi lần mở modal
+  useEffect(() => {
+    if (isOpen) {
+      setTimeLeft(COUNTDOWN_SECONDS);
+    }
+  }, [isOpen]);
 
   // Countdown timer
   useEffect(() => {
     if (!isOpen) return;
+    if (timeLeft <= 0) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -40,11 +50,12 @@ export default function VNPayPaymentModal({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen]);
+  }, [isOpen, timeLeft]);
 
-  // Auto-check payment status every 5 seconds
+  // Auto-check payment status every 5 seconds (chỉ khi còn thời gian)
   useEffect(() => {
     if (!isOpen) return;
+    if (timeLeft <= 0) return;
 
     const statusChecker = setInterval(async () => {
       try {
@@ -55,20 +66,28 @@ export default function VNPayPaymentModal({
       } catch (error) {
         console.error('Error checking payment status:', error);
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000);
 
     return () => clearInterval(statusChecker);
-  }, [isOpen, onCheckStatus, onSuccess]);
+  }, [isOpen, timeLeft, onCheckStatus, onSuccess]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs
+      .toString()
+      .padStart(2, '0')}`;
   };
 
-  const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
+  const formatPrice = (price: number) =>
+    price.toLocaleString('vi-VN') + 'đ';
 
   const handleCheckPayment = async () => {
+    if (timeLeft <= 0) {
+      alert('Phiên thanh toán đã hết hạn. Vui lòng đặt hàng lại.');
+      return;
+    }
+
     setIsChecking(true);
     try {
       const result = await onCheckStatus();
@@ -87,14 +106,22 @@ export default function VNPayPaymentModal({
   };
 
   const handleOpenVNPay = () => {
+    if (timeLeft <= 0) {
+      alert('Phiên thanh toán đã hết hạn. Vui lòng đặt hàng lại.');
+      return;
+    }
     window.open(paymentUrl, '_blank');
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+      aria-modal="true"
+      role="dialog"
+    >
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 md:p-8 shadow-2xl max-h-[90vh] overflow-y-auto my-8">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -117,11 +144,11 @@ export default function VNPayPaymentModal({
         </button>
 
         {/* Header */}
-        <div className="mb-6 text-center">
+        <div className="mb-5 text-center">
           <div className="mb-2 flex justify-center">
             <div className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 p-3">
               <svg
-                className="h-8 w-8 text-white"
+                className="h-7 w-7 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -135,20 +162,20 @@ export default function VNPayPaymentModal({
               </svg>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
             Thanh toán VNPay
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-1 text-xs md:text-sm text-gray-600">
             Quét mã QR bằng app ngân hàng hoặc mở VNPay để thanh toán
           </p>
         </div>
 
         {/* QR Code */}
-        <div className="mb-6 flex justify-center">
-          <div className="rounded-2xl border-4 border-gray-100 bg-white p-4 shadow-lg">
+        <div className="mb-5 flex justify-center">
+          <div className="rounded-2xl border-4 border-gray-100 bg-white p-3 shadow-lg">
             <QRCodeSVG
               value={paymentUrl}
-              size={280}
+              size={220} // giảm nhẹ cho đỡ chiếm chiều cao
               level="H"
               includeMargin={false}
             />
@@ -156,27 +183,35 @@ export default function VNPayPaymentModal({
         </div>
 
         {/* Order Info */}
-        <div className="mb-6 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
+        <div className="mb-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Mã đơn hàng</span>
+            <span className="text-xs md:text-sm font-medium text-gray-700">
+              Mã đơn hàng
+            </span>
             <span className="font-mono text-sm font-bold text-gray-900">
               #{orderId}
             </span>
           </div>
           <div className="mb-3 flex items-center justify-between border-t border-blue-200/50 pt-3">
-            <span className="text-sm font-medium text-gray-700">Nội dung</span>
-            <span className="text-right text-sm text-gray-900">{orderInfo}</span>
+            <span className="text-xs md:text-sm font-medium text-gray-700">
+              Nội dung
+            </span>
+            <span className="ml-3 flex-1 text-right text-xs md:text-sm text-gray-900">
+              {orderInfo}
+            </span>
           </div>
           <div className="flex items-center justify-between border-t border-blue-200/50 pt-3">
-            <span className="text-sm font-medium text-gray-700">Số tiền</span>
-            <span className="text-xl font-bold text-pink-600">
+            <span className="text-xs md:text-sm font-medium text-gray-700">
+              Số tiền
+            </span>
+            <span className="text-lg md:text-xl font-bold text-pink-600">
               {formatPrice(amount)}
             </span>
           </div>
         </div>
 
         {/* Timer */}
-        <div className="mb-6 flex items-center justify-center gap-2 rounded-lg bg-yellow-50 py-3">
+        <div className="mb-5 flex items-center justify-center gap-2 rounded-lg bg-yellow-50 py-3 px-3">
           <svg
             className="h-5 w-5 text-yellow-600"
             fill="none"
@@ -190,18 +225,20 @@ export default function VNPayPaymentModal({
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span className="text-sm font-medium text-yellow-800">
+          <span className="text-xs md:text-sm font-medium text-yellow-800">
             Thời gian còn lại:{' '}
-            <span className="font-mono font-bold">{formatTime(timeLeft)}</span>
+            <span className="font-mono font-bold">
+              {formatTime(timeLeft)}
+            </span>
           </span>
         </div>
 
         {/* Instructions */}
-        <div className="mb-6 space-y-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4">
+        <div className="mb-5 space-y-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4">
           <p className="text-sm font-semibold text-gray-900">
             Hướng dẫn thanh toán:
           </p>
-          <ol className="ml-4 space-y-1 text-sm text-gray-700">
+          <ol className="ml-4 space-y-1 text-xs md:text-sm text-gray-700">
             <li className="list-decimal">
               Mở app ngân hàng hoặc ví điện tử có hỗ trợ VNPay
             </li>
@@ -210,7 +247,8 @@ export default function VNPayPaymentModal({
               Xác nhận thông tin và hoàn tất thanh toán
             </li>
             <li className="list-decimal">
-              Nhấn "Đã thanh toán" hoặc đợi hệ thống tự động xác nhận
+              Nhấn &quot;Đã thanh toán&quot; hoặc đợi hệ thống tự động
+              xác nhận
             </li>
           </ol>
         </div>
@@ -219,15 +257,20 @@ export default function VNPayPaymentModal({
         <div className="space-y-3">
           <button
             onClick={handleCheckPayment}
-            disabled={isChecking}
+            disabled={isChecking || timeLeft <= 0}
             className="w-full rounded-full bg-gradient-to-r from-green-500 to-emerald-600 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg transition hover:opacity-90 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isChecking ? 'ĐANG KIỂM TRA...' : 'ĐÃ THANH TOÁN'}
+            {timeLeft <= 0
+              ? 'PHIÊN HẾT HẠN'
+              : isChecking
+              ? 'ĐANG KIỂM TRA...'
+              : 'ĐÃ THANH TOÁN'}
           </button>
 
           <button
             onClick={handleOpenVNPay}
-            className="w-full rounded-full border-2 border-blue-500 bg-white py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+            disabled={timeLeft <= 0}
+            className="w-full rounded-full border-2 border-blue-500 bg-white py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Mở cổng thanh toán VNPay
           </button>
