@@ -192,7 +192,7 @@ public class OrderService {
             User user = userRepository.findByEmail(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
-            if (!order.getUserId().equals(user.getUserId())) {
+            if (!order.getUserId().equals(user.getId())) {
                 throw new RuntimeException("Access denied: You can only view your own orders");
             }
         }
