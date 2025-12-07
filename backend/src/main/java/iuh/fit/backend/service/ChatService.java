@@ -36,6 +36,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ChatBotService chatBotService;
+    private final NotificationService notificationService;
 
     // ==================== Room Management ====================
 
@@ -184,6 +185,22 @@ public class ChatService {
             request.getMessageType() != null ? request.getMessageType() : MessageType.TEXT
         );
         
+        // Notify manager/support if assigned
+        if (room.getManagerId() != null) {
+            try {
+                User customer = userRepository.findById(customerId).orElse(null);
+                String senderName = customer != null ? customer.getFullName() : "Khách hàng";
+                notificationService.notifyNewMessage(
+                    Long.valueOf(room.getManagerId()), 
+                    roomId, 
+                    senderName,
+                    request.getContent()
+                );
+            } catch (Exception e) {
+                log.warn("Failed to send new message notification: {}", e.getMessage());
+            }
+        }
+        
         ChatMessageResponse response = mapToMessageResponse(customerMsg);
         
         // If chatting with bot, process and reply
@@ -223,6 +240,20 @@ public class ChatService {
             request.getMessageType() != null ? request.getMessageType() : MessageType.TEXT
         );
         
+        // Notify customer
+        try {
+            User manager = userRepository.findById(managerId).orElse(null);
+            String senderName = manager != null ? manager.getFullName() : "Quản lý";
+            notificationService.notifyNewMessage(
+                Long.valueOf(room.getCustomerId()), 
+                roomId, 
+                senderName,
+                request.getContent()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send new message notification: {}", e.getMessage());
+        }
+        
         return mapToMessageResponse(message);
     }
 
@@ -245,6 +276,20 @@ public class ChatService {
             request.getContent(),
             request.getMessageType() != null ? request.getMessageType() : MessageType.TEXT
         );
+        
+        // Notify customer
+        try {
+            User support = userRepository.findById(supportId).orElse(null);
+            String senderName = support != null ? support.getFullName() : "Hỗ trợ";
+            notificationService.notifyNewMessage(
+                Long.valueOf(room.getCustomerId()), 
+                roomId, 
+                senderName,
+                request.getContent()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send new message notification: {}", e.getMessage());
+        }
         
         return mapToMessageResponse(message);
     }

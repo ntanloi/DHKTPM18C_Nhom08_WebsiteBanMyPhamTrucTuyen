@@ -138,12 +138,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
 
         setStats(calculatedStats);
 
+        // Helper function to map status
+        const formatStatus = (
+          status: string,
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
+          const statusMap: Record<
+            string,
+            'delivered' | 'processing' | 'shipped' | 'pending'
+          > = {
+            DELIVERED: 'delivered',
+            PROCESSING: 'processing',
+            SHIPPED: 'shipped',
+            PENDING: 'pending',
+            CONFIRMED: 'pending',
+            CANCELLED: 'pending',
+          };
+          return statusMap[status] || 'pending';
+        };
+
         // Map recent orders
         const mappedOrders: Order[] = orderStats.recentOrders.slice(0, 5).map((order) => ({
           id: order.id.toString(),
           customer: order.customerName,
           amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
-          status: order.status.toLowerCase() as Order['status'],
+          status: formatStatus(order.status),
           date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
         }));
 
@@ -158,97 +176,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
 
     fetchDashboardData();
   }, []);
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
-        ),
-        gradient: 'from-purple-500 to-indigo-500',
-      },
-      {
-        title: 'Sản phẩm',
-        value: totalProducts.toString(),
-        change: '+5.1%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-          </svg>
-        ),
-        gradient: 'from-blue-500 to-cyan-500',
-      },
-      {
-        title: 'Khách hàng',
-        value: totalCustomers.toString(),
-        change: '+15.3%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-        ),
-        gradient: 'from-green-500 to-emerald-500',
-      },
-    ];
-
-    setStats(calculatedStats);
-
-    const formatStatus = (
-      status: string,
-    ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
-      const statusMap: Record<
-        string,
-        'delivered' | 'processing' | 'shipped' | 'pending'
-      > = {
-        DELIVERED: 'delivered',
-        PROCESSING: 'processing',
-        SHIPPED: 'shipped',
-        PENDING: 'pending',
-        CONFIRMED: 'pending',
-        CANCELLED: 'pending',
-      };
-      return statusMap[status] || 'pending';
-    };
-
-    const formattedOrders: Order[] = mockOrders
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-      .slice(0, 5)
-      .map((order) => ({
-        id: `ORD-${order.id.toString().padStart(4, '0')}`,
-        customer: order.user?.fullName || 'Khách hàng',
-        amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
-        status: formatStatus(order.status),
-        date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
-      }));
-
-    setRecentOrders(formattedOrders);
-  }, []);
 
   const getStatusBadge = (status: Order['status']) => {
     const badges = {
@@ -259,6 +186,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
     };
     return badges[status];
   };
+
+  if (loading) {
+    return (
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-pink-600"></div>
+            <p className="mt-4 text-gray-600">Đang tải dữ liệu dashboard...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg
+                className="h-8 w-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <p className="mt-4 text-lg font-semibold text-gray-900">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-lg bg-pink-600 px-6 py-2 text-white hover:bg-pink-700"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout onNavigate={onNavigate}>
