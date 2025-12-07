@@ -45,9 +45,9 @@ public class Product {
     @JoinColumn(name = "brand_id", insertable = false, updatable = false)
     private Brand brand;
 
-    @OneToOne(mappedBy = "product", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     @JsonIgnore
-    private ProductVariant productVariant;
+    private List<ProductVariant> productVariants;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     @JsonIgnore

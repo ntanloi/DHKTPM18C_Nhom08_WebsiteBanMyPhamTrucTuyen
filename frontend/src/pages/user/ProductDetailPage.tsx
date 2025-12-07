@@ -33,7 +33,7 @@ const ProductDetailPage = ({
   if (!authContext) {
     throw new Error('ProductDetailPage must be used within AuthProvider');
   }
-  const { user } = authContext;
+  const { user: _user } = authContext;
   const { navigate } = useNavigation();
 
   // Reset states when product changes

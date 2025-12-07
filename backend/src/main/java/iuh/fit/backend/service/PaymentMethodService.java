@@ -46,8 +46,8 @@ public class PaymentMethodService {
                 .id(paymentMethod.getId())
                 .name(paymentMethod.getName())
                 .code(paymentMethod.getCode())
-                .description(null) // Not available in entity
-                .icon(null) // Not available in entity
+                .description(paymentMethod.getDescription())
+                .icon(paymentMethod.getIcon())
                 .isActive(paymentMethod.getIsActive())
                 .build();
     }

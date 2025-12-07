@@ -52,11 +52,9 @@ import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
 import PaymentCallbackPage from './pages/user/PaymentCallbackPage';
 
 import OrderSuccessPage from './pages/user/OrderSuccessPage';
-import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
 import ChatWidget from './components/user/ui/ChatWidget';
 import AccountPage from './pages/user/AccountPage';
-import SupportChatPage from './pages/support/SupportChatPage';
 
 type Page =
   | 'home'
@@ -208,7 +206,6 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [showOTP, setShowOTP] = useState(false);
 
   const [_productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
@@ -307,13 +304,11 @@ function App() {
       const match = to.match(/\/admin\/products\/(\d+)\/images/);
       if (match) {
         setImageProductId(match[1]);
-        console.log('✅ Image Product ID:', match[1]);
       }
     } else if (to.startsWith('/admin/products/')) {
       const parts = to.split('/');
       if (parts[3] && parts[3] !== 'create' && !to.includes('/images')) {
         setAdminProductId(parts[3]);
-        console.log('✅ Admin Product ID:', parts[3]);
       }
     }
 
@@ -322,7 +317,6 @@ function App() {
       if (parts[3]) {
         const id = parts[3].replace(/\/(status|shipment|return)$/, '');
         setOrderId(id);
-        console.log('✅ Order ID:', id);
       }
     }
 
@@ -331,20 +325,14 @@ function App() {
       if (parts[3] && parts[3] !== 'create') {
         const id = parts[3].replace('/edit', '');
         setCouponId(id);
-        console.log('✅ Coupon ID:', id);
       }
     }
 
     if (to.startsWith('/order-success/')) {
       const code = to.replace('/order-success/', '');
       setOrderSuccessCode(code);
-      console.log('✅ Order Success Code:', code);
     }
   };
-
-  {
-    console.log(productSlug);
-  }
 
   useEffect(() => {
     const onPop = () => {
