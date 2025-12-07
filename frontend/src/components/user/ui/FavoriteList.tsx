@@ -24,11 +24,7 @@ interface FavoriteSidebarProps {
   onNavigate?: (path: string) => void;
 }
 
-function FavoriteSidebar({
-  isOpen,
-  onClose,
-  onNavigate,
-}: FavoriteSidebarProps) {
+function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
   const [favorites, setFavorites] = useState(mockFavorites);
 
   const handleRemoveFavorite = (id: number) => {

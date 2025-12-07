@@ -3,7 +3,6 @@ import logo from '../../../assets/images/logo.png';
 import {
   AccountIcon,
   CartIcon,
-  HeartIcon,
   MagazineIcon,
   MoreIcon,
   SearchIcon,
