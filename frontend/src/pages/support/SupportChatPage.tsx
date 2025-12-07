@@ -9,6 +9,8 @@ import {
   Search,
   Headphones,
   ArrowLeft,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import {
   type ChatRoom,
@@ -21,6 +23,7 @@ import {
   closeRoom,
 } from '../../api/chat';
 import { useAuth } from '../../hooks/useAuth';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 export default function SupportChatPage() {
   const { user } = useAuth();
@@ -37,24 +40,101 @@ export default function SupportChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // WebSocket connection
+  const token = localStorage.getItem('accessToken');
+  const { connected, subscribe, send } = useWebSocket({
+    autoConnect: true,
+    token: token || undefined,
+  });
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
     loadRooms();
-    const interval = setInterval(loadRooms, 5000);
-    return () => clearInterval(interval);
   }, []);
 
+  // WebSocket subscriptions for real-time updates
   useEffect(() => {
-    if (selectedRoom) {
-      loadMessages(selectedRoom.id);
-      const msgInterval = setInterval(() => loadMessages(selectedRoom.id), 3000);
-      return () => clearInterval(msgInterval);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom?.id]);
+    if (!connected) return;
+
+    // Subscribe to pending rooms
+    const unsubPending = subscribe('/topic/chat/pending', (message: unknown) => {
+      const room = message as ChatRoom;
+      setPendingRooms((prev) => {
+        const exists = prev.find((r) => r.id === room.id);
+        if (exists) {
+          return prev.map((r) => (r.id === room.id ? room : r));
+        }
+        return [room, ...prev];
+      });
+    });
+
+    // Subscribe to room updates
+    const unsubUpdates = subscribe('/topic/chat/updates', (message: unknown) => {
+      const room = message as ChatRoom;
+      
+      if (room.status === 'PENDING') {
+        setPendingRooms((prev) => {
+          const exists = prev.find((r) => r.id === room.id);
+          if (!exists) return [room, ...prev];
+          return prev.map((r) => (r.id === room.id ? room : r));
+        });
+        setMyRooms((prev) => prev.filter((r) => r.id !== room.id));
+      } else if (room.status === 'ASSIGNED') {
+        setMyRooms((prev) => {
+          const exists = prev.find((r) => r.id === room.id);
+          if (!exists) return [room, ...prev];
+          return prev.map((r) => (r.id === room.id ? room : r));
+        });
+        setPendingRooms((prev) => prev.filter((r) => r.id !== room.id));
+      } else if (room.status === 'CLOSED') {
+        setMyRooms((prev) => prev.filter((r) => r.id !== room.id));
+        setPendingRooms((prev) => prev.filter((r) => r.id !== room.id));
+        if (selectedRoom?.id === room.id) {
+          setSelectedRoom(null);
+          setMessages([]);
+        }
+      }
+    });
+
+    // Subscribe to personal queue
+    const unsubQueue = subscribe('/user/queue/chat', (message: unknown) => {
+      const data = message as { type: string; room: ChatRoom };
+      if (data.type === 'ROOM_ASSIGNED') {
+        setMyRooms((prev) => {
+          const exists = prev.find((r) => r.id === data.room.id);
+          if (!exists) return [data.room, ...prev];
+          return prev.map((r) => (r.id === data.room.id ? data.room : r));
+        });
+      }
+    });
+
+    return () => {
+      unsubPending();
+      unsubUpdates();
+      unsubQueue();
+    };
+  }, [connected, subscribe, selectedRoom]);
+
+  // Subscribe to selected room messages
+  useEffect(() => {
+    if (!connected || !selectedRoom) return;
+
+    // Load initial messages
+    loadMessages(selectedRoom.id);
+
+    const unsubMessages = subscribe(`/topic/chat/${selectedRoom.id}`, (message: unknown) => {
+      const msg = message as ChatMessage;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    });
+
+    return () => unsubMessages();
+  }, [connected, selectedRoom, subscribe]);
 
   const loadRooms = async () => {
     try {
@@ -98,10 +178,16 @@ export default function SupportChatPage() {
     setIsSending(true);
 
     try {
-      await sendManagerMessage(selectedRoom.id, { content: messageContent });
-      await loadMessages(selectedRoom.id);
+      // Try WebSocket first, fallback to REST API
+      if (connected) {
+        send(`/app/chat/${selectedRoom.id}/send`, { content: messageContent });
+      } else {
+        await sendManagerMessage(selectedRoom.id, { content: messageContent });
+        await loadMessages(selectedRoom.id);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
+      setInputValue(messageContent);
     } finally {
       setIsSending(false);
     }
@@ -173,9 +259,19 @@ export default function SupportChatPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {/* Connection Status */}
               <div className="flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
-                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span className="text-sm">Đang trực tuyến</span>
+                {connected ? (
+                  <>
+                    <Wifi className="h-4 w-4" />
+                    <span className="text-sm">Online</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-4 w-4" />
+                    <span className="text-sm">Offline</span>
+                  </>
+                )}
               </div>
               <button
                 onClick={loadRooms}
@@ -191,7 +287,7 @@ export default function SupportChatPage() {
       <div className="mx-auto max-w-7xl p-4">
         <div className="flex gap-4 h-[calc(100vh-120px)]">
           {/* Sidebar - Room List */}
-          <div className="w-80 flex-shrink-0 rounded-xl bg-white shadow-sm border border-gray-100 flex flex-col">
+          <div className="w-80 shrink-0 rounded-xl bg-white shadow-sm border border-gray-100 flex flex-col">
             {/* Search */}
             <div className="p-4 border-b border-gray-100">
               <div className="relative">
@@ -274,7 +370,7 @@ export default function SupportChatPage() {
                           e.stopPropagation();
                           handleAcceptRoom(room);
                         }}
-                        className="mt-3 w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                        className="mt-3 w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-500 py-2 text-sm font-medium text-white transition hover:opacity-90"
                       >
                         Nhận hỗ trợ
                       </button>
@@ -336,7 +432,7 @@ export default function SupportChatPage() {
                     >
                       <ArrowLeft className="h-5 w-5 text-gray-600" />
                     </button>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-pink-400 to-purple-500 text-white">
                       <User className="h-5 w-5" />
                     </div>
                     <div>
@@ -361,7 +457,7 @@ export default function SupportChatPage() {
                     {selectedRoom.status === 'PENDING' && (
                       <button
                         onClick={() => handleAcceptRoom(selectedRoom)}
-                        className="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                        className="rounded-lg bg-linear-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                       >
                         Nhận hỗ trợ
                       </button>
@@ -436,7 +532,7 @@ export default function SupportChatPage() {
                       <button
                         onClick={handleSendMessage}
                         disabled={!inputValue.trim() || isSending}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white transition hover:opacity-90 disabled:opacity-50"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-cyan-500 text-white transition hover:opacity-90 disabled:opacity-50"
                       >
                         <Send className="h-5 w-5" />
                       </button>
