@@ -1,6 +1,6 @@
-import axios from 'axios';
+import api from '../lib/api';
 
-const API_BASE_URL = '/api/cart';
+const API_BASE_URL = '/cart';
 
 export interface AddToCartRequest {
   productVariantId: number;
@@ -13,9 +13,13 @@ export interface UpdateCartItemRequest {
 
 export interface CartItemResponse {
   id: number;
-  cartId: number;
   productVariantId: number;
+  productName: string;
+  variantName: string;
   quantity: number;
+  price: number;
+  subtotal: number;
+  imageUrl?: string;
 }
 
 export interface CartResponse {
@@ -23,13 +27,14 @@ export interface CartResponse {
   userId: number;
   createdAt: string;
   updatedAt: string;
+  totalAmount: number;
   cartItems: CartItemResponse[];
 }
 
 export const getCartByUserId = async (
   userId: number,
 ): Promise<CartResponse> => {
-  const response = await axios.get<CartResponse>(
+  const response = await api.get<CartResponse>(
     `${API_BASE_URL}/user/${userId}`,
   );
   return response.data;
@@ -39,7 +44,7 @@ export const addToCart = async (
   userId: number,
   request: AddToCartRequest,
 ): Promise<CartResponse> => {
-  const response = await axios.post<CartResponse>(
+  const response = await api.post<CartResponse>(
     `${API_BASE_URL}/user/${userId}/items`,
     request,
   );
@@ -51,7 +56,7 @@ export const updateCartItem = async (
   cartItemId: number,
   request: UpdateCartItemRequest,
 ): Promise<CartResponse> => {
-  const response = await axios.put<CartResponse>(
+  const response = await api.put<CartResponse>(
     `${API_BASE_URL}/user/${userId}/items/${cartItemId}`,
     request,
   );
@@ -62,7 +67,7 @@ export const removeCartItem = async (
   userId: number,
   cartItemId: number,
 ): Promise<CartResponse> => {
-  const response = await axios.delete<CartResponse>(
+  const response = await api.delete<CartResponse>(
     `${API_BASE_URL}/user/${userId}/items/${cartItemId}`,
   );
   return response.data;
@@ -71,7 +76,7 @@ export const removeCartItem = async (
 export const clearCart = async (
   userId: number,
 ): Promise<{ message: string }> => {
-  const response = await axios.delete<{ message: string }>(
+  const response = await api.delete<{ message: string }>(
     `${API_BASE_URL}/user/${userId}/clear`,
   );
   return response.data;

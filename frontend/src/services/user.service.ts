@@ -1,59 +1,60 @@
-import api from '../lib/api';
+import axiosClient from './axiosClient';
 
 export const categoriesService = {
   getAll() {
-    return api.get('/categories');
+    return axiosClient.get('/categories');
   },
   getBySlug(slug: string) {
-    return api.get(`/categories/slug/${slug}`);
+    return axiosClient.get(`/categories/slug/${slug}`);
   },
   getById(categoryId: string) {
-    return api.get(`/categories/${categoryId}`);
+    return axiosClient.get(`/categories/${categoryId}`);
   },
 };
 
 export const productService = {
   getProductsByCategoryId(categoryId: string) {
-    return api.get(`/products/category/${categoryId}`);
+    return axiosClient.get(`/products/category/${categoryId}`);
   },
   getProductsByCategorySlug(categorySlug: string) {
-    return api.get(`/products/category/slug/${categorySlug}`);
+    return axiosClient.get(`/products/category/slug/${categorySlug}`);
   },
   getProductsByBrandId(brandId: number) {
-    return api.get(`/products/brand/${brandId}`);
+    return axiosClient.get(`/products/brand/${brandId}`);
   },
   getAll() {
-    return api.get('/products');
+    return axiosClient.get('/products');
   },
   getById(productId: number) {
-    return api.get(`/products/${productId}`);
+    return axiosClient.get(`/products/${productId}`);
   },
   getBySlug(slug: string) {
-    return api.get(`/products/slug/${slug}`);
+    return axiosClient.get(`/products/slug/${slug}`);
   },
   getAllProducts() {
-    return api.get('/products');
+    return axiosClient.get('/products');
+  },
+
+  // NEW: Search functions
+  search(keyword: string) {
+    return axiosClient.get(`/products/search`, {
+      params: { keyword },
+    });
+  },
+  getSearchSuggestions(keyword: string) {
+    return axiosClient.get(`/products/search/suggestions`, {
+      params: { keyword },
+    });
   },
 };
 
 export const productVariantService = {
-  // Get all variants
-  getAll: () => api.get('/product-variants'),
-
-  // Get variant by ID
-  getById: (id: number) => api.get(`/product-variants/${id}`),
-
-  // Get variants by product ID
+  getAll: () => axiosClient.get('/product-variants'),
+  getById: (id: number) => axiosClient.get(`/product-variants/${id}`),
   getByProductId: (productId: number) =>
-    api.get(`/product-variants/product/${productId}`),
-
-  // Get variant by SKU
-  getBySku: (sku: string) => api.get(`/product-variants/sku/${sku}`),
-
-  // Get in-stock variants
-  getInStock: () => api.get('/product-variants/in-stock'),
-
-  // Create variant
+    axiosClient.get(`/product-variants/product/${productId}`),
+  getBySku: (sku: string) => axiosClient.get(`/product-variants/sku/${sku}`),
+  getInStock: () => axiosClient.get('/product-variants/in-stock'),
   create: (data: {
     productId: number;
     name: string;
@@ -61,9 +62,7 @@ export const productVariantService = {
     price: number;
     salePrice?: number;
     stockQuantity: number;
-  }) => api.post('/product-variants', data),
-
-  // Update variant
+  }) => axiosClient.post('/product-variants', data),
   update: (
     id: number,
     data: {
@@ -74,35 +73,20 @@ export const productVariantService = {
       salePrice?: number;
       stockQuantity: number;
     },
-  ) => api.put(`/product-variants/${id}`, data),
-
-  // Update stock
+  ) => axiosClient.put(`/product-variants/${id}`, data),
   updateStock: (id: number, quantity: number) =>
-    api.patch(`/product-variants/${id}/stock?quantity=${quantity}`),
-
-  // Delete variant
-  delete: (id: number) => api.delete(`/product-variants/${id}`),
+    axiosClient.patch(`/product-variants/${id}/stock?quantity=${quantity}`),
+  delete: (id: number) => axiosClient.delete(`/product-variants/${id}`),
 };
 
 export const productImageService = {
-  // Get all product images
-  getAll: () => api.get('/product-images'),
-
-  // Get product image by ID
-  getById: (id: number) => api.get(`/product-images/${id}`),
-
-  // Get images by product ID
+  getAll: () => axiosClient.get('/product-images'),
+  getById: (id: number) => axiosClient.get(`/product-images/${id}`),
   getByProductId: (productId: number) =>
-    api.get(`/product-images/product/${productId}`),
-
-  // Create product image
+    axiosClient.get(`/product-images/product/${productId}`),
   create: (data: { productId: number; imageUrl: string }) =>
-    api.post('/product-images', data),
-
-  // Update product image
+    axiosClient.post('/product-images', data),
   update: (id: number, data: { productId: number; imageUrl: string }) =>
-    api.put(`/product-images/${id}`, data),
-
-  // Delete product image
-  delete: (id: number) => api.delete(`/product-images/${id}`),
+    axiosClient.put(`/product-images/${id}`, data),
+  delete: (id: number) => axiosClient.delete(`/product-images/${id}`),
 };

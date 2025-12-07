@@ -6,6 +6,7 @@ export interface Cart {
   userId: number;
   createdAt: string;
   updatedAt: string;
+  totalAmount: number;
   user?: User;
   cartItems?: CartItem[];
 }

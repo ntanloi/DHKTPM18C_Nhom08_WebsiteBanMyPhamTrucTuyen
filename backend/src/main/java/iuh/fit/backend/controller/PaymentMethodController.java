@@ -1,62 +1,54 @@
 package iuh.fit.backend.controller;
 
 import iuh.fit.backend.dto.PaymentMethodResponse;
-import iuh.fit.backend.model.PaymentMethod;
-import iuh.fit.backend.repository.PaymentMethodRepository;
+import iuh.fit.backend.service.PaymentMethodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/payment-methods")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class PaymentMethodController {
-
-    private final PaymentMethodRepository paymentMethodRepository;
-
+    
+    private final PaymentMethodService paymentMethodService;
+    
+    /**
+     * Get all active payment methods (public endpoint)
+     */
     @GetMapping
-    public ResponseEntity<List<PaymentMethodResponse>> getActivePaymentMethods() {
-        List<PaymentMethod> paymentMethods = paymentMethodRepository.findByIsActiveTrueOrderBySortOrderAsc();
-
-        List<PaymentMethodResponse> response = paymentMethods.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<PaymentMethodResponse>> getAllActivePaymentMethods() {
+        List<PaymentMethodResponse> paymentMethods = paymentMethodService.getAllActivePaymentMethods();
+        return ResponseEntity.ok(paymentMethods);
     }
-
+    
+    /**
+     * Get all payment methods including inactive (admin only)
+     */
     @GetMapping("/all")
     public ResponseEntity<List<PaymentMethodResponse>> getAllPaymentMethods() {
-        List<PaymentMethod> paymentMethods = paymentMethodRepository.findAll();
-
-        List<PaymentMethodResponse> response = paymentMethods.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(response);
+        List<PaymentMethodResponse> paymentMethods = paymentMethodService.getAllPaymentMethods();
+        return ResponseEntity.ok(paymentMethods);
     }
-
-    @GetMapping("/{code}")
+    
+    /**
+     * Get payment method by ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<PaymentMethodResponse> getPaymentMethodById(@PathVariable Integer id) {
+        PaymentMethodResponse paymentMethod = paymentMethodService.getPaymentMethodById(id);
+        return ResponseEntity.ok(paymentMethod);
+    }
+    
+    /**
+     * Get payment method by code
+     */
+    @GetMapping("/code/{code}")
     public ResponseEntity<PaymentMethodResponse> getPaymentMethodByCode(@PathVariable String code) {
-        return paymentMethodRepository.findByCode(code)
-                .map(this::toResponse)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    private PaymentMethodResponse toResponse(PaymentMethod paymentMethod) {
-        return PaymentMethodResponse.builder()
-                .id(paymentMethod.getId())
-                .name(paymentMethod.getName())
-                .code(paymentMethod.getCode())
-                .description(paymentMethod.getDescription())
-                .icon(paymentMethod.getIcon())
-                .isActive(paymentMethod.getIsActive())
-                .isRecommended(paymentMethod.getIsRecommended())
-                .sortOrder(paymentMethod.getSortOrder())
-                .build();
+        PaymentMethodResponse paymentMethod = paymentMethodService.getPaymentMethodByCode(code);
+        return ResponseEntity.ok(paymentMethod);
     }
 }

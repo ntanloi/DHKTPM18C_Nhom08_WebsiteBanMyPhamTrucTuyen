@@ -16,6 +16,4 @@ public class PaymentMethodResponse {
     private String description;
     private String icon;
     private Boolean isActive;
-    private Boolean isRecommended;
-    private Integer sortOrder;
 }

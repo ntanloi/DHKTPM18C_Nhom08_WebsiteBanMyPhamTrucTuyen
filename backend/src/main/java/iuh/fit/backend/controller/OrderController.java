@@ -36,6 +36,26 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/guest")
+    public ResponseEntity<?> createGuestOrder(@Valid @RequestBody CreateOrderRequest request) {
+        try {
+            // Create a new guest user for each order
+            // userId will be set by the service based on recipient info
+            OrderDetailResponse response = orderService.createGuestOrder(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            // Log the full stack trace for debugging
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("type", e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                error.put("cause", e.getCause().getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderDetail(@PathVariable Integer orderId) {
         try {
