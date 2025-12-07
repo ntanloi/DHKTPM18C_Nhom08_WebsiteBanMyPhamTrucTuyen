@@ -203,4 +203,35 @@ public class AuthService {
             throw new RuntimeException("Invalid refresh token");
         }
     }
+
+    // Verify current user - returns actual user info from database
+    // This ensures role is fetched from database, not trusted from JWT claims alone
+    public AuthResponse verifyCurrentUser() {
+        // Get current authenticated user from SecurityContext
+        org.springframework.security.core.Authentication authentication = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("No authenticated user");
+        }
+
+        String email = authentication.getName();
+        
+        // Fetch fresh user data from database
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getIsActive()) {
+            throw new RuntimeException("Account is inactive");
+        }
+
+        // Return user info with ACTUAL role from database
+        return new AuthResponse(
+            null,  // No new token needed
+            null,  // No new refresh token needed
+            user.getId(),
+            user.getEmail(),
+            user.getRole().getName()  // This is the DATABASE role, not JWT claim
+        );
+    }
 }

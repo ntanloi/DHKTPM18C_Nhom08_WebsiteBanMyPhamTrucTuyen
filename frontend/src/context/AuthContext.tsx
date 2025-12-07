@@ -16,13 +16,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check auth state on mount
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       try {
         const savedUser = tokenStorage.getUser();
         const accessToken = tokenStorage.getAccessToken();
 
         if (savedUser && accessToken) {
-          setUser(savedUser);
+          // SECURITY FIX: Verify with backend instead of trusting localStorage
+          try {
+            const response = await authApi.verifyUser();
+            
+            // Update user with verified role from database
+            const verifiedUser: User = {
+              userId: response.userId,
+              email: response.email,
+              role: response.role,
+            };
+            
+            setUser(verifiedUser);
+            
+            // Update localStorage if role changed
+            if (savedUser.role !== response.role) {
+              console.warn('⚠️ Security: Role mismatch detected on init. Updated from database.');
+              tokenStorage.saveUser(verifiedUser);
+            }
+          } catch (error) {
+            console.error('Failed to verify user on init:', error);
+            // If verification fails, clear auth data for security
+            tokenStorage.clearAll();
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
