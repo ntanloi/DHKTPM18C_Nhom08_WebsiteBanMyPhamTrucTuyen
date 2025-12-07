@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, Loader2, Star, ChevronDown, User, Headphones } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useWebSocket } from '../../../hooks/useWebSocket';
 import * as chatApi from '../../../api/chat';
 
 interface Message {
@@ -23,7 +24,15 @@ interface GuestChatResponse {
 const API_BASE = '/api/chat/guest';
 
 export default function ChatWidget() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  
+  // Get token from localStorage since it's not in user object
+  const token = localStorage.getItem('accessToken');
+  
+  const { connected, subscribe, send } = useWebSocket({
+    autoConnect: isLoggedIn,
+    token: token || undefined,
+  });
   
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -46,12 +55,66 @@ export default function ChatWidget() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // WebSocket subscriptions for authenticated users
+  useEffect(() => {
+    if (!connected || !isLoggedIn || !chatRoom) return;
+
+    console.log('🔌 Setting up WebSocket subscriptions for room:', chatRoom.id);
+
+    // Subscribe to chat room messages
+    const unsubMessages = subscribe(`/topic/chat/${chatRoom.id}`, (message: unknown) => {
+      const msg = message as Message;
+      console.log('📨 Received message:', msg);
+      setMessages(prev => {
+        // Avoid duplicates
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      setIsTyping(false);
+    });
+
+    // Subscribe to typing indicators
+    const unsubTyping = subscribe(`/topic/chat/${chatRoom.id}/typing`, (message: unknown) => {
+      const data = message as { isTyping: boolean; senderName?: string };
+      console.log('⌨️ Typing indicator:', data);
+      if (data.senderName && data.senderName !== user?.email) {
+        setIsTyping(data.isTyping);
+      }
+    });
+
+    // Subscribe to room status updates
+    const unsubStatus = subscribe(`/user/queue/chat`, (message: unknown) => {
+      const data = message as { type: string; roomId: string; status?: string };
+      console.log('🔔 Room update:', data);
+      if (data.type === 'ROOM_STATUS_CHANGE' && data.roomId === chatRoom.id.toString()) {
+        setChatRoom(prev => prev ? { ...prev, status: data.status as chatApi.ChatRoom['status'] } : null);
+        setIsWaitingForSupport(data.status === 'PENDING');
+        
+        if (data.status === 'ASSIGNED') {
+          setQuickReplies([]);
+          setMessages(prev => [...prev, {
+            id: `system-${Date.now()}`,
+            content: '✅ Nhân viên tư vấn đã tham gia chat!',
+            senderType: 'SYSTEM',
+            createdAt: new Date().toISOString(),
+          }]);
+        }
+      }
+    });
+
+    return () => {
+      unsubMessages();
+      unsubTyping();
+      unsubStatus();
+    };
+  }, [connected, isLoggedIn, chatRoom, subscribe, user]);
 
   // Initialize chat when opened
   useEffect(() => {
@@ -66,30 +129,7 @@ export default function ChatWidget() {
     };
     
     init();
-    
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  // Poll for new messages when waiting for support
-  useEffect(() => {
-    if (chatRoom && (chatRoom.status === 'PENDING' || chatRoom.status === 'ASSIGNED')) {
-      const poll = async () => await fetchMessages();
-      
-      pollIntervalRef.current = setInterval(poll, 3000);
-      
-      return () => {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-        }
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatRoom?.status]);
+  }, [isOpen, isLoggedIn, guestSessionId]);
 
   // Focus input when opened
   useEffect(() => {
@@ -269,15 +309,44 @@ export default function ChatWidget() {
     if (!chatRoom) return;
     
     try {
-      await chatApi.sendMessage(chatRoom.id, { content: messageContent });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await fetchMessages();
+      // If WebSocket is connected, use it for real-time messaging
+      if (connected) {
+        const message = {
+          roomId: chatRoom.id,
+          content: messageContent,
+          timestamp: new Date().toISOString(),
+        };
+        
+        // Send message via WebSocket
+        send(`/app/chat.send/${chatRoom.id}`, message);
+        
+        // Add message optimistically to UI
+        const optimisticMessage: Message = {
+          id: `temp-${Date.now()}`,
+          content: messageContent,
+          senderType: 'CUSTOMER',
+          senderName: user?.fullName || user?.email,
+          createdAt: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, optimisticMessage]);
+        
+        // Send typing indicator stopped
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        send(`/app/chat.typing/${chatRoom.id}`, { isTyping: false });
+        
+      } else {
+        // Fallback to REST API if WebSocket not connected
+        await chatApi.sendMessage(chatRoom.id, { content: messageContent });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await fetchMessages();
+      }
       
       setIsTyping(false);
       
     } catch (error) {
-      // Error logged internally
+      console.error('Error sending message:', error);
       setIsTyping(false);
       setMessages((prev) => [...prev, {
         id: `error-${Date.now()}`,
@@ -287,6 +356,29 @@ export default function ChatWidget() {
       }]);
     }
   };
+
+  // Send typing indicator via WebSocket
+  const handleTyping = useCallback(() => {
+    if (!connected || !chatRoom) return;
+
+    send(`/app/chat.typing/${chatRoom.id}`, { 
+      isTyping: true,
+      senderName: user?.fullName || user?.email
+    });
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      send(`/app/chat.typing/${chatRoom.id}`, { 
+        isTyping: false,
+        senderName: user?.fullName || user?.email
+      });
+    }, 2000);
+  }, [connected, chatRoom, send, user]);
 
   // ==================== Common Handlers ====================
 
@@ -624,7 +716,12 @@ export default function ChatWidget() {
                   ref={inputRef}
                   type="text"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    if (isLoggedIn && chatRoom) {
+                      handleTyping();
+                    }
+                  }}
                   onKeyPress={handleKeyPress}
                   placeholder={isWaitingForSupport ? "Nhân viên sẽ trả lời sớm..." : "Nhập tin nhắn..."}
                   className="flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition"
@@ -638,11 +735,27 @@ export default function ChatWidget() {
                   {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 </button>
               </div>
-              <p className="mt-2 text-center text-xs text-gray-400">
-                {isLoggedIn 
-                  ? 'Gõ "nhân viên" để kết nối với tư vấn viên'
-                  : 'Đăng nhập để được hỗ trợ từ nhân viên tư vấn'}
-              </p>
+              {/* Connection status indicator */}
+              {isLoggedIn && (
+                <p className="mt-2 text-center text-xs text-gray-400">
+                  {connected ? (
+                    <span className="flex items-center justify-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                      Real-time chat active
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                      Connecting...
+                    </span>
+                  )}
+                </p>
+              )}
+              {!isLoggedIn && (
+                <p className="mt-2 text-center text-xs text-gray-400">
+                  Đăng nhập để được hỗ trợ từ nhân viên tư vấn
+                </p>
+              )}
             </div>
           )}
         </div>
