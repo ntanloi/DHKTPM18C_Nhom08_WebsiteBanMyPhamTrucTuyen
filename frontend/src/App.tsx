@@ -11,6 +11,8 @@ import CheckoutPage from './pages/user/CheckoutPage';
 import { NavigationProvider } from './context/NavigationContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { Toaster } from 'react-hot-toast';
 
 import UserListPage from './pages/admin/user/UserListPage';
 import UserCreatePage from './pages/admin/user/UserCreatePage';
@@ -417,9 +419,35 @@ function App() {
 
   return (
     <AuthProvider>
-      <CartProvider>
-          <NavigationProvider navigate={navigate}>
+      <NotificationProvider>
+        <CartProvider>
+            <NavigationProvider navigate={navigate}>
           <div>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#fff',
+                color: '#363636',
+                padding: '16px',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
           {!isAdminPage && (
             <Header
               onOpenStores={() => navigate('/stores')}
@@ -567,6 +595,7 @@ function App() {
           </div>
         </NavigationProvider>
       </CartProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

@@ -13,6 +13,7 @@ import MenuItem from '../ui/MenuItem';
 import Navbar from './Navbar';
 import SearchDropdown from '../ui/SearchDropdown';
 import CartSidebar from '../ui/CartSidebar';
+import NotificationBell from '../../NotificationBell';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../context/CartContext';
 
@@ -343,6 +344,9 @@ export default function Header({
               >
                 <HeartIcon />
               </button>
+
+              {/* Notification Bell */}
+              {isLoggedIn && <NotificationBell />}
 
               <button
                 onClick={() => setIsCartOpen(true)}
