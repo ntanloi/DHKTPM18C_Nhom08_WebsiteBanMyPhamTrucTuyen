@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/layout/AdminLayout';
-import { mockOrders } from '../../mocks/orderMockData';
-import { mockProducts } from '../../mocks/productData';
-import { mockUsers } from '../../mocks/userData';
+import { getDashboardSummary, getOrderStats } from '../../api/analytics';
+import type { DashboardSummary } from '../../api/analytics';
 
 interface AdminDashboardProps {
   onNavigate: (path: string) => void;
@@ -28,57 +27,137 @@ interface Order {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats] = useState<StatCard[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const completedOrders = mockOrders.filter(
-      (order) => order.status === 'DELIVERED',
-    );
-    const totalRevenue = completedOrders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0,
-    );
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    const totalOrders = mockOrders.length;
+        // Fetch dashboard summary
+        const summary: DashboardSummary = await getDashboardSummary();
 
-    const totalProducts = mockProducts.length;
+        // Fetch recent orders (last 30 days)
+        const endDate = new Date().toISOString();
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const orderStats = await getOrderStats(startDate, endDate);
 
-    const totalCustomers = mockUsers.length;
+        // Map to stat cards
+        const calculatedStats: StatCard[] = [
+          {
+            title: 'Tổng doanh thu',
+            value: `₫${summary.totalRevenue.toLocaleString('vi-VN')}`,
+            change: `${summary.revenueGrowth >= 0 ? '+' : ''}${summary.revenueGrowth.toFixed(1)}%`,
+            trend: summary.revenueGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ),
+            gradient: 'from-pink-500 to-rose-500',
+          },
+          {
+            title: 'Đơn hàng',
+            value: summary.totalOrders.toString(),
+            change: `${summary.ordersGrowth >= 0 ? '+' : ''}${summary.ordersGrowth.toFixed(1)}%`,
+            trend: summary.ordersGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+            ),
+            gradient: 'from-blue-500 to-cyan-500',
+          },
+          {
+            title: 'Sản phẩm',
+            value: summary.totalProducts.toString(),
+            change: `${summary.productsGrowth >= 0 ? '+' : ''}${summary.productsGrowth.toFixed(1)}%`,
+            trend: summary.productsGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+            ),
+            gradient: 'from-purple-500 to-pink-500',
+          },
+          {
+            title: 'Khách hàng',
+            value: summary.totalCustomers.toString(),
+            change: `${summary.customersGrowth >= 0 ? '+' : ''}${summary.customersGrowth.toFixed(1)}%`,
+            trend: summary.customersGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ),
+            gradient: 'from-green-500 to-teal-500',
+          },
+        ];
 
-    const calculatedStats: StatCard[] = [
-      {
-        title: 'Tổng doanh thu',
-        value: `₫${totalRevenue.toLocaleString('vi-VN')}`,
-        change: '+12.5%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        ),
-        gradient: 'from-pink-500 to-rose-500',
-      },
-      {
-        title: 'Đơn hàng',
-        value: totalOrders.toString(),
-        change: '+8.2%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+        setStats(calculatedStats);
+
+        // Map recent orders
+        const mappedOrders: Order[] = orderStats.recentOrders.slice(0, 5).map((order) => ({
+          id: order.id.toString(),
+          customer: order.customerName,
+          amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
+          status: order.status.toLowerCase() as Order['status'],
+          date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
+        }));
+
+        setRecentOrders(mappedOrders);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

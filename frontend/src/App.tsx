@@ -47,6 +47,7 @@ import CouponDetailPage from './pages/admin/coupon/CouponDetailPage';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/analytic/AdminAnalytics';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import ChatManagementPage from './pages/admin/chat/ChatManagementPage';
 
@@ -417,6 +418,13 @@ function App() {
 
   const isAdminPage = page.startsWith('admin-') || page === 'support-chat';
 
+  // Admin access check component
+  const AdminRoute = ({ children }: { children: React.ReactNode }) => (
+    <ProtectedRoute requiredRole="ADMIN">
+      {children}
+    </ProtectedRoute>
+  );
+
   return (
     <AuthProvider>
       <NotificationProvider>
@@ -483,101 +491,173 @@ function App() {
           {page === 'product-detail' && (
             <ProductDetailPage productSlug={productSlug} />
           )}
+          
+          {/* Admin Routes - Protected */}
           {page === 'admin-dashboard' && (
-            <AdminDashboard onNavigate={navigate} />
+            <AdminRoute>
+              <AdminDashboard onNavigate={navigate} />
+            </AdminRoute>
           )}
-          {page === 'admin-users' && <UserListPage onNavigate={navigate} />}
+          {page === 'admin-users' && (
+            <AdminRoute>
+              <UserListPage onNavigate={navigate} />
+            </AdminRoute>
+          )}
           {page === 'admin-user-create' && (
-            <UserCreatePage onNavigate={navigate} />
+            <AdminRoute>
+              <UserCreatePage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-user-edit' && (
-            <UserEditPage userId={userId} onNavigate={navigate} />
+            <AdminRoute>
+              <UserEditPage userId={userId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-user-detail' && (
-            <UserDetailPage userId={userId} onNavigate={navigate} />
+            <AdminRoute>
+              <UserDetailPage userId={userId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-categories' && (
-            <CategoryListPage onNavigate={navigate} />
+            <AdminRoute>
+              <CategoryListPage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-category-create' && (
-            <CategoryFormPage onNavigate={navigate} mode="create" />
+            <AdminRoute>
+              <CategoryFormPage onNavigate={navigate} mode="create" />
+            </AdminRoute>
           )}
           {page === 'admin-category-edit' && (
-            <CategoryFormPage
-              categoryId={categoryId}
-              onNavigate={navigate}
-              mode="edit"
-            />
+            <AdminRoute>
+              <CategoryFormPage
+                categoryId={categoryId}
+                onNavigate={navigate}
+                mode="edit"
+              />
+            </AdminRoute>
           )}
-          {page === 'admin-brands' && <BrandListPage onNavigate={navigate} />}
+          {page === 'admin-brands' && (
+            <AdminRoute>
+              <BrandListPage onNavigate={navigate} />
+            </AdminRoute>
+          )}
           {page === 'admin-brand-create' && (
-            <BrandFormPage onNavigate={navigate} mode="create" />
+            <AdminRoute>
+              <BrandFormPage onNavigate={navigate} mode="create" />
+            </AdminRoute>
           )}
           {page === 'admin-brand-edit' && (
-            <BrandFormPage
-              brandId={brandId}
-              onNavigate={navigate}
-              mode="edit"
-            />
+            <AdminRoute>
+              <BrandFormPage
+                brandId={brandId}
+                onNavigate={navigate}
+                mode="edit"
+              />
+            </AdminRoute>
           )}
           {page === 'admin-products' && (
-            <AdminProductListPage onNavigate={navigate} />
+            <AdminRoute>
+              <AdminProductListPage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-product-create' && (
-            <ProductCreatePage onNavigate={navigate} />
+            <AdminRoute>
+              <ProductCreatePage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-product-edit' && (
-            <ProductEditPage productId={adminProductId} onNavigate={navigate} />
+            <AdminRoute>
+              <ProductEditPage productId={adminProductId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-product-detail' && (
-            <AdminProductDetailPage
-              productId={adminProductId}
-              onNavigate={navigate}
-            />
+            <AdminRoute>
+              <AdminProductDetailPage
+                productId={adminProductId}
+                onNavigate={navigate}
+              />
+            </AdminRoute>
           )}
           {page === 'admin-product-images' && (
-            <ProductImageManagePage
-              productId={imageProductId}
-              onNavigate={navigate}
-            />
+            <AdminRoute>
+              <ProductImageManagePage
+                productId={imageProductId}
+                onNavigate={navigate}
+              />
+            </AdminRoute>
           )}
-          {page === 'admin-orders' && <OrderListPage onNavigate={navigate} />}
+          {page === 'admin-orders' && (
+            <AdminRoute>
+              <OrderListPage onNavigate={navigate} />
+            </AdminRoute>
+          )}
           {page === 'admin-order-detail' && (
-            <OrderDetailPage orderId={orderId} onNavigate={navigate} />
+            <AdminRoute>
+              <OrderDetailPage orderId={orderId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-order-status-update' && (
-            <OrderStatusUpdatePage orderId={orderId} onNavigate={navigate} />
+            <AdminRoute>
+              <OrderStatusUpdatePage orderId={orderId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-order-shipment' && (
-            <OrderShipmentManagePage orderId={orderId} onNavigate={navigate} />
+            <AdminRoute>
+              <OrderShipmentManagePage orderId={orderId} onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-payment-methods' && (
-            <PaymentMethodListPage onNavigate={navigate} />
+            <AdminRoute>
+              <PaymentMethodListPage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-order-return' && (
-            <OrderReturnManagePage orderId={orderId} onNavigate={navigate} />
+            <AdminRoute>
+              <OrderReturnManagePage orderId={orderId} onNavigate={navigate} />
+            </AdminRoute>
           )}
-          {page === 'admin-returns' && <ReturnListPage onNavigate={navigate} />}
-          {page === 'admin-coupons' && <CouponListPage onNavigate={navigate} />}
+          {page === 'admin-returns' && (
+            <AdminRoute>
+              <ReturnListPage onNavigate={navigate} />
+            </AdminRoute>
+          )}
+          {page === 'admin-coupons' && (
+            <AdminRoute>
+              <CouponListPage onNavigate={navigate} />
+            </AdminRoute>
+          )}
           {page === 'admin-coupon-create' && (
-            <CouponCreatePage onNavigate={navigate} />
+            <AdminRoute>
+              <CouponCreatePage onNavigate={navigate} />
+            </AdminRoute>
           )}
           {page === 'admin-coupon-edit' && (
-            <CouponEditPage
-              couponId={parseInt(couponId)}
-              onNavigate={navigate}
-            />
+            <AdminRoute>
+              <CouponEditPage
+                couponId={parseInt(couponId)}
+                onNavigate={navigate}
+              />
+            </AdminRoute>
           )}
           {page === 'admin-coupon-detail' && (
-            <CouponDetailPage
-              couponId={parseInt(couponId)}
-              onNavigate={navigate}
-            />
+            <AdminRoute>
+              <CouponDetailPage
+                couponId={parseInt(couponId)}
+                onNavigate={navigate}
+              />
+            </AdminRoute>
           )}
           {page === 'admin-analytics' && (
-            <AdminAnalytics onNavigate={navigate} />
+            <AdminRoute>
+              <AdminAnalytics onNavigate={navigate} />
+            </AdminRoute>
           )}
-          {page === 'admin-chat' && <ChatManagementPage />}
+          {page === 'admin-chat' && (
+            <AdminRoute>
+              <ChatManagementPage />
+            </AdminRoute>
+          )}
           {page === 'payment-callback' && (
             <PaymentCallbackPage onNavigate={navigate} />
           )}
