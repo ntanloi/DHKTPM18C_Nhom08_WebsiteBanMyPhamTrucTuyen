@@ -1,4 +1,6 @@
 import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAddress } from '../../../hooks/useAddress';
 
 interface Address {
   id: number;
@@ -26,11 +28,92 @@ export default function AddressModal({
   type,
   address,
 }: AddressModalProps) {
+  const { provinces, districts, wards, fetchDistricts, fetchWards } = useAddress();
+  
+  const [formData, setFormData] = useState({
+    label: '',
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    district: '',
+    ward: '',
+    street: '',
+    isDefault: false,
+  });
+
+  useEffect(() => {
+    if (address && show) {
+      setFormData({
+        label: address.date || '',
+        name: address.name || '',
+        email: address.email || '',
+        phone: address.phone || '',
+        city: address.city || '',
+        district: address.district || '',
+        ward: address.ward || '',
+        street: address.street || '',
+        isDefault: address.isDefault || false,
+      });
+    } else if (!show) {
+      // Reset form when modal closes
+      setFormData({
+        label: '',
+        name: '',
+        email: '',
+        phone: '',
+        city: '',
+        district: '',
+        ward: '',
+        street: '',
+        isDefault: false,
+      });
+    }
+  }, [address, show]);
+
   if (!show) return null;
 
   const handleSave = () => {
+    // Validate form
+    if (!formData.name || !formData.phone || !formData.city || !formData.district || !formData.ward || !formData.street) {
+      alert('Vui lòng điền đầy đủ thông tin!');
+      return;
+    }
+    
     alert('Đã lưu địa chỉ!');
     onClose();
+  };
+
+  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedProvince = provinces.find(p => p.name === e.target.value);
+    if (selectedProvince) {
+      setFormData(prev => ({
+        ...prev,
+        city: selectedProvince.name,
+        district: '',
+        ward: '',
+      }));
+      fetchDistricts(selectedProvince.code);
+    }
+  };
+
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedDistrict = districts.find(d => d.name === e.target.value);
+    if (selectedDistrict) {
+      setFormData(prev => ({
+        ...prev,
+        district: selectedDistrict.name,
+        ward: '',
+      }));
+      fetchWards(selectedDistrict.code);
+    }
+  };
+
+  const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      ward: e.target.value,
+    }));
   };
 
   return (
@@ -54,7 +137,8 @@ export default function AddressModal({
             <input
               type="text"
               placeholder="Tên địa chỉ (vd: Văn phòng, Nhà, ...)"
-              defaultValue={address?.date}
+              value={formData.label}
+              onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -62,69 +146,84 @@ export default function AddressModal({
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="Tên"
-              defaultValue={address?.name.split(' ')[0]}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
-            />
-            <input
-              type="text"
-              placeholder="Họ"
-              defaultValue={address?.name.split(' ').slice(1).join(' ')}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
+              placeholder="Họ và tên"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              className="col-span-2 rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
           <input
             type="email"
             placeholder="Email"
-            defaultValue={address?.email}
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
           <input
             type="tel"
-            placeholder="+ 84"
-            defaultValue={address?.phone}
+            placeholder="Số điện thoại (vd: 0867418359)"
+            value={formData.phone}
+            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
           <select
-            defaultValue={address?.city}
+            value={formData.city}
+            onChange={handleProvinceChange}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           >
-            <option>Tỉnh/Thành phố</option>
-            <option>Hồ Chí Minh</option>
-            <option>Hà Nội</option>
+            <option value="">Chọn Tỉnh/Thành phố</option>
+            {provinces.map((province) => (
+              <option key={province.code} value={province.name}>
+                {province.name}
+              </option>
+            ))}
           </select>
 
           <div className="grid grid-cols-2 gap-4">
             <select
-              defaultValue={address?.district}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
+              value={formData.district}
+              onChange={handleDistrictChange}
+              disabled={!formData.city}
+              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option>Quận/huyện</option>
-              <option>Quận Gò Vấp</option>
+              <option value="">Chọn Quận/Huyện</option>
+              {districts.map((district) => (
+                <option key={district.code} value={district.name}>
+                  {district.name}
+                </option>
+              ))}
             </select>
             <select
-              defaultValue={address?.ward}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
+              value={formData.ward}
+              onChange={handleWardChange}
+              disabled={!formData.district}
+              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option>Phường/xã</option>
-              <option>Phường 5</option>
+              <option value="">Chọn Phường/Xã</option>
+              {wards.map((ward) => (
+                <option key={ward.code} value={ward.name}>
+                  {ward.name}
+                </option>
+              ))}
             </select>
           </div>
 
           <input
             type="text"
             placeholder="Tòa nhà, số nhà, tên đường"
-            defaultValue={address?.street}
+            value={formData.street}
+            onChange={(e) => setFormData(prev => ({ ...prev, street: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              defaultChecked={address?.isDefault}
+              checked={formData.isDefault}
+              onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
               className="h-5 w-5"
             />
             <span>Đặt làm địa chỉ mặc định</span>

@@ -4,13 +4,15 @@ import { AuthContext } from '../../context/auth-context';
 import { createOrder, createGuestOrder, type CreateOrderRequest, type CreateGuestOrderRequest } from '../../api/order';
 import { createVNPayPayment, getPaymentMethods, type PaymentMethod } from '../../api/payment';
 import CartItemCard from '../../components/user/ui/CartItemCard';
-import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../../data/vietnamProvinces';
+import { useAddress } from '../../hooks/useAddress';
+import { getPaymentIcon } from '../../utils/paymentIcons';
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
 
 export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) {
+  const { provinces, districts, wards, fetchDistricts, fetchWards } = useAddress();
   const { cart, loading: cartLoading, updateQuantity, removeItem, clearCart } = useCart();
   const authContext = useContext(AuthContext);
   if (!authContext) {
@@ -23,7 +25,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
     recipientLastName: '',
     recipientPhone: '',
     recipientEmail: '',
-    city: '',
+    province: '',
     district: '',
     ward: '',
     address: '',
@@ -35,11 +37,6 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Address dropdowns
-  const [provinces] = useState<string[]>(getProvinceNames());
-  const [districts, setDistricts] = useState<string[]>([]);
-  const [wards, setWards] = useState<string[]>([]);
 
   // Load payment methods
   useEffect(() => {
@@ -171,25 +168,6 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
     }
   }, [user]);
 
-  // Update districts when city changes
-  useEffect(() => {
-    if (formData.city) {
-      const districtList = getDistrictsByProvince(formData.city);
-      setDistricts(districtList);
-      setFormData(prev => ({ ...prev, district: '', ward: '' }));
-      setWards([]);
-    }
-  }, [formData.city]);
-
-  // Update wards when district changes
-  useEffect(() => {
-    if (formData.city && formData.district) {
-      const wardList = getWardsByDistrict(formData.city, formData.district);
-      setWards(wardList);
-      setFormData(prev => ({ ...prev, ward: '' }));
-    }
-  }, [formData.district]);
-
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
 
   const validateForm = (): boolean => {
@@ -211,8 +189,8 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.recipientEmail)) {
       newErrors.recipientEmail = 'Email không hợp lệ';
     }
-    if (!formData.city.trim()) {
-      newErrors.city = 'Vui lòng chọn tỉnh/thành phố';
+    if (!formData.province.trim()) {
+      newErrors.province = 'Vui lòng chọn tỉnh/thành phố';
     }
     if (!formData.district.trim()) {
       newErrors.district = 'Vui lòng chọn quận/huyện';
@@ -242,7 +220,7 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
     setIsProcessing(true);
 
     try {
-      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
+      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
 
       if (!user) {
         // Guest checkout - Hỗ trợ tất cả payment methods
@@ -515,21 +493,34 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
               <div className="space-y-4">
                 <div>
                   <select
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    className={`w-full rounded-lg border ${errors.city ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
+                    value={formData.province}
+                    onChange={(e) => {
+                      const provinceName = e.target.value;
+
+                      setFormData(prev => ({
+                        ...prev,
+                        province: provinceName,
+                        district: "",
+                        ward: ""
+                      }))
+
+
+                      const province = provinces.find(p => p.name === provinceName)
+                      if(province) {
+                        fetchDistricts(province.code);
+                      }
+                    }}
+                    className={`w-full rounded-lg border ${errors.province ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none`}
                   >
                     <option value="">Chọn Tỉnh/Thành phố *</option>
                     {provinces.map((province) => (
-                      <option key={province} value={province}>
-                        {province}
+                      <option key={province.code} value={province.name}>
+                        {province.name}
                       </option>
                     ))}
                   </select>
-                  {errors.city && (
-                    <p className="mt-1 text-xs text-red-500">{errors.city}</p>
+                  {errors.province && (
+                    <p className="mt-1 text-xs text-red-500">{errors.province}</p>
                   )}
                 </div>
 
@@ -537,16 +528,26 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                   <div>
                     <select
                       value={formData.district}
-                      onChange={(e) =>
-                        setFormData({ ...formData, district: e.target.value })
-                      }
-                      disabled={!formData.city}
+                      onChange={(e) => {
+                        const districtName = e.target.value;
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          district: districtName,
+                          ward: ""
+                        }))
+
+                        const district = districts.find(d => d.name === districtName);
+
+                        if(district) fetchWards(district.code)
+                      }}
+                      disabled={!formData.province}
                       className={`w-full rounded-lg border ${errors.district ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
                     >
                       <option value="">Chọn Quận/Huyện *</option>
                       {districts.map((district) => (
-                        <option key={district} value={district}>
-                          {district}
+                        <option key={district.code} value={district.name}>
+                          {district.name}
                         </option>
                       ))}
                     </select>
@@ -557,16 +558,16 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                   <div>
                     <select
                       value={formData.ward}
-                      onChange={(e) =>
-                        setFormData({ ...formData, ward: e.target.value })
+                      onChange={(e) => 
+                        setFormData((prev) => ({ ...prev, ward: e.target.value }))
                       }
                       disabled={!formData.district}
                       className={`w-full rounded-lg border ${errors.ward ? 'border-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
                     >
                       <option value="">Chọn Phường/Xã *</option>
                       {wards.map((ward) => (
-                        <option key={ward} value={ward}>
-                          {ward}
+                        <option key={ward.code} value={ward.name}>
+                          {ward.name}
                         </option>
                       ))}
                     </select>
@@ -654,13 +655,11 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
                             </p>
                           )}
                         </div>
-                        {method.icon && (
-                          <img
-                            src={method.icon}
-                            alt={method.name}
-                            className="h-8 object-contain"
-                          />
-                        )}
+                        <img
+                          src={getPaymentIcon(method.icon)}
+                          alt={method.name}
+                          className="h-8 object-contain"
+                        />
                       </label>
                     );
                   })}
