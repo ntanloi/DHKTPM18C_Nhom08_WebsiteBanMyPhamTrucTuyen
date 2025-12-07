@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import iuh.fit.backend.config.VNPayConfig;
 import iuh.fit.backend.dto.VNPayRequest;
 import iuh.fit.backend.dto.VNPayResponse;
+import iuh.fit.backend.model.Order;
 import iuh.fit.backend.model.Payment;
+import iuh.fit.backend.repository.OrderRepository;
 import iuh.fit.backend.repository.PaymentRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VNPayService {
     private final VNPayConfig vnpayConfig;
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
     private final NotificationService notificationService;
 
     private static final Integer VALID_MINUTE = 15;
@@ -143,11 +146,15 @@ public class VNPayService {
                 payment.setUpdatedAt(LocalDateTime.now());
                 paymentRepository.save(payment);
 
-                // Send notification
-                notificationService.notifyPaymentCompleted(payment.getOrderId(), payment.getId());
+                // Send notification to customer
+                try {
+                    Order order = orderRepository.findById(payment.getOrderId())
+                            .orElseThrow(() -> new RuntimeException("Order not found"));
+                    notificationService.notifyPaymentCompleted(payment.getOrderId(), order.getUserId());
+                } catch (Exception e) {
+                    log.warn("Failed to send payment notification: {}", e.getMessage());
+                }
                 
-                log.info("Payment completed for transaction: {}", txnRef);
-
                 log.info("Payment completed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
                 
                 return VNPayResponse.builder()

@@ -330,11 +330,15 @@ public class StockService {
                 productName = product.map(Product::getName).orElse("Unknown");
             }
 
-            String title = alertType.equals(ALERT_OUT_OF_STOCK) ? "Out of Stock Alert" : "Low Stock Alert";
-            String message = String.format("%s - %s (SKU: %s) has %d units remaining",
-                    productName, variant.getName(), variant.getSku(), variant.getStockQuantity());
-
-            notificationService.sendToAdmins(title, message, "STOCK_ALERT");
+            // Use dedicated notifyLowStock method for better notification structure
+            notificationService.notifyLowStock(
+                variant.getProductId(), 
+                productName + " - " + variant.getName() + " (SKU: " + variant.getSku() + ")",
+                variant.getStockQuantity()
+            );
+            
+            log.info("Stock alert notification sent for variant {}: {} - {} units", 
+                    variant.getId(), productName, variant.getStockQuantity());
         } catch (Exception e) {
             log.error("Failed to send stock alert notification: {}", e.getMessage());
         }
