@@ -12,7 +12,7 @@ interface CheckoutInfoPageProps {
 }
 
 export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) {
-  const { provinces, districts, wards, fetchDistricts, fetchWards, loading, error} = useAddress();
+  const { provinces, districts, wards, fetchDistricts, fetchWards } = useAddress();
   const { cart, loading: cartLoading, updateQuantity, removeItem, clearCart } = useCart();
   const authContext = useContext(AuthContext);
   if (!authContext) {
@@ -37,10 +37,6 @@ export default function CheckoutInfoPage({ onNavigate }: CheckoutInfoPageProps) 
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Address dropdowns
-  const [selectorProvinceCode, setSelectorProvinceCode] = useState<number | null>(null);
-  const [selectorDistrictCode, setSelectorDistricteCode] = useState<number | null>(null);
 
   // Load payment methods
   useEffect(() => {
