@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Heart, Share2, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Share2 } from 'lucide-react';
 import { useProductDetail } from '../../hooks/useProductDetail';
 import { useCart } from '../../context/CartContext';
 import { AuthContext } from '../../context/auth-context';

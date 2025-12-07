@@ -39,11 +39,7 @@ interface ReviewSectionProps {
   productImage?: string;
 }
 
-export default function ReviewSection({
-  productId,
-  productName,
-  productImage,
-}: ReviewSectionProps) {
+export default function ReviewSection({ productId }: ReviewSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
