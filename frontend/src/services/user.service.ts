@@ -1,60 +1,60 @@
-import axiosClient from './axiosClient';
+import api from '../lib/api';
 
 export const categoriesService = {
   getAll() {
-    return axiosClient.get('/categories');
+    return api.get('/categories');
   },
   getBySlug(slug: string) {
-    return axiosClient.get(`/categories/slug/${slug}`);
+    return api.get(`/categories/slug/${slug}`);
   },
   getById(categoryId: string) {
-    return axiosClient.get(`/categories/${categoryId}`);
+    return api.get(`/categories/${categoryId}`);
   },
 };
 
 export const productService = {
   getProductsByCategoryId(categoryId: string) {
-    return axiosClient.get(`/products/category/${categoryId}`);
+    return api.get(`/products/category/${categoryId}`);
   },
   getProductsByCategorySlug(categorySlug: string) {
-    return axiosClient.get(`/products/category/slug/${categorySlug}`);
+    return api.get(`/products/category/slug/${categorySlug}`);
   },
   getProductsByBrandId(brandId: number) {
-    return axiosClient.get(`/products/brand/${brandId}`);
+    return api.get(`/products/brand/${brandId}`);
   },
   getAll() {
-    return axiosClient.get('/products');
+    return api.get('/products');
   },
   getById(productId: number) {
-    return axiosClient.get(`/products/${productId}`);
+    return api.get(`/products/${productId}`);
   },
   getBySlug(slug: string) {
-    return axiosClient.get(`/products/slug/${slug}`);
+    return api.get(`/products/slug/${slug}`);
   },
   getAllProducts() {
-    return axiosClient.get('/products');
+    return api.get('/products');
   },
 
   // NEW: Search functions
   search(keyword: string) {
-    return axiosClient.get(`/products/search`, {
+    return api.get(`/products/search`, {
       params: { keyword },
     });
   },
   getSearchSuggestions(keyword: string) {
-    return axiosClient.get(`/products/search/suggestions`, {
+    return api.get(`/products/search/suggestions`, {
       params: { keyword },
     });
   },
 };
 
 export const productVariantService = {
-  getAll: () => axiosClient.get('/product-variants'),
-  getById: (id: number) => axiosClient.get(`/product-variants/${id}`),
+  getAll: () => api.get('/product-variants'),
+  getById: (id: number) => api.get(`/product-variants/${id}`),
   getByProductId: (productId: number) =>
-    axiosClient.get(`/product-variants/product/${productId}`),
-  getBySku: (sku: string) => axiosClient.get(`/product-variants/sku/${sku}`),
-  getInStock: () => axiosClient.get('/product-variants/in-stock'),
+    api.get(`/product-variants/product/${productId}`),
+  getBySku: (sku: string) => api.get(`/product-variants/sku/${sku}`),
+  getInStock: () => api.get('/product-variants/in-stock'),
   create: (data: {
     productId: number;
     name: string;
@@ -62,7 +62,7 @@ export const productVariantService = {
     price: number;
     salePrice?: number;
     stockQuantity: number;
-  }) => axiosClient.post('/product-variants', data),
+  }) => api.post('/product-variants', data),
   update: (
     id: number,
     data: {
@@ -73,20 +73,20 @@ export const productVariantService = {
       salePrice?: number;
       stockQuantity: number;
     },
-  ) => axiosClient.put(`/product-variants/${id}`, data),
+  ) => api.put(`/product-variants/${id}`, data),
   updateStock: (id: number, quantity: number) =>
-    axiosClient.patch(`/product-variants/${id}/stock?quantity=${quantity}`),
-  delete: (id: number) => axiosClient.delete(`/product-variants/${id}`),
+    api.patch(`/product-variants/${id}/stock?quantity=${quantity}`),
+  delete: (id: number) => api.delete(`/product-variants/${id}`),
 };
 
 export const productImageService = {
-  getAll: () => axiosClient.get('/product-images'),
-  getById: (id: number) => axiosClient.get(`/product-images/${id}`),
+  getAll: () => api.get('/product-images'),
+  getById: (id: number) => api.get(`/product-images/${id}`),
   getByProductId: (productId: number) =>
-    axiosClient.get(`/product-images/product/${productId}`),
+    api.get(`/product-images/product/${productId}`),
   create: (data: { productId: number; imageUrl: string }) =>
-    axiosClient.post('/product-images', data),
+    api.post('/product-images', data),
   update: (id: number, data: { productId: number; imageUrl: string }) =>
-    axiosClient.put(`/product-images/${id}`, data),
-  delete: (id: number) => axiosClient.delete(`/product-images/${id}`),
+    api.put(`/product-images/${id}`, data),
+  delete: (id: number) => api.delete(`/product-images/${id}`),
 };

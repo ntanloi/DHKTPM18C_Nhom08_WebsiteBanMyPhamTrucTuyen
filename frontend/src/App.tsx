@@ -52,11 +52,9 @@ import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
 import PaymentCallbackPage from './pages/user/PaymentCallbackPage';
 
 import OrderSuccessPage from './pages/user/OrderSuccessPage';
-import OTPModal from './components/user/ui/OTPModal';
 import BrandPage from './pages/user/BrandPage';
 import ChatWidget from './components/user/ui/ChatWidget';
 import AccountPage from './pages/user/AccountPage';
-import SupportChatPage from './pages/support/SupportChatPage';
 
 type Page =
   | 'home'
@@ -208,7 +206,6 @@ function App() {
   const [page, setPage] = useState<Page>(pathToPage(window.location.pathname));
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [showOTP, setShowOTP] = useState(false);
 
   const [_productId, setProductId] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
