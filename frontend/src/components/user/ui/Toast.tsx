@@ -10,7 +10,12 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export const Toast = ({ message, type = 'info', duration = 3000, onClose }: ToastProps) => {
+export const Toast = ({
+  message,
+  type = 'info',
+  duration = 3000,
+  onClose,
+}: ToastProps) => {
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(onClose, duration);
@@ -19,10 +24,10 @@ export const Toast = ({ message, type = 'info', duration = 3000, onClose }: Toas
   }, [duration, onClose]);
 
   const icons = {
-    success: <CheckCircle className="w-5 h-5" />,
-    error: <AlertCircle className="w-5 h-5" />,
-    info: <Info className="w-5 h-5" />,
-    warning: <AlertTriangle className="w-5 h-5" />,
+    success: <CheckCircle className="h-5 w-5" />,
+    error: <AlertCircle className="h-5 w-5" />,
+    info: <Info className="h-5 w-5" />,
+    warning: <AlertTriangle className="h-5 w-5" />,
   };
 
   const colors = {
@@ -33,11 +38,13 @@ export const Toast = ({ message, type = 'info', duration = 3000, onClose }: Toas
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${colors[type]} animate-slide-in-right`}>
+    <div
+      className={`fixed top-4 right-4 z-50 flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg ${colors[type]} animate-slide-in-right`}
+    >
       {icons[type]}
       <p className="text-sm font-medium">{message}</p>
       <button onClick={onClose} className="ml-2 hover:opacity-70">
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
       </button>
     </div>
   );
