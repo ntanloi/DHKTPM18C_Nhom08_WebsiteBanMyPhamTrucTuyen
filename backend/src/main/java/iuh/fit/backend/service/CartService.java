@@ -126,8 +126,10 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
+        // Delete all cart items for this cart
         cartItemRepository.deleteByCartId(cart.getId());
-
+        
+        // Update cart timestamp
         cart.setUpdatedAt(LocalDateTime.now());
         cartRepository.save(cart);
     }

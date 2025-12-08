@@ -64,4 +64,9 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return isActive;
     }
+
+    // Alias for id to support @PreAuthorize expressions
+    public Integer getUserId() {
+        return id;
+    }
 }

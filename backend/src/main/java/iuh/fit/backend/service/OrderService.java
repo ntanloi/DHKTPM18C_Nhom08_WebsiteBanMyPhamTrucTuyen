@@ -146,6 +146,11 @@ public class OrderService {
             payment.setOrderId(savedOrder.getId());
             payment.setPaymentMethodId(request.getPaymentMethodId());
             payment.setAmount(savedOrder.getTotalAmount());
+            
+            // Check if this is from VNPay callback (payment already completed)
+            // For VNPay, payment is completed before order creation in new flow
+            // We can detect this by checking if payment method is VNPay (id = 6 typically)
+            // For now, default to PENDING, frontend will update if needed
             payment.setStatus("PENDING");
             payment.setCreatedAt(LocalDateTime.now());
             payment.setUpdatedAt(LocalDateTime.now());
@@ -450,5 +455,20 @@ public class OrderService {
         
         // Create order using existing logic
         return createOrder(request);
+    }
+    
+    /**
+     * Update payment status to COMPLETED for an order
+     * Used after successful VNPay payment
+     */
+    @Transactional
+    public void markPaymentAsCompleted(Integer orderId) {
+        paymentRepository.findByOrderId(orderId).ifPresent(payment -> {
+            payment.setStatus("COMPLETED");
+            payment.setPaidAt(LocalDateTime.now());
+            payment.setUpdatedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+            log.info("Marked payment as COMPLETED for order: {}", orderId);
+        });
     }
 }

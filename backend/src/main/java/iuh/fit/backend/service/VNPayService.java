@@ -77,15 +77,18 @@ public class VNPayService {
 
             String paymentUrl = vnpayConfig.getPayUrl() + "?" + queryUrl;
 
-            // Store transaction code in Payment entity
-            paymentRepository.findByOrderId(request.getOrderId()).ifPresent(payment -> {
-                payment.setTransactionCode(vnp_TxnRef);
-                payment.setStatus("PROCESSING");
-                payment.setUpdatedAt(LocalDateTime.now());
-                paymentRepository.save(payment);
-            });
-
-            log.info("Created VNPay payment URL for order: {}, txnRef: {}", request.getOrderId(), vnp_TxnRef);
+            // Store transaction code in Payment entity (only if order exists)
+            if (request.getOrderId() != null && request.getOrderId() > 0) {
+                paymentRepository.findByOrderId(request.getOrderId()).ifPresent(payment -> {
+                    payment.setTransactionCode(vnp_TxnRef);
+                    payment.setStatus("PROCESSING");
+                    payment.setUpdatedAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                });
+                log.info("Created VNPay payment URL for order: {}, txnRef: {}", request.getOrderId(), vnp_TxnRef);
+            } else {
+                log.info("Created VNPay payment URL for temporary order, txnRef: {}", vnp_TxnRef);
+            }
 
             return VNPayResponse.builder()
                     .paymentUrl(paymentUrl)
@@ -134,48 +137,63 @@ public class VNPayService {
             String transactionStatus = params.get("vnp_TransactionStatus");
             String bankTranNo = params.get("vnp_BankTranNo");
 
-            // Find payment by transaction code
-            Payment payment = paymentRepository.findByTransactionCode(txnRef)
-                    .orElseThrow(() -> new RuntimeException("Payment not found for transaction: " + txnRef));
+            // Try to find payment by transaction code (may not exist for new flow)
+            Payment payment = paymentRepository.findByTransactionCode(txnRef).orElse(null);
 
-        
             if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
                 // Payment successful
-                payment.setStatus("COMPLETED");
-                payment.setPaidAt(LocalDateTime.now());
-                payment.setUpdatedAt(LocalDateTime.now());
-                paymentRepository.save(payment);
+                if (payment != null) {
+                    // Update existing payment record
+                    payment.setStatus("COMPLETED");
+                    payment.setPaidAt(LocalDateTime.now());
+                    payment.setUpdatedAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
 
-                // Send notification to customer
-                try {
-                    Order order = orderRepository.findById(payment.getOrderId())
-                            .orElseThrow(() -> new RuntimeException("Order not found"));
-                    notificationService.notifyPaymentCompleted(payment.getOrderId(), order.getUserId());
-                } catch (Exception e) {
-                    log.warn("Failed to send payment notification: {}", e.getMessage());
+                    // Send notification to customer
+                    try {
+                        Order order = orderRepository.findById(payment.getOrderId())
+                                .orElseThrow(() -> new RuntimeException("Order not found"));
+                        notificationService.notifyPaymentCompleted(payment.getOrderId(), order.getUserId());
+                    } catch (Exception e) {
+                        log.warn("Failed to send payment notification: {}", e.getMessage());
+                    }
+                    
+                    log.info("Payment completed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
+                    
+                    return VNPayResponse.builder()
+                            .success(true)
+                            .transactionNo(bankTranNo)
+                            .orderId(String.valueOf(payment.getOrderId()))
+                            .message("Payment successful")
+                            .build();
+                } else {
+                    // New flow: Payment successful but order not created yet
+                    // Frontend will create order after receiving this success response
+                    log.info("Payment successful for txnRef: {}, order will be created by frontend", txnRef);
+                    
+                    return VNPayResponse.builder()
+                            .success(true)
+                            .transactionNo(bankTranNo)
+                            .orderId("0") // Order not created yet
+                            .message("Payment successful")
+                            .build();
                 }
-                
-                log.info("Payment completed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
-                
-                return VNPayResponse.builder()
-                        .success(true)
-                        .transactionNo(bankTranNo)
-                        .orderId(String.valueOf(payment.getOrderId()))
-                        .message("Payment successful")
-                        .build();
 
             } else {
                 // Payment failed
-                payment.setStatus("FAILED");
-                payment.setUpdatedAt(LocalDateTime.now());
-                paymentRepository.save(payment);
-
-                log.info("Payment failed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
+                if (payment != null) {
+                    payment.setStatus("FAILED");
+                    payment.setUpdatedAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                    log.info("Payment failed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
+                } else {
+                    log.info("Payment failed for txnRef: {}, no order created", txnRef);
+                }
 
                 return VNPayResponse.builder()
                         .success(false)
                         .transactionNo(bankTranNo)
-                        .orderId(String.valueOf(payment.getOrderId()))
+                        .orderId(payment != null ? String.valueOf(payment.getOrderId()) : "0")
                         .message("Payment failed with response code: " + responseCode)
                         .build();
             }
