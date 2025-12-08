@@ -82,9 +82,6 @@ public class SecurityConfig {
                         // Public access for payment methods and guest orders
                         .requestMatchers(HttpMethod.GET, "/api/payment-methods").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/orders/guest").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/orders/**").permitAll()
-
-
 
                         // Admin only - User management
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

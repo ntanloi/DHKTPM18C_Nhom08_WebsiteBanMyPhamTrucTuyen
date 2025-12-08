@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/auth-context';
 import {
   createOrder,
   createGuestOrder,
+  getOrderDetail,
   type CreateOrderRequest,
   type CreateGuestOrderRequest,
 } from '../../api/order';
@@ -16,6 +17,7 @@ import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
+import VNPayPaymentModal from '../../components/user/payment/VNPayPaymentModal';
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
@@ -57,6 +59,11 @@ export default function CheckoutInfoPage({
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // VNPay Payment Modal State
+  const [showVNPayModal, setShowVNPayModal] = useState(false);
+  const [vnpayPaymentUrl, setVnpayPaymentUrl] = useState('');
+  const [currentOrderId, setCurrentOrderId] = useState<number>(0);
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -392,8 +399,10 @@ export default function CheckoutInfoPage({
         });
 
         if (vnpayResponse.success && vnpayResponse.paymentUrl) {
-          await clearCart();
-          window.location.href = vnpayResponse.paymentUrl;
+          // Show VNPay modal instead of redirecting
+          setCurrentOrderId(order.id);
+          setVnpayPaymentUrl(vnpayResponse.paymentUrl);
+          setShowVNPayModal(true);
         } else {
           throw new Error(
             vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
@@ -433,6 +442,33 @@ export default function CheckoutInfoPage({
       } catch (error: any) {
         showToast(error.message || 'Không thể xóa sản phẩm', 'error');
       }
+    }
+  };
+
+  // VNPay Modal Handlers
+  const handleVNPayModalClose = () => {
+    setShowVNPayModal(false);
+    setVnpayPaymentUrl('');
+    // Don't clear currentOrderId immediately, user might want to check status
+  };
+
+  const handleVNPaySuccess = async () => {
+    setShowVNPayModal(false);
+    await clearCart();
+    onNavigate?.(`/order-success/${currentOrderId}`);
+  };
+
+  const handleCheckPaymentStatus = async (): Promise<{ isPaid: boolean; status: string }> => {
+    try {
+      const order = await getOrderDetail(currentOrderId);
+      const isPaid = order.paymentInfo?.status === 'PAID' || order.paymentInfo?.status === 'COMPLETED';
+      return {
+        isPaid,
+        status: order.paymentInfo?.status || 'PENDING',
+      };
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      return { isPaid: false, status: 'UNKNOWN' };
     }
   };
 
@@ -849,6 +885,18 @@ export default function CheckoutInfoPage({
           </div>
         </div>
       </div>
+
+      {/* VNPay Payment Modal */}
+      <VNPayPaymentModal
+        isOpen={showVNPayModal}
+        paymentUrl={vnpayPaymentUrl}
+        orderId={currentOrderId}
+        amount={cart.totalAmount}
+        orderInfo={`Thanh toán đơn hàng #${currentOrderId} - BeautyBox`}
+        onClose={handleVNPayModalClose}
+        onSuccess={handleVNPaySuccess}
+        onCheckStatus={handleCheckPaymentStatus}
+      />
     </div>
   );
 }

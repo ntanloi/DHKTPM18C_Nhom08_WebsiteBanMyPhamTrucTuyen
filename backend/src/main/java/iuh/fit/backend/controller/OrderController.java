@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -57,9 +59,10 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<?> getOrderDetail(@PathVariable Integer orderId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getOrderDetail(@PathVariable Integer orderId, Authentication authentication) {
         try {
-            OrderDetailResponse response = orderService.getOrderDetail(orderId);
+            OrderDetailResponse response = orderService.getOrderDetailWithAuth(orderId, authentication);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -69,24 +72,28 @@ public class OrderController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
         List<OrderResponse> orders = orderService.getAllOrders();
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     public ResponseEntity<List<OrderResponse>> getOrdersByUserId(@PathVariable Integer userId) {
         List<OrderResponse> orders = orderService.getOrdersByUserId(userId);
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<List<OrderResponse>> getOrdersByStatus(@PathVariable String status) {
         List<OrderResponse> orders = orderService.getOrdersByStatus(status);
         return ResponseEntity.ok(orders);
     }
 
     @PutMapping("/{orderId}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPPORT')")
     public ResponseEntity<?> updateOrderStatus(
             @PathVariable Integer orderId,
             @RequestBody UpdateOrderStatusRequest request) {

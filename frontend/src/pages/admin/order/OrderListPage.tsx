@@ -16,6 +16,8 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>(mockOrders);
   const [loading, setLoading] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [bulkAction, setBulkAction] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState<
     'all' | 'processing' | 'completed' | 'cancelled'
@@ -148,6 +150,55 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
     setSearchQuery('');
     setDateFrom('');
     setDateTo('');
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(getPaginatedOrders().map((o) => o.id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleSelectOrder = (orderId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedOrders((prev) => [...prev, orderId]);
+    } else {
+      setSelectedOrders((prev) => prev.filter((id) => id !== orderId));
+    }
+  };
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedOrders.length === 0) {
+      alert('Vui lòng chọn hành động và ít nhất một đơn hàng');
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc chắn muốn ${bulkAction} ${selectedOrders.length} đơn hàng đã chọn?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          selectedOrders.includes(order.id)
+            ? { ...order, status: bulkAction, updatedAt: new Date().toISOString() }
+            : order,
+        ),
+      );
+
+      alert(`Đã cập nhật ${selectedOrders.length} đơn hàng thành công!`);
+      setSelectedOrders([]);
+      setBulkAction('');
+    } catch (error) {
+      alert('Có lỗi xảy ra khi cập nhật đơn hàng');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
@@ -354,6 +405,39 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
             </div>
           )}
 
+          {selectedOrders.length > 0 && (
+            <div className="mb-4 flex items-center gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <span className="text-sm font-medium text-blue-900">
+                Đã chọn {selectedOrders.length} đơn hàng
+              </span>
+              <select
+                value={bulkAction}
+                onChange={(e) => setBulkAction(e.target.value)}
+                className="rounded-lg border-gray-300 px-4 py-2 text-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500"
+              >
+                <option value="">-- Chọn hành động --</option>
+                <option value="CONFIRMED">Xác nhận đơn</option>
+                <option value="PROCESSING">Chuyển sang xử lý</option>
+                <option value="SHIPPED">Đã gửi hàng</option>
+                <option value="DELIVERED">Đã giao hàng</option>
+                <option value="CANCELLED">Hủy đơn</option>
+              </select>
+              <button
+                onClick={handleBulkAction}
+                disabled={!bulkAction}
+                className="rounded-lg bg-pink-600 px-6 py-2 text-sm font-medium text-white hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Áp dụng
+              </button>
+              <button
+                onClick={() => setSelectedOrders([])}
+                className="ml-auto text-sm text-gray-600 hover:text-gray-900"
+              >
+                Hủy chọn
+              </button>
+            </div>
+          )}
+
           <OrderTable
             orders={getPaginatedOrders()}
             onViewDetail={handleViewDetail}
@@ -362,6 +446,9 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
             onDeleteOrder={handleDeleteOrder}
             loading={loading}
             activeTab={activeTab}
+            selectedOrders={selectedOrders}
+            onSelectAll={handleSelectAll}
+            onSelectOrder={handleSelectOrder}
           />
 
           {filteredOrders.length > 0 && (

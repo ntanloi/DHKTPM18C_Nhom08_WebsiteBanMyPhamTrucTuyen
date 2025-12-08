@@ -16,6 +16,8 @@ import iuh.fit.backend.repository.ProductImageRepository;
 import iuh.fit.backend.repository.ProductRepository;
 import iuh.fit.backend.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IngestService {
 
     private final ProductRepository productRepository;
@@ -34,6 +37,32 @@ public class IngestService {
     private final ProductImageRepository productImageRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
+
+    /**
+     * Scheduled job to automatically ingest products daily at 2 AM
+     * This would typically call an external API or data source
+     */
+    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Ho_Chi_Minh")
+    public void scheduledIngest() {
+        log.info("Starting scheduled product ingest at {}", LocalDateTime.now());
+        try {
+            // In a real implementation, this would:
+            // 1. Call external API or read from data source
+            // 2. Transform data to IngestProductRequest format
+            // 3. Call ingest() method
+            
+            // Example: List<IngestProductRequest> products = fetchFromExternalSource();
+            // List<IngestResult> results = ingest(products);
+            
+            log.info("Scheduled ingest would run here - configure external data source");
+            log.info("To enable: uncomment and implement fetchFromExternalSource() method");
+            
+            // Placeholder for future implementation
+            // When ready, replace the above logs with actual ingest logic
+        } catch (Exception e) {
+            log.error("Scheduled ingest failed: {}", e.getMessage(), e);
+        }
+    }
 
     @Transactional
     public List<IngestResult> ingest(List<IngestProductRequest> requests) {
