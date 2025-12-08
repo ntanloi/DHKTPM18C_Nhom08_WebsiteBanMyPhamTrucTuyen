@@ -102,10 +102,10 @@ public class SecurityConfig {
                         
                         // Manager + Admin - Coupon management
                         // TEMPORARY: Allow public access to coupons for testing (REMOVE IN PRODUCTION!)
-                        .requestMatchers("/api/coupons/**").permitAll()
-                        // .requestMatchers(HttpMethod.POST, "/api/coupons").hasAnyRole("MANAGER", "ADMIN")
-                        // .requestMatchers(HttpMethod.PUT, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
-                        // .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
+                        // .requestMatchers("/api/coupons/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/coupons").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
                         
                         // VNPay payment endpoints
                         .requestMatchers("/api/payments/vnpay/callback").permitAll()
