@@ -3,9 +3,11 @@ package iuh.fit.backend.service;
 import iuh.fit.backend.dto.*;
 import iuh.fit.backend.model.Cart;
 import iuh.fit.backend.model.CartItem;
+import iuh.fit.backend.model.ProductImage;
 import iuh.fit.backend.model.ProductVariant;
 import iuh.fit.backend.repository.CartItemRepository;
 import iuh.fit.backend.repository.CartRepository;
+import iuh.fit.backend.repository.ProductImageRepository;
 import iuh.fit.backend.repository.ProductVariantRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class CartService {
 
     @Autowired
     private ProductVariantRepository productVariantRepository;
+    
+    @Autowired
+    private ProductImageRepository productImageRepository;
 
     @Transactional
     public CartResponse getCartByUserId(Integer userId) {
@@ -161,6 +166,12 @@ public class CartService {
                 itemResponse.setVariantName(variant.getName());
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
+                    
+                    // Get first product image
+                    List<ProductImage> images = productImageRepository.findByProductId(variant.getProduct().getId());
+                    if (!images.isEmpty()) {
+                        itemResponse.setImageUrl(images.get(0).getImageUrl());
+                    }
                 }
                 BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
                 itemResponse.setPrice(price);
@@ -197,28 +208,22 @@ public class CartService {
                 ProductVariant variant = productVariantRepository.findById(guestItem.getProductVariantId())
                         .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
-                Optional<CartItem> existingItem = cart.getCartItems().stream()
-                        .filter(item -> item.getProductVariant().getId().equals(guestItem.getProductVariantId()))
-                        .findFirst();
+                Optional<CartItem> existingItem = cartItemRepository
+                        .findByCartIdAndProductVariantId(cart.getId(), guestItem.getProductVariantId());
 
                 if (existingItem.isPresent()) {
                     CartItem item = existingItem.get();
                     int newQuantity = Math.min(item.getQuantity() + guestItem.getQuantity(), variant.getStockQuantity());
                     item.setQuantity(newQuantity);
-                    item.setUpdatedAt(LocalDateTime.now());
                     cartItemRepository.save(item);
                 } else {
                     int quantity = Math.min(guestItem.getQuantity(), variant.getStockQuantity());
                     if (quantity > 0) {
-                        CartItem newItem = CartItem.builder()
-                                .cart(cart)
-                                .productVariant(variant)
-                                .quantity(quantity)
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
+                        CartItem newItem = new CartItem();
+                        newItem.setCartId(cart.getId());
+                        newItem.setProductVariantId(guestItem.getProductVariantId());
+                        newItem.setQuantity(quantity);
                         cartItemRepository.save(newItem);
-                        cart.getCartItems().add(newItem);
                     }
                 }
             } catch (Exception e) {
