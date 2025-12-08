@@ -87,10 +87,15 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           alt={`Product image ${currentImageIndex + 1}`}
           className="h-full w-full cursor-pointer object-cover transition-transform duration-300 group-hover:scale-105"
           onClick={handleMainImageClick}
+          onError={(e) => {
+            console.error('Failed to load image:', currentImage.imageUrl);
+            e.currentTarget.style.display = 'block';
+            e.currentTarget.style.backgroundColor = '#f3f4f6';
+          }}
         />
 
-        <div className="bg-opacity-0 group-hover:bg-opacity-10 absolute inset-0 flex items-center justify-center bg-black transition-all duration-300">
-          <div className="opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/10">
+          <div className="pointer-events-auto opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <div className="rounded-full bg-white p-3 shadow-lg">
               <svg
                 className="h-6 w-6 text-gray-700"
@@ -181,12 +186,13 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
       {showLightbox && (
         <div
-          className="bg-opacity-90 fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setShowLightbox(false)}
         >
           <button
             onClick={() => setShowLightbox(false)}
-            className="absolute top-4 right-4 text-white transition-colors hover:text-gray-300"
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition-all hover:bg-white/20"
+            aria-label="Đóng"
           >
             <svg
               className="h-8 w-8"
@@ -203,12 +209,17 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             </svg>
           </button>
 
-          <div className="relative max-h-[90vh] max-w-5xl">
+          <div className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center">
             <img
               src={currentImage.imageUrl}
               alt="Full size"
-              className="max-h-[90vh] max-w-full object-contain"
+              className="max-h-[90vh] w-auto max-w-full rounded-lg object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                console.error('Failed to load image:', currentImage.imageUrl);
+                e.currentTarget.src = '';
+                e.currentTarget.alt = 'Không thể tải hình ảnh';
+              }}
             />
 
             {images.length > 1 && (
@@ -218,10 +229,11 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                     e.stopPropagation();
                     handlePrevious();
                   }}
-                  className="bg-opacity-20 hover:bg-opacity-30 absolute top-1/2 left-4 -translate-y-1/2 rounded-full bg-white p-3 transition-all"
+                  className="absolute left-4 rounded-full bg-white p-3 shadow-lg transition-all hover:bg-gray-100"
+                  aria-label="Ảnh trước"
                 >
                   <svg
-                    className="h-6 w-6 text-white"
+                    className="h-6 w-6 text-gray-800"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -239,10 +251,11 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                     e.stopPropagation();
                     handleNext();
                   }}
-                  className="bg-opacity-20 hover:bg-opacity-30 absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-white p-3 transition-all"
+                  className="absolute right-4 rounded-full bg-white p-3 shadow-lg transition-all hover:bg-gray-100"
+                  aria-label="Ảnh tiếp theo"
                 >
                   <svg
-                    className="h-6 w-6 text-white"
+                    className="h-6 w-6 text-gray-800"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -256,7 +269,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                   </svg>
                 </button>
 
-                <div className="bg-opacity-60 absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm text-white">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm text-white backdrop-blur-sm">
                   {currentImageIndex + 1} / {images.length}
                 </div>
               </>

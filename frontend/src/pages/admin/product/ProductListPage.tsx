@@ -6,6 +6,10 @@ import {
 } from '../../../api/product';
 import { getAllCategories, type CategoryResponse } from '../../../api/category';
 import { getAllBrands, type BrandResponse } from '../../../api/brand';
+import {
+  getAllProductImages,
+  type ProductImageResponse,
+} from '../../../api/productImage';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
 
 interface ProductListPageProps {
@@ -16,6 +20,9 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
   const [products, setProducts] = useState<ProductResponse[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [brands, setBrands] = useState<BrandResponse[]>([]);
+  const [productImages, setProductImages] = useState<ProductImageResponse[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,14 +37,17 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [productsData, categoriesData, brandsData] = await Promise.all([
-        getAllProducts(),
-        getAllCategories(),
-        getAllBrands(),
-      ]);
+      const [productsData, categoriesData, brandsData, imagesData] =
+        await Promise.all([
+          getAllProducts(),
+          getAllCategories(),
+          getAllBrands(),
+          getAllProductImages(),
+        ]);
       setProducts(productsData);
       setCategories(categoriesData);
       setBrands(brandsData);
+      setProductImages(imagesData);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data');
@@ -65,6 +75,11 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
   const getBrandName = (brandId: number): string => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.name : '—';
+  };
+
+  const getProductImage = (productId: number): string | null => {
+    const image = productImages.find((img) => img.productId === productId);
+    return image ? image.imageUrl : null;
   };
 
   const filteredProducts = products.filter((product) => {
@@ -213,26 +228,26 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Product Table */}
-          <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+          <div className="overflow-x-auto rounded-2xl bg-white shadow-lg">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-purple-50 to-pink-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="w-16 px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="min-w-[250px] px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     Tên Sản Phẩm
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     Danh Mục
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     Thương Hiệu
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="min-w-[120px] px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     Trạng Thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                  <th className="min-w-[280px] px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                     Thao Tác
                   </th>
                 </tr>
@@ -243,25 +258,41 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
                     key={product.id}
                     className="transition-colors hover:bg-pink-50"
                   >
-                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                    <td className="w-16 px-4 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
                       {product.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="min-w-[250px] px-4 py-4">
                       <div className="flex items-center">
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-pink-100">
-                          <svg
-                            className="h-6 w-6 text-purple-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-purple-100 to-pink-100">
+                          {getProductImage(product.id) ? (
+                            <img
+                              src={getProductImage(product.id)!}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement!.innerHTML = `
+                                  <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                  </svg>
+                                `;
+                              }}
                             />
-                          </svg>
+                          ) : (
+                            <svg
+                              className="h-8 w-8 text-purple-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                              />
+                            </svg>
+                          )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-semibold text-gray-900">
@@ -273,19 +304,19 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
+                    <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                       <span className="rounded-lg bg-purple-100 px-3 py-1.5 text-xs font-medium text-purple-800">
                         {getCategoryName(product.categoryId)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
+                    <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                       <span className="rounded-lg bg-pink-100 px-3 py-1.5 text-xs font-medium text-pink-800">
                         {getBrandName(product.brandId)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="min-w-[120px] px-4 py-4 whitespace-nowrap">
                       <span
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                        className={`inline-block rounded-full px-3 py-1.5 text-xs font-semibold ${
                           product.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : product.status === 'inactive'
@@ -300,28 +331,76 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
                             : 'Nháp'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                    <td className="min-w-[280px] px-4 py-4 text-sm">
                       <div className="flex gap-2">
                         <button
                           onClick={() =>
                             onNavigate(`/admin/products/${product.id}`)
                           }
-                          className="font-semibold text-purple-600 transition-colors hover:text-purple-800"
+                          className="flex items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 font-semibold text-purple-700 transition-all hover:bg-purple-200"
+                          title="Xem Chi Tiết"
                         >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
                           Xem
                         </button>
                         <button
                           onClick={() =>
                             onNavigate(`/admin/products/${product.id}/edit`)
                           }
-                          className="font-semibold text-blue-600 transition-colors hover:text-blue-800"
+                          className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 font-semibold text-blue-700 transition-all hover:bg-blue-200"
+                          title="Sửa"
                         >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
                           Sửa
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="font-semibold text-red-600 transition-colors hover:text-red-800"
+                          className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 font-semibold text-red-700 transition-all hover:bg-red-200"
+                          title="Xóa"
                         >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
                           Xóa
                         </button>
                       </div>
