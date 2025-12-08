@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import CancelOrderModal from '../../components/user/ui/CancelOrderModal';
-import { getOrderDetail, type OrderDetailResponse } from '../../api/order';
+import { getOrderDetail, getGuestOrderDetail, type OrderDetailResponse } from '../../api/order';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
+import { useAuth } from '../../hooks/useAuth';
 
 interface OrderSuccessPageProps {
   orderCode: string;
@@ -35,6 +36,7 @@ export default function OrderSuccessPage({
   orderCode,
   onBack,
 }: OrderSuccessPageProps) {
+  const { user } = useAuth();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,23 @@ export default function OrderSuccessPage({
       try {
         setLoading(true);
         const orderId = parseInt(orderCode);
-        const orderDetail: OrderDetailResponse = await getOrderDetail(orderId);
+        let orderDetail: OrderDetailResponse;
+        
+        // Check if user is authenticated
+        if (user) {
+          // Authenticated user - use regular API
+          orderDetail = await getOrderDetail(orderId);
+        } else {
+          // Guest user - retrieve email from localStorage
+          const guestEmail = localStorage.getItem(`guestOrder_${orderId}_email`);
+          
+          if (!guestEmail) {
+            throw new Error('Không tìm thấy thông tin đơn hàng. Vui lòng kiểm tra email của bạn.');
+          }
+          
+          // Use guest API with email validation
+          orderDetail = await getGuestOrderDetail(orderId, guestEmail);
+        }
 
         // Transform API response to OrderInfo format
         const transformedInfo: OrderInfo = {
@@ -97,9 +115,9 @@ export default function OrderSuccessPage({
 
         setOrderInfo(transformedInfo);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error loading order detail:', err);
-        const errorMessage = err.message || 'Không thể tải thông tin đơn hàng';
+        const errorMessage = err instanceof Error ? err.message : 'Không thể tải thông tin đơn hàng';
         setError(errorMessage);
         showToast(errorMessage, 'error');
       } finally {
@@ -110,7 +128,7 @@ export default function OrderSuccessPage({
     if (orderCode) {
       loadOrderDetail();
     }
-  }, [orderCode]);
+  }, [orderCode, user]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
 

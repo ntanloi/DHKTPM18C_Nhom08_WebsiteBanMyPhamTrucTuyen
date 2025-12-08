@@ -79,6 +79,22 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/guest/{orderId}")
+    public ResponseEntity<?> getGuestOrderDetail(
+            @PathVariable Integer orderId,
+            @RequestParam String email) {
+        try {
+            log.info("Guest order detail request: orderId={}, email={}", orderId, email);
+            OrderDetailResponse response = orderService.getGuestOrderDetail(orderId, email);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error retrieving guest order: orderId={}, email={}", orderId, email, e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        }
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<OrderResponse>> getAllOrders() {

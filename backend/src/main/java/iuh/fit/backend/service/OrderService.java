@@ -202,6 +202,18 @@ public class OrderService {
         return getOrderDetail(orderId);
     }
 
+    public OrderDetailResponse getGuestOrderDetail(Integer orderId, String email) {
+        // Verify the email matches the recipient email
+        RecipientInformation recipientInfo = recipientInformationRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Recipient information not found"));
+        
+        if (!recipientInfo.getRecipientEmail().equalsIgnoreCase(email)) {
+            throw new RuntimeException("Access denied: Email does not match order recipient");
+        }
+        
+        return getOrderDetail(orderId);
+    }
+
     public OrderDetailResponse getOrderDetail(Integer orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));

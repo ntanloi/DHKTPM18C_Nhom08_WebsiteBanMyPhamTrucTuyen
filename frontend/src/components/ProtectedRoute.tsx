@@ -22,7 +22,8 @@ export default function ProtectedRoute({
   // SECURITY FIX: Verify role with backend, don't trust localStorage
   useEffect(() => {
     const verifyUserRole = async () => {
-      if (!isLoggedIn || !user) {
+      // Read fresh values from context
+      if (!isLoggedIn) {
         setIsVerifying(false);
         return;
       }
@@ -32,23 +33,32 @@ export default function ProtectedRoute({
         const response = await authApi.verifyUser();
         setVerifiedRole(response.role);
         
-        // If localStorage role doesn't match database role, update it
-        if (user.role !== response.role) {
-          console.warn('⚠️ Security: localStorage role mismatch! Updating from database.');
-          // This could indicate an attack attempt
-        }
+        console.log('✓ Role verified from database:', response.role);
       } catch (error) {
         console.error('Failed to verify user role:', error);
-        setVerificationError('Failed to verify permissions');
-        // If verification fails, log out user for security
-        logout();
+        const err = error as { response?: { status?: number } };
+        
+        // Only logout on authentication errors (401/403), not on network errors
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          console.log('Authentication failed in ProtectedRoute, logging out');
+          setVerificationError('Session expired');
+          logout();
+        } else {
+          // For other errors (network, server), use user's existing role from context
+          console.warn('Verification failed, using cached role from context');
+          // Don't call logout on network errors - just use existing role
+          if (user) {
+            setVerifiedRole(user.role);
+          }
+        }
       } finally {
         setIsVerifying(false);
       }
     };
 
     verifyUserRole();
-  }, [isLoggedIn, user, logout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]); // Only depend on login state, not user object
 
   // Loading state - show while checking auth and verifying role
   if (isLoading || isVerifying) {
