@@ -43,13 +43,18 @@ public class CartService {
 
     @Transactional
     public CartResponse addToCart(Integer userId, AddToCartRequest request) {
+        if (request.getProductVariantId() == null || request.getQuantity() == null || request.getQuantity() < 1) {
+            throw new RuntimeException("Số lượng hoặc sản phẩm không hợp lệ");
+        }
+
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> createCartForUser(userId));
 
         ProductVariant variant = productVariantRepository.findById(request.getProductVariantId())
                 .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
-        if (variant.getStockQuantity() < request.getQuantity()) {
+        int stock = variant.getStockQuantity() != null ? variant.getStockQuantity() : 0;
+        if (stock < request.getQuantity()) {
             throw new RuntimeException("Insufficient stock for product: " + variant.getName());
         }
 
@@ -58,8 +63,9 @@ public class CartService {
 
         if (existingItem.isPresent()) {
             CartItem item = existingItem.get();
-            int newQuantity = item.getQuantity() + request.getQuantity();
-            if (variant.getStockQuantity() < newQuantity) {
+            int currentQty = item.getQuantity() != null ? item.getQuantity() : 0;
+            int newQuantity = currentQty + request.getQuantity();
+            if (stock < newQuantity) {
                 throw new RuntimeException("Insufficient stock for product: " + variant.getName());
             }
             item.setQuantity(newQuantity);
@@ -93,7 +99,8 @@ public class CartService {
         ProductVariant variant = productVariantRepository.findById(cartItem.getProductVariantId())
                 .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
-        if (variant.getStockQuantity() < request.getQuantity()) {
+        int stock = variant.getStockQuantity() != null ? variant.getStockQuantity() : 0;
+        if (stock < request.getQuantity()) {
             throw new RuntimeException("Insufficient stock for product: " + variant.getName());
         }
 
@@ -159,9 +166,12 @@ public class CartService {
             CartItemResponse itemResponse = new CartItemResponse();
             itemResponse.setId(item.getId());
             itemResponse.setProductVariantId(item.getProductVariantId());
-            itemResponse.setQuantity(item.getQuantity());
+            itemResponse.setQuantity(item.getQuantity() != null ? item.getQuantity() : 0);
 
             ProductVariant variant = productVariantRepository.findById(item.getProductVariantId()).orElse(null);
+            BigDecimal price = BigDecimal.ZERO;
+            BigDecimal subtotal = BigDecimal.ZERO;
+
             if (variant != null) {
                 itemResponse.setVariantName(variant.getName());
                 if (variant.getProduct() != null) {
@@ -173,10 +183,14 @@ public class CartService {
                         itemResponse.setImageUrl(images.get(0).getImageUrl());
                     }
                 }
-                BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
-                itemResponse.setPrice(price);
-                itemResponse.setSubtotal(price.multiply(BigDecimal.valueOf(item.getQuantity())));
+                price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
             }
+            if (price == null) {
+                price = BigDecimal.ZERO;
+            }
+            subtotal = price.multiply(BigDecimal.valueOf(itemResponse.getQuantity()));
+            itemResponse.setPrice(price);
+            itemResponse.setSubtotal(subtotal);
 
             return itemResponse;
         }).collect(Collectors.toList());

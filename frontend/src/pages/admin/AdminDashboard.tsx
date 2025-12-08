@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/layout/AdminLayout';
 import { getDashboardSummary, getOrderStats } from '../../api/analytics';
 import type { DashboardSummary } from '../../api/analytics';
+import { tokenStorage } from '../../api/auth';
 
 interface AdminDashboardProps {
   onNavigate: (path: string) => void;
@@ -44,7 +45,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            Authorization: `Bearer ${tokenStorage.getAccessToken()}`,
           },
         }
       );

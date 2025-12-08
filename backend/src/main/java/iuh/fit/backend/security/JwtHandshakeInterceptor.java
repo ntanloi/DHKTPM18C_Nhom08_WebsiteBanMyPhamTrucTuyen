@@ -56,6 +56,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                         attributes.put("username", username);
                         attributes.put("token", token);
                         
+                        // Reduce noise: keep debug low volume only when DEBUG is enabled
                         log.debug("WebSocket handshake authenticated for user: {}", username);
                         return true;
                     }
@@ -70,11 +71,13 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             if (sessionId != null && !sessionId.isEmpty()) {
                 attributes.put("guestSessionId", sessionId);
                 attributes.put("isGuest", true);
+                // Reduce noise: keep debug low volume only when DEBUG is enabled
                 log.debug("WebSocket handshake for guest with sessionId: {}", sessionId);
                 return true;
             }
 
-            log.warn("WebSocket handshake rejected: No valid token or guest session");
+            // Soften to debug to avoid log spam when unauthenticated clients poll
+            log.debug("WebSocket handshake rejected: No valid token or guest session");
             return false;
         }
 

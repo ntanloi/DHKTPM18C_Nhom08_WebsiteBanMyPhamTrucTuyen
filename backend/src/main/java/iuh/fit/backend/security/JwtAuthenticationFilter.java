@@ -39,8 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         String method = request.getMethod();
         
-        // Auth endpoints
-        if (matcher.match("/api/auth/**", path)) return true;
+        // Auth endpoints that are PUBLIC (do not require JWT)
+        if (matcher.match("/api/auth/login", path)) return true;
+        if (matcher.match("/api/auth/register", path)) return true;
+        if (matcher.match("/api/auth/send-otp", path)) return true;
+        if (matcher.match("/api/auth/verify-otp", path)) return true;
+        if (matcher.match("/api/auth/refresh", path)) return true;
         
         // Swagger/OpenAPI
         if (matcher.match("/swagger-ui/**", path)) return true;
