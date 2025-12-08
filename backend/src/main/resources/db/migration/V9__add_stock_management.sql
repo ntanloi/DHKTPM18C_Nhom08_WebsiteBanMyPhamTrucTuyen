@@ -21,10 +21,23 @@ CREATE TABLE IF NOT EXISTS stock_history (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Add stock threshold columns to product_variants
-ALTER TABLE product_variants 
-ADD COLUMN IF NOT EXISTS low_stock_threshold INT DEFAULT 10,
-ADD COLUMN IF NOT EXISTS reorder_point INT DEFAULT 5,
-ADD COLUMN IF NOT EXISTS reorder_quantity INT DEFAULT 50;
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'product_variants' AND COLUMN_NAME = 'low_stock_threshold';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE product_variants ADD COLUMN low_stock_threshold INT DEFAULT 10', 'SELECT "Column low_stock_threshold already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'product_variants' AND COLUMN_NAME = 'reorder_point';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE product_variants ADD COLUMN reorder_point INT DEFAULT 5', 'SELECT "Column reorder_point already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'product_variants' AND COLUMN_NAME = 'reorder_quantity';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE product_variants ADD COLUMN reorder_quantity INT DEFAULT 50', 'SELECT "Column reorder_quantity already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Stock alerts table for tracking alert status
 CREATE TABLE IF NOT EXISTS stock_alerts (

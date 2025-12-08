@@ -107,9 +107,12 @@ export default function Header({
 
         {/* Header */}
         <div className="header container flex items-center justify-between">
-          <a href="/home">
+          <button
+            onClick={() => onNavigate?.('/home')}
+            className="cursor-pointer border-none bg-transparent p-0"
+          >
             <img src={logo} alt="logo" className="w-[190px]" />
-          </a>
+          </button>
 
           {/* Search */}
           <div className="relative mx-8 max-w-[400px] flex-1" ref={searchRef}>

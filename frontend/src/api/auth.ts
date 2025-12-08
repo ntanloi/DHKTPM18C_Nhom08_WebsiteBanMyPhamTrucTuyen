@@ -48,8 +48,13 @@ export const authApi = {
   },
 
   // Send OTP to email (passwordless login)
-  sendOtp: async (request: SendOtpRequest): Promise<{ message: string; email: string }> => {
-    const response = await api.post<{ message: string; email: string }>('/auth/send-otp', request);
+  sendOtp: async (
+    request: SendOtpRequest,
+  ): Promise<{ message: string; email: string }> => {
+    const response = await api.post<{ message: string; email: string }>(
+      '/auth/send-otp',
+      request,
+    );
     return response.data;
   },
 
@@ -80,8 +85,14 @@ const USER_KEY = 'beautybox_user';
 export const tokenStorage = {
   // Save tokens after login
   saveTokens: (accessToken: string, refreshToken: string) => {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    try {
+      console.log('💾 Saving tokens to localStorage...');
+      localStorage.setItem(TOKEN_KEY, accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      console.log('✅ Tokens saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving tokens:', error);
+    }
   },
 
   // Get access token

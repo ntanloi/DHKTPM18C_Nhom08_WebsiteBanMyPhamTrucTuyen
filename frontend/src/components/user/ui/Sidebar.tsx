@@ -1,12 +1,9 @@
+import type { UserResponse } from '../../../api/user';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  user: {
-    firstName: string;
-    lastName: string;
-    points: number;
-    pointsToNextLevel: number;
-  };
+  user: UserResponse | null;
 }
 
 export default function Sidebar({
@@ -25,11 +22,20 @@ export default function Sidebar({
     <div className="w-80 rounded-lg bg-white p-6 shadow-sm">
       <div className="mb-6 text-center">
         <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 text-4xl">
-          👤
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.fullName}
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : (
+            '👤'
+          )}
         </div>
         <h3 className="text-lg font-bold text-gray-800">
-          {user.firstName} {user.lastName}
+          {user?.fullName || 'User'}
         </h3>
+        <p className="text-sm text-gray-500">{user?.email}</p>
       </div>
 
       <nav className="space-y-1">
