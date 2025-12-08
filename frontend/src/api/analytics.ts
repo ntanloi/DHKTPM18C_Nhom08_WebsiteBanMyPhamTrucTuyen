@@ -1,6 +1,6 @@
-import axios from 'axios';
+import api from '../lib/api';
 
-const API_BASE = '/api/admin/analytics';
+const API_BASE = '/admin/analytics';
 
 export interface DashboardSummary {
   totalRevenue: number;
@@ -56,7 +56,7 @@ export interface UserStats {
 }
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
-  const response = await axios.get(`${API_BASE}/dashboard`);
+  const response = await api.get(`${API_BASE}/dashboard`);
   return response.data;
 };
 
@@ -64,7 +64,7 @@ export const getRevenueData = async (
   startDate: string,
   endDate: string
 ): Promise<RevenueData> => {
-  const response = await axios.get(`${API_BASE}/revenue`, {
+  const response = await api.get(`${API_BASE}/revenue`, {
     params: { startDate, endDate },
   });
   return response.data;
@@ -74,7 +74,7 @@ export const getOrderStats = async (
   startDate: string,
   endDate: string
 ): Promise<OrderStats> => {
-  const response = await axios.get(`${API_BASE}/orders`, {
+  const response = await api.get(`${API_BASE}/orders`, {
     params: { startDate, endDate },
   });
   return response.data;
@@ -85,7 +85,7 @@ export const getProductStats = async (
   endDate: string,
   topCount: number = 10
 ): Promise<ProductStats> => {
-  const response = await axios.get(`${API_BASE}/products`, {
+  const response = await api.get(`${API_BASE}/products`, {
     params: { startDate, endDate, topCount },
   });
   return response.data;
@@ -95,7 +95,7 @@ export const getUserStats = async (
   startDate: string,
   endDate: string
 ): Promise<UserStats> => {
-  const response = await axios.get(`${API_BASE}/users`, {
+  const response = await api.get(`${API_BASE}/users`, {
     params: { startDate, endDate },
   });
   return response.data;

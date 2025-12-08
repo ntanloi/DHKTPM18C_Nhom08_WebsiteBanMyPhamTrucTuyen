@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { tokenStorage } from '../api/auth';
+import { tokenStorage, authApi } from '../api/auth';
 import type { AuthResponse } from '../api/auth';
 import { AuthContext } from './auth-context';
 import type { User } from './auth-context';

@@ -179,4 +179,55 @@ public class CartService {
 
         return response;
     }
+
+    /**
+     * Merge guest cart items into user cart after login
+     */
+    @Transactional
+    public CartResponse mergeGuestCart(Integer userId, MergeCartRequest request) {
+        if (request.getGuestCartItems() == null || request.getGuestCartItems().isEmpty()) {
+            return getCartByUserId(userId);
+        }
+
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseGet(() -> createCartForUser(userId));
+
+        for (MergeCartRequest.CartItemData guestItem : request.getGuestCartItems()) {
+            try {
+                ProductVariant variant = productVariantRepository.findById(guestItem.getProductVariantId())
+                        .orElseThrow(() -> new RuntimeException("Product variant not found"));
+
+                Optional<CartItem> existingItem = cart.getCartItems().stream()
+                        .filter(item -> item.getProductVariant().getId().equals(guestItem.getProductVariantId()))
+                        .findFirst();
+
+                if (existingItem.isPresent()) {
+                    CartItem item = existingItem.get();
+                    int newQuantity = Math.min(item.getQuantity() + guestItem.getQuantity(), variant.getStockQuantity());
+                    item.setQuantity(newQuantity);
+                    item.setUpdatedAt(LocalDateTime.now());
+                    cartItemRepository.save(item);
+                } else {
+                    int quantity = Math.min(guestItem.getQuantity(), variant.getStockQuantity());
+                    if (quantity > 0) {
+                        CartItem newItem = CartItem.builder()
+                                .cart(cart)
+                                .productVariant(variant)
+                                .quantity(quantity)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+                        cartItemRepository.save(newItem);
+                        cart.getCartItems().add(newItem);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error merging cart item: " + e.getMessage());
+            }
+        }
+
+        cart.setUpdatedAt(LocalDateTime.now());
+        cartRepository.save(cart);
+        return convertToCartResponse(cart);
+    }
 }

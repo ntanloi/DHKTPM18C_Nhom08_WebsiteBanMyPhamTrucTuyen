@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { Notification } from '../types/notification';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../hooks/useAuth';
-import * as notificationApi from '../api/notification';
+// import * as notificationApi from '../api/notification'; // TODO: Backend chưa có NotificationController
 import toast from 'react-hot-toast';
 
 interface NotificationContextType {
@@ -25,7 +25,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // WebSocket connection
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('beautybox_access_token');
   const { connected, subscribe } = useWebSocket({
     autoConnect: isLoggedIn,
     token: token || undefined,
@@ -89,8 +89,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const data = await notificationApi.getNotifications();
-      setNotifications(data);
+      // TODO: Backend chưa có NotificationController REST API
+      // Hiện tại chỉ dùng WebSocket để nhận notification real-time
+      console.warn('NotificationController REST API not implemented yet - using WebSocket only');
+      // const data = await notificationApi.getNotifications();
+      // setNotifications(data);
+      setNotifications([]); // Tạm thời dùng empty array
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
@@ -104,7 +108,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      await notificationApi.markAsRead(notificationId);
+      // TODO: Backend chưa có NotificationController REST API
+      console.warn('markAsRead API not implemented - only updating local state');
+      // await notificationApi.markAsRead(notificationId);
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
       );
@@ -115,7 +121,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const markAllAsRead = async () => {
     try {
-      await notificationApi.markAllAsRead();
+      // TODO: Backend chưa có NotificationController REST API
+      console.warn('markAllAsRead API not implemented - only updating local state');
+      // await notificationApi.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
@@ -124,7 +132,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const clearNotifications = async () => {
     try {
-      await notificationApi.clearAllNotifications();
+      // TODO: Backend chưa có NotificationController REST API
+      console.warn('clearNotifications API not implemented - only updating local state');
+      // await notificationApi.clearAllNotifications();
       setNotifications([]);
     } catch (error) {
       console.error('Error clearing notifications:', error);
@@ -133,7 +143,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      await notificationApi.deleteNotification(notificationId);
+      // TODO: Backend chưa có NotificationController REST API
+      console.warn('deleteNotification API not implemented - only updating local state');
+      // await notificationApi.deleteNotification(notificationId);
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     } catch (error) {
       console.error('Error deleting notification:', error);
