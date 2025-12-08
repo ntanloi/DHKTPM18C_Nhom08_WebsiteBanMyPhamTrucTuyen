@@ -20,10 +20,14 @@ CREATE TABLE IF NOT EXISTS stock_history (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add stock threshold columns to product_variants
+-- Add stock threshold columns to product_variants (separate ALTER statements for MySQL/MariaDB compatibility)
 ALTER TABLE product_variants 
-ADD COLUMN IF NOT EXISTS low_stock_threshold INT DEFAULT 10,
-ADD COLUMN IF NOT EXISTS reorder_point INT DEFAULT 5,
+ADD COLUMN IF NOT EXISTS low_stock_threshold INT DEFAULT 10;
+
+ALTER TABLE product_variants 
+ADD COLUMN IF NOT EXISTS reorder_point INT DEFAULT 5;
+
+ALTER TABLE product_variants 
 ADD COLUMN IF NOT EXISTS reorder_quantity INT DEFAULT 50;
 
 -- Stock alerts table for tracking alert status

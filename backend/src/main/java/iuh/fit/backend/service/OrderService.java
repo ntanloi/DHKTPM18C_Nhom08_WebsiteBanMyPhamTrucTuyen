@@ -448,40 +448,54 @@ public class OrderService {
     
     @Transactional
     public OrderDetailResponse createGuestOrder(CreateOrderRequest request) {
-        // Create a new guest user for this order
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("USER role not found"));
-        
-        // Use recipient info to create guest user
-        String guestEmail = request.getRecipientInfo().getRecipientEmail();
-        String guestFullName = request.getRecipientInfo().getRecipientFirstName() + " " + 
-                               request.getRecipientInfo().getRecipientLastName();
-        String guestPhone = request.getRecipientInfo().getRecipientPhone();
-        
-        // Check if user with this email already exists
-        User guestUser = userRepository.findByEmail(guestEmail).orElse(null);
-        
-        if (guestUser == null) {
-            // Create new guest user
-            guestUser = new User();
-            guestUser.setEmail(guestEmail);
-            guestUser.setPassword("$2a$10$guestUserNoPassword"); // Dummy password, guest can't login
-            guestUser.setFullName(guestFullName);
-            guestUser.setPhoneNumber(guestPhone);
-            guestUser.setRole(userRole);
-            guestUser.setIsActive(true);
-            guestUser.setCreatedAt(LocalDateTime.now());
-            guestUser.setUpdatedAt(LocalDateTime.now());
-            guestUser = userRepository.save(guestUser);
-            log.info("Created new guest user with email: {} and ID: {}", guestEmail, guestUser.getId());
-        } else {
-            log.info("Using existing user with email: {} and ID: {}", guestEmail, guestUser.getId());
+        try {
+            // Validate recipient info
+            if (request.getRecipientInfo() == null) {
+                throw new RuntimeException("Recipient information is required for guest orders");
+            }
+            if (request.getRecipientInfo().getRecipientEmail() == null || 
+                request.getRecipientInfo().getRecipientEmail().trim().isEmpty()) {
+                throw new RuntimeException("Recipient email is required for guest orders");
+            }
+            
+            // Create a new guest user for this order
+            Role userRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new RuntimeException("USER role not found"));
+            
+            // Use recipient info to create guest user
+            String guestEmail = request.getRecipientInfo().getRecipientEmail();
+            String guestFullName = request.getRecipientInfo().getRecipientFirstName() + " " + 
+                                   request.getRecipientInfo().getRecipientLastName();
+            String guestPhone = request.getRecipientInfo().getRecipientPhone();
+            
+            // Check if user with this email already exists
+            User guestUser = userRepository.findByEmail(guestEmail).orElse(null);
+            
+            if (guestUser == null) {
+                // Create new guest user
+                guestUser = new User();
+                guestUser.setEmail(guestEmail);
+                guestUser.setPassword("$2a$10$guestUserNoPassword"); // Dummy password, guest can't login
+                guestUser.setFullName(guestFullName);
+                guestUser.setPhoneNumber(guestPhone);
+                guestUser.setRole(userRole);
+                guestUser.setIsActive(true);
+                guestUser.setCreatedAt(LocalDateTime.now());
+                guestUser.setUpdatedAt(LocalDateTime.now());
+                guestUser = userRepository.save(guestUser);
+                log.info("Created new guest user with email: {} and ID: {}", guestEmail, guestUser.getId());
+            } else {
+                log.info("Using existing user with email: {} and ID: {}", guestEmail, guestUser.getId());
+            }
+            
+            // Set userId for the order
+            request.setUserId(guestUser.getId());
+            
+            // Create order using existing logic
+            return createOrder(request);
+        } catch (Exception e) {
+            log.error("Error creating guest order", e);
+            throw e;
         }
-        
-        // Set userId for the order
-        request.setUserId(guestUser.getId());
-        
-        // Create order using existing logic
-        return createOrder(request);
     }
 }

@@ -6,6 +6,7 @@ import iuh.fit.backend.dto.OrderResponse;
 import iuh.fit.backend.dto.UpdateOrderStatusRequest;
 import iuh.fit.backend.service.OrderService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class OrderController {
 
     @Autowired
@@ -42,12 +44,17 @@ public class OrderController {
     @PostMapping("/guest")
     public ResponseEntity<?> createGuestOrder(@Valid @RequestBody CreateOrderRequest request) {
         try {
+            log.info("Guest order request received: orderItems={}, recipientEmail={}", 
+                request.getOrderItems() != null ? request.getOrderItems().size() : 0,
+                request.getRecipientInfo() != null ? request.getRecipientInfo().getRecipientEmail() : "null");
+            
             // Create a new guest user for each order
             // userId will be set by the service based on recipient info
             OrderDetailResponse response = orderService.createGuestOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             // Log the full stack trace for debugging
+            log.error("Error creating guest order", e);
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
