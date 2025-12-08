@@ -4,6 +4,7 @@ import React, {
   type DragEvent,
   type ChangeEvent,
 } from 'react';
+import { uploadImages } from '../../../api/upload';
 
 interface ProductImageUploaderProps {
   productId: number;
@@ -140,16 +141,29 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
     setError(null);
 
     try {
-      const uploadedUrls: string[] = [];
+      const filesToUpload = files.map((f) => f.file);
+      
+      // Simulate progress during upload
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 10, 90));
+      }, 200);
 
-      for (let i = 0; i < files.length; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        uploadedUrls.push(files[i].preview);
-        setUploadProgress(((i + 1) / files.length) * 100);
+      const result = await uploadImages(filesToUpload, 'products');
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (result.errors && result.errors.length > 0) {
+        setError(`Some images failed to upload:\n${result.errors.join('\n')}`);
       }
-      onUploadComplete(uploadedUrls);
-      clearAll();
-      alert('Upload thành công!');
+
+      if (result.urls.length > 0) {
+        onUploadComplete(result.urls);
+        clearAll();
+        alert(`Upload thành công ${result.success}/${result.total} ảnh!`);
+      } else {
+        setError('No images were uploaded successfully');
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Upload failed. Please try again.';
