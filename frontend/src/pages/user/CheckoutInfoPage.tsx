@@ -87,7 +87,6 @@ export default function CheckoutInfoPage({
     const loadPaymentMethods = async () => {
       try {
         const methods = await getPaymentMethods();
-        console.log('✅ Payment methods loaded:', methods);
 
         if (methods && methods.length > 0) {
           setPaymentMethods(methods.filter((m) => m.isActive));
@@ -360,6 +359,10 @@ export default function CheckoutInfoPage({
         };
 
         const order = await createGuestOrder(guestOrderRequest);
+        
+        // Save guest email to localStorage for order retrieval
+        localStorage.setItem(`guestOrder_${order.id}_email`, formData.recipientEmail);
+        
         await clearCart();
         onNavigate?.(`/order-success/${order.id}`);
         return;

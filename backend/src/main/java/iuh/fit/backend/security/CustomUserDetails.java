@@ -30,6 +30,11 @@ public class CustomUserDetails implements UserDetails {
         );
     }
 
+    // IMPORTANT: This method is used in @PreAuthorize expressions
+    public Integer getUserId() {
+        return id;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;

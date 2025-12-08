@@ -63,26 +63,27 @@ public class Order {
     @JsonIgnore
     private User user;
 
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<OrderItem> orderItems;
 
-    @OneToOne(mappedBy = "order")
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
     private Payment payment;
 
-    @OneToOne(mappedBy = "order")
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
     private Return returnInfo;
 
-    @OneToOne(mappedBy = "order")
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
     private Shipment shipment;
 
-    @OneToOne(mappedBy = "order")
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
     private OrderStatusHistory orderStatusHistory;
 
-    @OneToOne(mappedBy = "order")
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
     private RecipientInformation recipientInformation;
 

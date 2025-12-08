@@ -6,6 +6,7 @@ import iuh.fit.backend.service.FavoriteListService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -20,12 +21,16 @@ public class FavoriteListController {
     @Autowired
     private FavoriteListService favoriteListService;
 
+    // Get all favorites - Admin/Manager only
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<List<FavoriteListResponse>> getAllFavorites() {
         List<FavoriteListResponse> favorites = favoriteListService.getAllFavorites();
         return ResponseEntity.ok(favorites);
     }
 
+    // Get favorite by ID - User can get their own, Admin/Manager can get any
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{favoriteId}")
     public ResponseEntity<?> getFavoriteById(@PathVariable Integer favoriteId) {
         try {
@@ -38,6 +43,8 @@ public class FavoriteListController {
         }
     }
 
+    // Get favorites by user ID - User can get their own, Admin/Manager can get any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<FavoriteListResponse>> getFavoritesByUserId(
             @PathVariable Integer userId) {
@@ -45,6 +52,8 @@ public class FavoriteListController {
         return ResponseEntity.ok(favorites);
     }
 
+    // Add to favorites - Authenticated users only
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<?> createFavorite(@RequestBody FavoriteListRequest request) {
         try {
@@ -57,6 +66,8 @@ public class FavoriteListController {
         }
     }
 
+    // Remove from favorites - Authenticated users only
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{favoriteId}")
     public ResponseEntity<?> deleteFavorite(@PathVariable Integer favoriteId) {
         try {
@@ -71,6 +82,8 @@ public class FavoriteListController {
         }
     }
 
+    // Remove from favorites by user and product - User can remove their own, Admin can remove any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasRole('ADMIN'))")
     @DeleteMapping("/user/{userId}/product/{productId}")
     public ResponseEntity<?> deleteFavoriteByUserAndProduct(
             @PathVariable Integer userId,

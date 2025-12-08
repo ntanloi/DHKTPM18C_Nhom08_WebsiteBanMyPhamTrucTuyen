@@ -3,6 +3,7 @@ package iuh.fit.backend.service;
 import iuh.fit.backend.dto.*;
 import iuh.fit.backend.model.*;
 import iuh.fit.backend.repository.*;
+import iuh.fit.backend.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final ShipmentRepository shipmentRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ProductImageRepository productImageRepository;
     private final NotificationService notificationService;
     private final CouponService couponService;
     private final CouponRepository couponRepository;
@@ -199,6 +201,18 @@ public class OrderService {
         return getOrderDetail(orderId);
     }
 
+    public OrderDetailResponse getGuestOrderDetail(Integer orderId, String email) {
+        // Verify the email matches the recipient email
+        RecipientInformation recipientInfo = recipientInformationRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Recipient information not found"));
+        
+        if (!recipientInfo.getRecipientEmail().equalsIgnoreCase(email)) {
+            throw new RuntimeException("Access denied: Email does not match order recipient");
+        }
+        
+        return getOrderDetail(orderId);
+    }
+
     public OrderDetailResponse getOrderDetail(Integer orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -229,6 +243,12 @@ public class OrderService {
                 itemResponse.setVariantName(variant.getName());
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
+                    
+                    // Get first product image
+                    List<ProductImage> images = productImageRepository.findByProductId(variant.getProduct().getId());
+                    if (!images.isEmpty()) {
+                        itemResponse.setImageUrl(images.get(0).getImageUrl());
+                    }
                 }
                 BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
                 itemResponse.setPrice(price);
@@ -340,8 +360,11 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
-            throw new RuntimeException("Cannot cancel order with status: " + order.getStatus());
+        // Cannot cancel order if it's SHIPPED, DELIVERED or already CANCELLED
+        List<String> nonCancellableStatuses = List.of("SHIPPED", "DELIVERING", "DELIVERED", "CANCELLED");
+        if (nonCancellableStatuses.contains(order.getStatus())) {
+            throw new RuntimeException("Cannot cancel order with status: " + order.getStatus() + 
+                                       ". Only PENDING and CONFIRMED orders can be cancelled.");
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
@@ -382,6 +405,27 @@ public class OrderService {
         return convertToOrderResponse(cancelledOrder);
     }
 
+    /**
+     * Cancel order with authentication check - user can only cancel their own orders
+     * Admin/Manager can cancel any order
+     */
+    @Transactional
+    public OrderResponse cancelOrderWithAuth(Integer orderId, Authentication authentication) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // Check ownership - user can only cancel their own orders
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN") || auth.getAuthority().equals("ROLE_MANAGER"));
+        
+        if (!isAdmin && !order.getUserId().equals(userDetails.getUserId())) {
+            throw new RuntimeException("You can only cancel your own orders");
+        }
+        
+        return cancelOrder(orderId);
+    }
+
     @Transactional
     public void deleteOrder(Integer orderId) {
         Order order = orderRepository.findById(orderId)
@@ -415,40 +459,54 @@ public class OrderService {
     
     @Transactional
     public OrderDetailResponse createGuestOrder(CreateOrderRequest request) {
-        // Create a new guest user for this order
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("USER role not found"));
-        
-        // Use recipient info to create guest user
-        String guestEmail = request.getRecipientInfo().getRecipientEmail();
-        String guestFullName = request.getRecipientInfo().getRecipientFirstName() + " " + 
-                               request.getRecipientInfo().getRecipientLastName();
-        String guestPhone = request.getRecipientInfo().getRecipientPhone();
-        
-        // Check if user with this email already exists
-        User guestUser = userRepository.findByEmail(guestEmail).orElse(null);
-        
-        if (guestUser == null) {
-            // Create new guest user
-            guestUser = new User();
-            guestUser.setEmail(guestEmail);
-            guestUser.setPassword("$2a$10$guestUserNoPassword"); // Dummy password, guest can't login
-            guestUser.setFullName(guestFullName);
-            guestUser.setPhoneNumber(guestPhone);
-            guestUser.setRole(userRole);
-            guestUser.setIsActive(true);
-            guestUser.setCreatedAt(LocalDateTime.now());
-            guestUser.setUpdatedAt(LocalDateTime.now());
-            guestUser = userRepository.save(guestUser);
-            log.info("Created new guest user with email: {} and ID: {}", guestEmail, guestUser.getId());
-        } else {
-            log.info("Using existing user with email: {} and ID: {}", guestEmail, guestUser.getId());
+        try {
+            // Validate recipient info
+            if (request.getRecipientInfo() == null) {
+                throw new RuntimeException("Recipient information is required for guest orders");
+            }
+            if (request.getRecipientInfo().getRecipientEmail() == null || 
+                request.getRecipientInfo().getRecipientEmail().trim().isEmpty()) {
+                throw new RuntimeException("Recipient email is required for guest orders");
+            }
+            
+            // Create a new guest user for this order
+            Role userRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new RuntimeException("USER role not found"));
+            
+            // Use recipient info to create guest user
+            String guestEmail = request.getRecipientInfo().getRecipientEmail();
+            String guestFullName = request.getRecipientInfo().getRecipientFirstName() + " " + 
+                                   request.getRecipientInfo().getRecipientLastName();
+            String guestPhone = request.getRecipientInfo().getRecipientPhone();
+            
+            // Check if user with this email already exists
+            User guestUser = userRepository.findByEmail(guestEmail).orElse(null);
+            
+            if (guestUser == null) {
+                // Create new guest user
+                guestUser = new User();
+                guestUser.setEmail(guestEmail);
+                guestUser.setPassword("$2a$10$guestUserNoPassword"); // Dummy password, guest can't login
+                guestUser.setFullName(guestFullName);
+                guestUser.setPhoneNumber(guestPhone);
+                guestUser.setRole(userRole);
+                guestUser.setIsActive(true);
+                guestUser.setCreatedAt(LocalDateTime.now());
+                guestUser.setUpdatedAt(LocalDateTime.now());
+                guestUser = userRepository.save(guestUser);
+                log.info("Created new guest user with email: {} and ID: {}", guestEmail, guestUser.getId());
+            } else {
+                log.info("Using existing user with email: {} and ID: {}", guestEmail, guestUser.getId());
+            }
+            
+            // Set userId for the order
+            request.setUserId(guestUser.getId());
+            
+            // Create order using existing logic
+            return createOrder(request);
+        } catch (Exception e) {
+            log.error("Error creating guest order", e);
+            throw e;
         }
-        
-        // Set userId for the order
-        request.setUserId(guestUser.getId());
-        
-        // Create order using existing logic
-        return createOrder(request);
     }
 }

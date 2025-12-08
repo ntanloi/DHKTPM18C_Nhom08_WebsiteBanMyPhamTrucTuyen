@@ -6,6 +6,7 @@ import iuh.fit.backend.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -45,6 +46,8 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
+    // Get reviews by user ID - User can get their own, Admin/Manager can get any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<ReviewResponse>> getReviewsByUserId(
             @PathVariable Integer userId) {
@@ -52,6 +55,8 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
+    // Create review - Authenticated users only (verified purchase checked in service)
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<?> createReview(@RequestBody ReviewRequest request) {
         try {
@@ -64,6 +69,8 @@ public class ReviewController {
         }
     }
 
+    // Update review - Authenticated users only (ownership checked in service)
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{reviewId}")
     public ResponseEntity<?> updateReview(
             @PathVariable Integer reviewId,
@@ -78,6 +85,8 @@ public class ReviewController {
         }
     }
 
+    // Delete review - Authenticated users only (ownership checked in service) or Admin
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<?> deleteReview(@PathVariable Integer reviewId) {
         try {
