@@ -7,6 +7,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -169,6 +171,33 @@ public class OrderService {
         }
 
         return getOrderDetail(savedOrder.getId());
+    }
+
+    /**
+     * Get order detail with authentication check
+     * Allows user to view their own orders or admin/manager to view any order
+     */
+    public OrderDetailResponse getOrderDetailWithAuth(Integer orderId, Authentication authentication) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // Check if user has permission to view this order
+        String username = authentication.getName();
+        boolean isAdminOrManager = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_MANAGER"));
+        
+        // If not admin/manager, check if order belongs to user
+        if (!isAdminOrManager) {
+            User user = userRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!order.getUserId().equals(user.getId())) {
+                throw new RuntimeException("Access denied: You can only view your own orders");
+            }
+        }
+        
+        return getOrderDetail(orderId);
     }
 
     public OrderDetailResponse getOrderDetail(Integer orderId) {

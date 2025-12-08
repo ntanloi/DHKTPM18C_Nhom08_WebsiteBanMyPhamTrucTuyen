@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/layout/AdminLayout';
-import { mockOrders } from '../../mocks/orderMockData';
-import { mockProducts } from '../../mocks/productData';
-import { mockUsers } from '../../mocks/userData';
+import { getDashboardSummary, getOrderStats } from '../../api/analytics';
+import type { DashboardSummary } from '../../api/analytics';
 
 interface AdminDashboardProps {
   onNavigate: (path: string) => void;
@@ -28,147 +27,197 @@ interface Order {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats] = useState<StatCard[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Date range: last 30 days
+      const endDate = new Date().toISOString();
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const response = await fetch(
+        `http://localhost:8080/api/admin/analytics/export/csv?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      // Create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analytics_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      alert('Xuất CSV thành công!');
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Không thể xuất CSV. Vui lòng thử lại.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
-    const completedOrders = mockOrders.filter(
-      (order) => order.status === 'DELIVERED',
-    );
-    const totalRevenue = completedOrders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0,
-    );
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    const totalOrders = mockOrders.length;
+        // Fetch dashboard summary
+        const summary: DashboardSummary = await getDashboardSummary();
 
-    const totalProducts = mockProducts.length;
+        // Fetch recent orders (last 30 days)
+        const endDate = new Date().toISOString();
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const orderStats = await getOrderStats(startDate, endDate);
 
-    const totalCustomers = mockUsers.length;
+        // Map to stat cards
+        const calculatedStats: StatCard[] = [
+          {
+            title: 'Tổng doanh thu',
+            value: `₫${summary.totalRevenue.toLocaleString('vi-VN')}`,
+            change: `${summary.revenueGrowth >= 0 ? '+' : ''}${summary.revenueGrowth.toFixed(1)}%`,
+            trend: summary.revenueGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ),
+            gradient: 'from-pink-500 to-rose-500',
+          },
+          {
+            title: 'Đơn hàng',
+            value: summary.totalOrders.toString(),
+            change: `${summary.ordersGrowth >= 0 ? '+' : ''}${summary.ordersGrowth.toFixed(1)}%`,
+            trend: summary.ordersGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+            ),
+            gradient: 'from-blue-500 to-cyan-500',
+          },
+          {
+            title: 'Sản phẩm',
+            value: summary.totalProducts.toString(),
+            change: `${summary.productsGrowth >= 0 ? '+' : ''}${summary.productsGrowth.toFixed(1)}%`,
+            trend: summary.productsGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+            ),
+            gradient: 'from-purple-500 to-pink-500',
+          },
+          {
+            title: 'Khách hàng',
+            value: summary.totalCustomers.toString(),
+            change: `${summary.customersGrowth >= 0 ? '+' : ''}${summary.customersGrowth.toFixed(1)}%`,
+            trend: summary.customersGrowth >= 0 ? 'up' : 'down',
+            icon: (
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ),
+            gradient: 'from-green-500 to-teal-500',
+          },
+        ];
 
-    const calculatedStats: StatCard[] = [
-      {
-        title: 'Tổng doanh thu',
-        value: `₫${totalRevenue.toLocaleString('vi-VN')}`,
-        change: '+12.5%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        ),
-        gradient: 'from-pink-500 to-rose-500',
-      },
-      {
-        title: 'Đơn hàng',
-        value: totalOrders.toString(),
-        change: '+8.2%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
-        ),
-        gradient: 'from-purple-500 to-indigo-500',
-      },
-      {
-        title: 'Sản phẩm',
-        value: totalProducts.toString(),
-        change: '+5.1%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-          </svg>
-        ),
-        gradient: 'from-blue-500 to-cyan-500',
-      },
-      {
-        title: 'Khách hàng',
-        value: totalCustomers.toString(),
-        change: '+15.3%',
-        trend: 'up',
-        icon: (
-          <svg
-            className="h-8 w-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-        ),
-        gradient: 'from-green-500 to-emerald-500',
-      },
-    ];
+        setStats(calculatedStats);
 
-    setStats(calculatedStats);
+        // Helper function to map status
+        const formatStatus = (
+          status: string,
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
+          const statusMap: Record<
+            string,
+            'delivered' | 'processing' | 'shipped' | 'pending'
+          > = {
+            DELIVERED: 'delivered',
+            PROCESSING: 'processing',
+            SHIPPED: 'shipped',
+            PENDING: 'pending',
+            CONFIRMED: 'pending',
+            CANCELLED: 'pending',
+          };
+          return statusMap[status] || 'pending';
+        };
 
-    const formatStatus = (
-      status: string,
-    ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
-      const statusMap: Record<
-        string,
-        'delivered' | 'processing' | 'shipped' | 'pending'
-      > = {
-        DELIVERED: 'delivered',
-        PROCESSING: 'processing',
-        SHIPPED: 'shipped',
-        PENDING: 'pending',
-        CONFIRMED: 'pending',
-        CANCELLED: 'pending',
-      };
-      return statusMap[status] || 'pending';
+        // Map recent orders
+        const mappedOrders: Order[] = orderStats.recentOrders.slice(0, 5).map((order) => ({
+          id: order.id.toString(),
+          customer: order.customerName,
+          amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
+          status: formatStatus(order.status),
+          date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
+        }));
+
+        setRecentOrders(mappedOrders);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const formattedOrders: Order[] = mockOrders
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-      .slice(0, 5)
-      .map((order) => ({
-        id: `ORD-${order.id.toString().padStart(4, '0')}`,
-        customer: order.user?.fullName || 'Khách hàng',
-        amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
-        status: formatStatus(order.status),
-        date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
-      }));
-
-    setRecentOrders(formattedOrders);
+    fetchDashboardData();
   }, []);
 
   const getStatusBadge = (status: Order['status']) => {
@@ -181,6 +230,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
     return badges[status];
   };
 
+  if (loading) {
+    return (
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-pink-600"></div>
+            <p className="mt-4 text-gray-600">Đang tải dữ liệu dashboard...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg
+                className="h-8 w-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <p className="mt-4 text-lg font-semibold text-gray-900">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-lg bg-pink-600 px-6 py-2 text-white hover:bg-pink-700"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout onNavigate={onNavigate}>
       <div className="flex h-screen bg-gray-50">
@@ -192,6 +287,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
                 <p className="mt-1 text-sm text-gray-500">Chào mừng trở lại!</p>
               </div>
               <div className="flex items-center gap-4">
+                <button
+                  onClick={handleExportCSV}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isExporting ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <span>Đang xuất...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <span>Xuất CSV</span>
+                    </>
+                  )}
+                </button>
                 <button className="relative rounded-lg p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600">
                   <svg
                     className="h-6 w-6"

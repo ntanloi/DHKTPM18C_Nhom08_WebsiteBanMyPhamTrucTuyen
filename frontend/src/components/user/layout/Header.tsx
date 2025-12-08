@@ -12,6 +12,7 @@ import MenuItem from '../ui/MenuItem';
 import Navbar from './Navbar';
 import SearchDropdown from '../ui/SearchDropdown';
 import CartSidebar from '../ui/CartSidebar';
+import NotificationBell from '../../NotificationBell';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../context/CartContext';
 import FavoriteSidebar, { HeartIconWithBadge } from '../ui/FavoriteList';
@@ -342,6 +343,9 @@ export default function Header({
                 count={2} // Số lượng yêu thích
                 onClick={() => setIsFavoriteOpen(true)}
               />
+
+              {/* Notification Bell */}
+              {isLoggedIn && <NotificationBell />}
 
               <button
                 onClick={() => setIsCartOpen(true)}

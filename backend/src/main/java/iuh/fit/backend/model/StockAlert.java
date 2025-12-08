@@ -39,6 +39,7 @@ public class StockAlert {
     private Integer threshold;
 
     @Column(name = "acknowledged")
+    @Builder.Default
     private Boolean acknowledged = false;
 
     @Column(name = "acknowledged_by")

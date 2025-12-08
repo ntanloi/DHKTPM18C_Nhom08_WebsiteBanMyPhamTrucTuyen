@@ -15,6 +15,9 @@ interface OrderTableProps {
   onDeleteOrder?: (orderId: number) => void;
   loading?: boolean;
   activeTab?: 'all' | 'processing' | 'completed' | 'cancelled';
+  selectedOrders?: number[];
+  onSelectAll?: (checked: boolean) => void;
+  onSelectOrder?: (orderId: number, checked: boolean) => void;
 }
 
 const OrderTable: React.FC<OrderTableProps> = ({
@@ -25,6 +28,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
   onDeleteOrder,
   loading = false,
   activeTab = 'all',
+  selectedOrders = [],
+  onSelectAll,
+  onSelectOrder,
 }) => {
   if (loading) {
     return (
@@ -91,15 +97,47 @@ const OrderTable: React.FC<OrderTableProps> = ({
     );
   };
 
+  const allSelected = orders.length > 0 && orders.every((o) => selectedOrders.includes(o.id));
+  const someSelected = orders.some((o) => selectedOrders.includes(o.id)) && !allSelected;
+
   return (
     <div className="space-y-4">
+      {onSelectAll && orders.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = someSelected;
+              }}
+              onChange={(e) => onSelectAll(e.target.checked)}
+              className="h-5 w-5 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {allSelected ? 'Bỏ chọn tất cả' : someSelected ? `Đã chọn ${selectedOrders.length} đơn` : 'Chọn tất cả đơn hàng trên trang này'}
+            </span>
+          </label>
+        </div>
+      )}
       {orders.map((order) => (
         <div
           key={order.id}
-          className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+          className={`overflow-hidden rounded-lg border ${
+            selectedOrders.includes(order.id) ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-200'
+          } bg-white shadow-sm transition-all hover:shadow-md`}
         >
           <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-3">
             <div className="flex items-center gap-4">
+              {onSelectOrder && (
+                <input
+                  type="checkbox"
+                  checked={selectedOrders.includes(order.id)}
+                  onChange={(e) => onSelectOrder(order.id, e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
               <span className="font-mono text-sm font-semibold text-pink-600">
                 {formatOrderId(order.id)}
               </span>

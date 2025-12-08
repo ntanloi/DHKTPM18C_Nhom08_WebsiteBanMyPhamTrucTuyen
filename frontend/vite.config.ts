@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      global: 'globalThis',
+    },
     server: {
       port: parseInt(env.VITE_PORT) || 3000,
       proxy: {

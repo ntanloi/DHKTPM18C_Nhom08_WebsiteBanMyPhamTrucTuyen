@@ -106,6 +106,22 @@ public class NotificationService {
     }
 
     /**
+     * Send new message notification to user
+     */
+    public void notifyNewMessage(Long userId, String roomId, String senderName, String messagePreview) {
+        NotificationMessage notification = NotificationMessage.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .type("NEW_MESSAGE")
+                .title("Tin nhắn mới từ " + senderName)
+                .message(messagePreview.length() > 50 ? messagePreview.substring(0, 50) + "..." : messagePreview)
+                .read(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .data(java.util.Map.of("roomId", roomId, "senderName", senderName, "url", "/chat/" + roomId))
+                .build();
+        sendToUser(userId.toString(), notification);
+    }
+
+    /**
      * Send custom notification to admins with title, message, and type
      */
     public void sendToAdmins(String title, String message, String type) {

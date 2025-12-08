@@ -9,6 +9,8 @@ import {
   RefreshCw,
   Search,
   Star,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import {
   type ChatRoom,
@@ -21,6 +23,7 @@ import {
   sendManagerMessage,
   closeRoom,
 } from '../../../api/chat';
+import { useWebSocket } from '../../../hooks/useWebSocket';
 
 export default function ChatManagementPage() {
   const [pendingRooms, setPendingRooms] = useState<ChatRoom[]>([]);
@@ -36,6 +39,13 @@ export default function ChatManagementPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // WebSocket connection
+  const token = localStorage.getItem('accessToken');
+  const { connected, subscribe, send } = useWebSocket({
+    autoConnect: true,
+    token: token || undefined,
+  });
+
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,10 +54,87 @@ export default function ChatManagementPage() {
   // Load rooms on mount
   useEffect(() => {
     loadRooms();
-    // Poll for new rooms every 10 seconds
-    const interval = setInterval(loadRooms, 10000);
-    return () => clearInterval(interval);
   }, []);
+
+  // WebSocket subscriptions for real-time updates
+  useEffect(() => {
+    if (!connected) return;
+
+    // Subscribe to pending rooms updates
+    const unsubPending = subscribe('/topic/chat/pending', (message: unknown) => {
+      const room = message as ChatRoom;
+      setPendingRooms((prev) => {
+        // Add new room or update existing
+        const exists = prev.find((r) => r.id === room.id);
+        if (exists) {
+          return prev.map((r) => (r.id === room.id ? room : r));
+        }
+        return [room, ...prev];
+      });
+    });
+
+    // Subscribe to room status updates
+    const unsubUpdates = subscribe('/topic/chat/updates', (message: unknown) => {
+      const room = message as ChatRoom;
+      
+      // Update pending/my rooms based on status
+      if (room.status === 'PENDING') {
+        setPendingRooms((prev) => {
+          const exists = prev.find((r) => r.id === room.id);
+          if (!exists) return [room, ...prev];
+          return prev.map((r) => (r.id === room.id ? room : r));
+        });
+        setMyRooms((prev) => prev.filter((r) => r.id !== room.id));
+      } else if (room.status === 'ASSIGNED') {
+        setMyRooms((prev) => {
+          const exists = prev.find((r) => r.id === room.id);
+          if (!exists) return [room, ...prev];
+          return prev.map((r) => (r.id === room.id ? room : r));
+        });
+        setPendingRooms((prev) => prev.filter((r) => r.id !== room.id));
+      } else if (room.status === 'CLOSED') {
+        setMyRooms((prev) => prev.filter((r) => r.id !== room.id));
+        setPendingRooms((prev) => prev.filter((r) => r.id !== room.id));
+        if (selectedRoom?.id === room.id) {
+          setSelectedRoom(null);
+          setMessages([]);
+        }
+      }
+    });
+
+    // Subscribe to personal queue for direct updates
+    const unsubQueue = subscribe('/user/queue/chat', (message: unknown) => {
+      const data = message as { type: string; room: ChatRoom };
+      if (data.type === 'ROOM_ASSIGNED') {
+        setMyRooms((prev) => {
+          const exists = prev.find((r) => r.id === data.room.id);
+          if (!exists) return [data.room, ...prev];
+          return prev.map((r) => (r.id === data.room.id ? data.room : r));
+        });
+      }
+    });
+
+    return () => {
+      unsubPending();
+      unsubUpdates();
+      unsubQueue();
+    };
+  }, [connected, subscribe, selectedRoom]);
+
+  // Subscribe to selected room messages
+  useEffect(() => {
+    if (!connected || !selectedRoom) return;
+
+    const unsubMessages = subscribe(`/topic/chat/${selectedRoom.id}`, (message: unknown) => {
+      const msg = message as ChatMessage;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    });
+
+    return () => unsubMessages();
+  }, [connected, selectedRoom, subscribe]);
 
   // Load messages when room selected
   useEffect(() => {
@@ -101,10 +188,17 @@ export default function ChatManagementPage() {
     setIsSending(true);
 
     try {
-      await sendManagerMessage(selectedRoom.id, { content: messageContent });
-      await loadMessages(selectedRoom.id);
+      // Try WebSocket first, fallback to REST API
+      if (connected) {
+        send(`/app/chat/${selectedRoom.id}/send`, { content: messageContent });
+      } else {
+        await sendManagerMessage(selectedRoom.id, { content: messageContent });
+        await loadMessages(selectedRoom.id);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
+      // Restore input if failed
+      setInputValue(messageContent);
     } finally {
       setIsSending(false);
     }
@@ -188,9 +282,23 @@ export default function ChatManagementPage() {
       <div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white">
         {/* Header */}
         <div className="border-b border-gray-200 p-4">
-          <h1 className="mb-4 text-xl font-bold text-gray-900">
-            Quản lý Chat
-          </h1>
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Quản lý Chat</h1>
+            {/* Connection Status */}
+            <div className="flex items-center gap-2">
+              {connected ? (
+                <>
+                  <Wifi className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-green-600">Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-4 w-4 text-yellow-500" />
+                  <span className="text-xs text-yellow-600">Offline</span>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Search */}
           <div className="relative mb-4">
@@ -404,7 +512,7 @@ export default function ChatManagementPage() {
                         >
                           {/* Avatar */}
                           {message.senderType !== 'MANAGER' && (
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200">
                               <User className="h-4 w-4 text-gray-600" />
                             </div>
                           )}
@@ -471,7 +579,7 @@ export default function ChatManagementPage() {
 
       {/* Right Sidebar - Customer Info (optional) */}
       {selectedRoom && (
-        <div className="w-72 flex-shrink-0 border-l border-gray-200 bg-white p-6">
+        <div className="w-72 shrink-0 border-l border-gray-200 bg-white p-6">
           <h3 className="mb-4 font-semibold text-gray-900">Thông tin khách hàng</h3>
 
           <div className="mb-6 text-center">
