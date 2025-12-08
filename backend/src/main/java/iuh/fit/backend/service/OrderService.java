@@ -31,6 +31,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final ShipmentRepository shipmentRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ProductImageRepository productImageRepository;
     private final NotificationService notificationService;
     private final CouponService couponService;
     private final CouponRepository couponRepository;
@@ -231,6 +232,12 @@ public class OrderService {
                 itemResponse.setVariantName(variant.getName());
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
+                    
+                    // Get first product image
+                    List<ProductImage> images = productImageRepository.findByProductId(variant.getProduct().getId());
+                    if (!images.isEmpty()) {
+                        itemResponse.setImageUrl(images.get(0).getImageUrl());
+                    }
                 }
                 BigDecimal price = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
                 itemResponse.setPrice(price);
