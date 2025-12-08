@@ -4,9 +4,13 @@ import type {
   CreateCouponRequest,
   UpdateCouponRequest,
 } from '../../../api/coupon';
-import { mockCouponService } from '../../../mocks/couponMockData';
+import { getCouponById, updateCoupon } from '../../../api/coupon';
 import CouponForm from '../../../components/admin/coupon/CouponForm';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ErrorDisplay from '../../../components/admin/ErrorDisplay';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { parseApiError, type ErrorInfo } from '../../../utils/errorHandler';
+import { useToast } from '../../../hooks/useToast';
 
 interface CouponEditPageProps {
   couponId: number;
@@ -20,7 +24,9 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
   const [coupon, setCoupon] = useState<CouponResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchCoupon();
@@ -29,11 +35,18 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
   const fetchCoupon = async () => {
     try {
       setLoading(true);
-      const data = await mockCouponService.getCouponById(couponId);
-      setCoupon(data);
       setError(null);
+      const data = await getCouponById(couponId);
+      setCoupon(data);
     } catch (err: any) {
-      setError(err.message || 'Không tìm thấy mã giảm giá');
+      const errorInfo = parseApiError(err);
+      setError(errorInfo);
+      
+      if (errorInfo.shouldRedirect) {
+        setTimeout(() => {
+          onNavigate(errorInfo.shouldRedirect!);
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -47,29 +60,35 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
     try {
       setSubmitting(true);
       setError(null);
-      const response = await mockCouponService.updateCoupon(
-        couponId,
-        updateData,
+      const response = await updateCoupon(couponId, updateData);
+      showToast(
+        `Cập nhật mã giảm giá thành công! Mã: ${response.code}`,
+        'success',
       );
-
-      alert(
-        ` Cập nhật mã giảm giá thành công!\n\nMã: ${response.code}\nID: ${response.id}`,
-      );
-
-      onNavigate('/admin/coupons');
+      setTimeout(() => {
+        onNavigate(`/admin/coupons/${couponId}`);
+      }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra khi cập nhật mã giảm giá');
+      const errorInfo = parseApiError(err);
+      setError(errorInfo);
+      
+      if (errorInfo.shouldRedirect) {
+        setTimeout(() => {
+          onNavigate(errorInfo.shouldRedirect!);
+        }, 2000);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    if (
-      window.confirm('Bạn có chắc muốn hủy? Các thay đổi sẽ không được lưu.')
-    ) {
-      onNavigate('/admin/coupons');
-    }
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onNavigate('/admin/coupons');
   };
 
   const isExpired = coupon ? new Date(coupon.validTo) < new Date() : false;
@@ -87,32 +106,47 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
 
   if (error || !coupon) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-lg font-medium text-red-800">
-            {error || 'Không tìm thấy mã giảm giá'}
-          </h3>
-          <button
-            onClick={() => onNavigate('/admin/coupons')}
-            className="mt-4 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-          >
-            Quay lại danh sách
-          </button>
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="p-6">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <svg
+                className="mx-auto h-16 w-16 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            {error ? (
+              <ErrorDisplay
+                error={error}
+                onRetry={error.canRetry ? fetchCoupon : undefined}
+              />
+            ) : (
+              <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center">
+                <p className="text-lg font-medium text-red-800">
+                  Không tìm thấy mã giảm giá
+                </p>
+              </div>
+            )}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => onNavigate('/admin/coupons')}
+                className="rounded bg-gray-600 px-6 py-2 text-white hover:bg-gray-700"
+              >
+                Quay lại danh sách
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -216,23 +250,12 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
         )}
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
-            <div className="flex items-center gap-2">
-              <svg
-                className="h-5 w-5 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-sm font-medium text-red-800">{error}</p>
-            </div>
+          <div className="mb-6">
+            <ErrorDisplay
+              error={error as ErrorInfo}
+              onRetry={(error as ErrorInfo).canRetry ? () => setError(null) : undefined}
+              onDismiss={() => setError(null)}
+            />
           </div>
         )}
 
@@ -279,6 +302,18 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Cancel Confirmation Dialog */}
+        <ConfirmDialog
+          open={showCancelDialog}
+          title="Hủy chỉnh sửa?"
+          message="Bạn có chắc muốn hủy? Các thay đổi sẽ không được lưu và bạn sẽ quay lại danh sách mã giảm giá."
+          onConfirm={confirmCancel}
+          onCancel={() => setShowCancelDialog(false)}
+          confirmText="Hủy chỉnh sửa"
+          cancelText="Tiếp tục chỉnh sửa"
+          variant="warning"
+        />
       </div>
     </AdminLayout>
   );
