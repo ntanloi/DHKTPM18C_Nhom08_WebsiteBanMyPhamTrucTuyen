@@ -29,6 +29,7 @@ public class OrderService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final RecipientInformationRepository recipientInformationRepository;
     private final PaymentRepository paymentRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final ShipmentRepository shipmentRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
@@ -454,6 +455,43 @@ public class OrderService {
         response.setEstimateDeliveryTo(order.getEstimateDeliveryTo());
         response.setCreatedAt(order.getCreatedAt());
         response.setUpdatedAt(order.getUpdatedAt());
+        
+        // Add recipient info
+        recipientInformationRepository.findByOrderId(order.getId()).ifPresent(recipient -> {
+            RecipientInfoResponse recipientResponse = new RecipientInfoResponse();
+            recipientResponse.setRecipientFirstName(recipient.getRecipientFirstName());
+            recipientResponse.setRecipientLastName(recipient.getRecipientLastName());
+            recipientResponse.setRecipientPhone(recipient.getRecipientPhone());
+            recipientResponse.setRecipientEmail(recipient.getRecipientEmail());
+            recipientResponse.setShippingRecipientAddress(recipient.getShippingRecipientAddress());
+            recipientResponse.setIsAnotherReceiver(recipient.getIsAnotherReceiver());
+            response.setRecipientInfo(recipientResponse);
+        });
+        
+        // Add payment info
+        paymentRepository.findByOrderId(order.getId()).ifPresent(payment -> {
+            PaymentInfoResponse paymentResponse = new PaymentInfoResponse();
+            paymentResponse.setId(payment.getId());
+            paymentResponse.setStatus(payment.getStatus());
+            paymentResponse.setTransactionCode(payment.getTransactionCode());
+            paymentResponse.setAmount(payment.getAmount());
+            paymentResponse.setCreatedAt(payment.getCreatedAt());
+            
+            // Get payment method name
+            if (payment.getPaymentMethodId() != null) {
+                paymentMethodRepository.findById(payment.getPaymentMethodId()).ifPresent(paymentMethod -> {
+                    paymentResponse.setPaymentMethodName(paymentMethod.getName());
+                    response.setPaymentMethod(paymentMethod.getName());
+                });
+            }
+            
+            response.setPaymentInfo(paymentResponse);
+        });
+        
+        // Add order items count
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
+        response.setOrderItems(orderItems.size());
+        
         return response;
     }
     

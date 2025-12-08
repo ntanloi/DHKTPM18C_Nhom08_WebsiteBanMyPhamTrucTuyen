@@ -288,6 +288,7 @@ public class AnalyticsService {
         LocalDateTime startOfLastMonth = today.minusMonths(1).withDayOfMonth(1).atStartOfDay();
         LocalDateTime endOfLastMonth = today.withDayOfMonth(1).atStartOfDay();
 
+        // Calculate revenue growth
         BigDecimal currentMonthRevenue = getRevenueForPeriod(startOfMonth, endOfDay);
         BigDecimal lastMonthRevenue = getRevenueForPeriod(startOfLastMonth, endOfLastMonth);
         BigDecimal revenueGrowth = BigDecimal.ZERO;
@@ -297,6 +298,30 @@ public class AnalyticsService {
                     .multiply(BigDecimal.valueOf(100));
         }
 
+        // Calculate orders growth
+        Long currentMonthOrders = getOrderCountForPeriod(startOfMonth, endOfDay);
+        Long lastMonthOrders = getOrderCountForPeriod(startOfLastMonth, endOfLastMonth);
+        BigDecimal ordersGrowth = BigDecimal.ZERO;
+        if (lastMonthOrders > 0) {
+            ordersGrowth = BigDecimal.valueOf(currentMonthOrders - lastMonthOrders)
+                    .divide(BigDecimal.valueOf(lastMonthOrders), 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        }
+
+        // Calculate customers growth
+        Long currentMonthCustomers = getNewCustomersForPeriod(startOfMonth, endOfDay);
+        Long lastMonthCustomers = getNewCustomersForPeriod(startOfLastMonth, endOfLastMonth);
+        BigDecimal customersGrowth = BigDecimal.ZERO;
+        if (lastMonthCustomers > 0) {
+            customersGrowth = BigDecimal.valueOf(currentMonthCustomers - lastMonthCustomers)
+                    .divide(BigDecimal.valueOf(lastMonthCustomers), 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        }
+
+        // Calculate products growth (assuming products added this month vs last month)
+        // For simplicity, we'll set it to 0 for now as we don't track product creation date
+        BigDecimal productsGrowth = BigDecimal.ZERO;
+
         return DashboardSummary.builder()
                 .totalRevenue(getTotalRevenue())
                 .todayRevenue(getRevenueForPeriod(startOfDay, endOfDay))
@@ -305,10 +330,13 @@ public class AnalyticsService {
                 .totalOrders(orderRepository.count())
                 .todayOrders(getOrderCountForPeriod(startOfDay, endOfDay))
                 .pendingOrders(orderRepository.countByStatus("PENDING"))
+                .ordersGrowth(ordersGrowth)
                 .totalCustomers(getTotalCustomers())
                 .newCustomersToday(getNewCustomersForPeriod(startOfDay, endOfDay))
+                .customersGrowth(customersGrowth)
                 .totalProducts(productRepository.count())
                 .lowStockProducts(getLowStockProductCount())
+                .productsGrowth(productsGrowth)
                 .totalReturns(returnRepository.count())
                 .pendingReturns(returnRepository.countByStatus(ReturnStatus.PENDING))
                 .ordersByStatus(getOrdersByStatus())
@@ -339,6 +367,9 @@ public class AnalyticsService {
                 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
+        // Get recent orders (last 10)
+        List<AnalyticsResponse.RecentOrderData> recentOrdersList = getRecentOrders(10);
+
         return OrderStats.builder()
                 .totalOrders(totalOrders)
                 .completedOrders(statusCounts.getOrDefault("DELIVERED", 0L) + statusCounts.getOrDefault("COMPLETED", 0L))
@@ -348,6 +379,7 @@ public class AnalyticsService {
                 .averageOrderValue(avgOrderValue)
                 .totalRevenue(totalRevenue)
                 .ordersByStatus(statusCounts)
+                .recentOrders(recentOrdersList)
                 .build();
     }
 

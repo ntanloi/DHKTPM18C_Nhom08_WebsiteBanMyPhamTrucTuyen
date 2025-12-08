@@ -53,6 +53,11 @@ export interface OrderResponse {
   estimateDeliveryTo: string;
   createdAt: string;
   updatedAt: string;
+  // Additional fields for admin order list
+  recipientInfo?: RecipientInfoResponse;
+  paymentInfo?: PaymentInfoResponse;
+  orderItems?: number; // Count of order items
+  paymentMethod?: string; // Payment method name
 }
 
 export interface RecipientInfoResponse {

@@ -24,4 +24,10 @@ public class OrderResponse {
     private LocalDate estimateDeliveryTo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // Additional fields for admin order list
+    private RecipientInfoResponse recipientInfo;
+    private PaymentInfoResponse paymentInfo;
+    private Integer orderItems; // Count of order items
+    private String paymentMethod; // Payment method name
 }
