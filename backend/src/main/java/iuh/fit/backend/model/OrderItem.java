@@ -29,12 +29,12 @@ public class OrderItem {
     
     private BigDecimal price;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore
     private Order order;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_variant_id", insertable = false, updatable = false)
     @JsonIgnore
     private ProductVariant productVariant;

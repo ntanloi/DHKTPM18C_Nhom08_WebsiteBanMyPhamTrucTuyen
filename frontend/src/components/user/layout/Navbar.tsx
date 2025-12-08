@@ -216,18 +216,13 @@ export default function Navbar() {
 
   const getListNav = async () => {
     try {
-      console.log('🔄 Fetching categories...'); // ← DEBUG
       const res = await categoriesService.getAll();
-      console.log('📊 Categories response:', res); // ← DEBUG
 
       if (res && res.data) {
         setNavlist(res.data);
-        console.log('✅ Navlist set:', res.data.length, 'items'); // ← DEBUG
-      } else {
-        console.warn('⚠️ No data in response'); // ← DEBUG
       }
     } catch (err) {
-      console.error('❌ Error loading categories:', err); // ← DEBUG
+      console.error('❌ Error loading categories:', err);
     } finally {
       setIsLoading(false); // ← THÊM
     }
@@ -288,14 +283,6 @@ export default function Navbar() {
       setHoveredIndex(null);
     }, 150);
   };
-
-  // ← THÊM: Debug render
-  console.log(
-    '🎨 Navbar render - navlist length:',
-    navlist.length,
-    'isLoading:',
-    isLoading,
-  );
 
   return (
     <>

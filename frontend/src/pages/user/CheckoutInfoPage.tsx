@@ -87,7 +87,6 @@ export default function CheckoutInfoPage({
     const loadPaymentMethods = async () => {
       try {
         const methods = await getPaymentMethods();
-        console.log('✅ Payment methods loaded:', methods);
 
         if (methods && methods.length > 0) {
           setPaymentMethods(methods.filter((m) => m.isActive));
