@@ -48,6 +48,11 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             "FROM Order o JOIN o.user u GROUP BY o.userId, u.fullName, u.email ORDER BY SUM(o.totalAmount) DESC")
     List<Object[]> getTopCustomers(int limit);
     
+    // Verified purchase check for reviews
+    @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.orderItems oi JOIN oi.productVariant pv " +
+            "WHERE o.userId = :userId AND o.status = 'DELIVERED' AND pv.productId = :productId")
+    boolean hasUserPurchasedProduct(@Param("userId") Integer userId, @Param("productId") Integer productId);
+    
     @Query("SELECT o FROM Order o ORDER BY o.createdAt DESC")
     List<Order> findTopByOrderByCreatedAtDesc(Pageable pageable);
     

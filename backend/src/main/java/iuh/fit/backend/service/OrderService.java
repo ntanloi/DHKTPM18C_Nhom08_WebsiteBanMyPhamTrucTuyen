@@ -3,6 +3,7 @@ package iuh.fit.backend.service;
 import iuh.fit.backend.dto.*;
 import iuh.fit.backend.model.*;
 import iuh.fit.backend.repository.*;
+import iuh.fit.backend.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -341,8 +342,11 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
-            throw new RuntimeException("Cannot cancel order with status: " + order.getStatus());
+        // Cannot cancel order if it's SHIPPED, DELIVERED or already CANCELLED
+        List<String> nonCancellableStatuses = List.of("SHIPPED", "DELIVERING", "DELIVERED", "CANCELLED");
+        if (nonCancellableStatuses.contains(order.getStatus())) {
+            throw new RuntimeException("Cannot cancel order with status: " + order.getStatus() + 
+                                       ". Only PENDING and CONFIRMED orders can be cancelled.");
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
@@ -381,6 +385,27 @@ public class OrderService {
         }
 
         return convertToOrderResponse(cancelledOrder);
+    }
+
+    /**
+     * Cancel order with authentication check - user can only cancel their own orders
+     * Admin/Manager can cancel any order
+     */
+    @Transactional
+    public OrderResponse cancelOrderWithAuth(Integer orderId, Authentication authentication) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // Check ownership - user can only cancel their own orders
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN") || auth.getAuthority().equals("ROLE_MANAGER"));
+        
+        if (!isAdmin && !order.getUserId().equals(userDetails.getUserId())) {
+            throw new RuntimeException("You can only cancel your own orders");
+        }
+        
+        return cancelOrder(orderId);
     }
 
     @Transactional

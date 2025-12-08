@@ -27,7 +27,8 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    @PreAuthorize("isAuthenticated() and #request.userId == authentication.principal.userId")
+    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request, Authentication authentication) {
         try {
             OrderDetailResponse response = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -110,9 +111,9 @@ public class OrderController {
     // Cancel order - User can cancel their own, Admin/Manager can cancel any
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<?> cancelOrder(@PathVariable Integer orderId) {
+    public ResponseEntity<?> cancelOrder(@PathVariable Integer orderId, Authentication authentication) {
         try {
-            OrderResponse response = orderService.cancelOrder(orderId);
+            OrderResponse response = orderService.cancelOrderWithAuth(orderId, authentication);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();

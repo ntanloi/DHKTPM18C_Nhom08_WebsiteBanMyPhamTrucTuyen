@@ -5,6 +5,7 @@ import iuh.fit.backend.dto.ReviewRequest;
 import iuh.fit.backend.dto.ReviewResponse;
 import iuh.fit.backend.model.Review;
 import iuh.fit.backend.model.ReviewImage;
+import iuh.fit.backend.repository.OrderRepository;
 import iuh.fit.backend.repository.ReviewImageRepository;
 import iuh.fit.backend.repository.ReviewRepository;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,9 @@ public class ReviewService {
 
     @Autowired
     private ReviewImageRepository reviewImageRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     public List<ReviewResponse> getAllReviews() {
         return reviewRepository.findAll().stream()
@@ -50,6 +54,11 @@ public class ReviewService {
 
     @Transactional
     public ReviewResponse createReview(ReviewRequest request) {
+        // Verify that user has purchased and received this product
+        if (!orderRepository.hasUserPurchasedProduct(request.getUserId(), request.getProductId())) {
+            throw new RuntimeException("You can only review products you have purchased and received");
+        }
+        
         Review review = new Review();
         review.setUserId(request.getUserId());
         review.setProductId(request.getProductId());
