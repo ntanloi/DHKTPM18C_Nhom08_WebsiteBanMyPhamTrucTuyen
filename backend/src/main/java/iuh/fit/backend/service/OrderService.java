@@ -117,10 +117,9 @@ public class OrderService {
             couponService.recordCouponUsage(appliedCoupon.getId(), request.getUserId(), savedOrder.getId(), discountAmount);
         }
 
-        for (OrderItem item : orderItems) {
-            item.setOrderId(savedOrder.getId());
-            orderItemRepository.save(item);
-        }
+        // Set order ID for all items and save in batch
+        orderItems.forEach(item -> item.setOrderId(savedOrder.getId()));
+        orderItemRepository.saveAll(orderItems);
 
         if (request.getRecipientInfo() != null) {
             RecipientInformation recipientInfo = new RecipientInformation();

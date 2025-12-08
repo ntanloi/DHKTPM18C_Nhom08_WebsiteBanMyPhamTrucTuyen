@@ -106,6 +106,16 @@ export const getOrderDetail = async (
   return response.data;
 };
 
+// Get order detail for guest orders (no authentication required)
+export const getGuestOrderDetail = async (
+  orderId: number,
+): Promise<OrderDetailResponse> => {
+  const response = await api.get<OrderDetailResponse>(
+    `${API_BASE_URL}/guest/${orderId}`,
+  );
+  return response.data;
+};
+
 export const getAllOrders = async (): Promise<OrderResponse[]> => {
   const response = await api.get<OrderResponse[]>(API_BASE_URL);
   return response.data;
@@ -168,6 +178,9 @@ export interface CreateGuestOrderRequest {
 export const createGuestOrder = async (
   request: CreateGuestOrderRequest,
 ): Promise<OrderDetailResponse> => {
-  const response = await api.post<OrderDetailResponse>(`${API_BASE_URL}/guest`, request);
+  const response = await api.post<OrderDetailResponse>(
+    `${API_BASE_URL}/guest`,
+    request,
+  );
   return response.data;
 };

@@ -37,7 +37,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Login function - save tokens and user info
   const login = (authResponse: AuthResponse) => {
+    console.log('🔐 Login called with response:', authResponse);
     const { accessToken, refreshToken, userId, email, role } = authResponse;
+
+    console.log('🔑 Saving tokens...');
+    console.log(
+      '  - accessToken:',
+      accessToken ? accessToken.substring(0, 50) + '...' : 'MISSING',
+    );
+    console.log(
+      '  - refreshToken:',
+      refreshToken ? refreshToken.substring(0, 50) + '...' : 'MISSING',
+    );
 
     // Save tokens
     tokenStorage.saveTokens(accessToken, refreshToken);
@@ -46,6 +57,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const userInfo: User = { userId, email, role };
     tokenStorage.saveUser(userInfo);
     setUser(userInfo);
+
+    // Verify tokens were saved
+    const savedToken = tokenStorage.getAccessToken();
+    console.log('✅ Token saved successfully:', !!savedToken);
   };
 
   // Logout function - clear all auth data

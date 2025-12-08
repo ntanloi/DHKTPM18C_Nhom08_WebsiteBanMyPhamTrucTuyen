@@ -71,6 +71,19 @@ public class OrderController {
         }
     }
 
+    // Public endpoint for guest orders - no authentication required
+    @GetMapping("/guest/{orderId}")
+    public ResponseEntity<?> getGuestOrderDetail(@PathVariable Integer orderId) {
+        try {
+            OrderDetailResponse response = orderService.getOrderDetail(orderId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<OrderResponse>> getAllOrders() {

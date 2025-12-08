@@ -1,25 +1,15 @@
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAddress } from '../../../hooks/useAddress';
-
-interface Address {
-  id: number;
-  date: string;
-  name: string;
-  phone: string;
-  email: string;
-  city: string;
-  district: string;
-  ward: string;
-  street: string;
-  isDefault: boolean;
-}
+import { createAddress, updateAddress } from '../../../api/address';
+import type { AddressResponse } from '../../../api/address';
 
 interface AddressModalProps {
   show: boolean;
   onClose: () => void;
   type: 'add' | 'edit';
-  address: Address | null;
+  address: AddressResponse | null;
+  userId?: number;
 }
 
 export default function AddressModal({
@@ -27,45 +17,41 @@ export default function AddressModal({
   onClose,
   type,
   address,
+  userId,
 }: AddressModalProps) {
-  const { provinces, districts, wards, fetchDistricts, fetchWards } = useAddress();
-  
+  const { provinces, districts, wards, fetchDistricts, fetchWards } =
+    useAddress();
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
-    label: '',
-    name: '',
-    email: '',
-    phone: '',
+    recipientName: '',
+    recipientPhone: '',
     city: '',
     district: '',
     ward: '',
-    street: '',
+    streetAddress: '',
     isDefault: false,
   });
 
   useEffect(() => {
     if (address && show) {
       setFormData({
-        label: address.date || '',
-        name: address.name || '',
-        email: address.email || '',
-        phone: address.phone || '',
+        recipientName: address.recipientName || '',
+        recipientPhone: address.recipientPhone || '',
         city: address.city || '',
         district: address.district || '',
         ward: address.ward || '',
-        street: address.street || '',
+        streetAddress: address.streetAddress || '',
         isDefault: address.isDefault || false,
       });
     } else if (!show) {
-      // Reset form when modal closes
       setFormData({
-        label: '',
-        name: '',
-        email: '',
-        phone: '',
+        recipientName: '',
+        recipientPhone: '',
         city: '',
         district: '',
         ward: '',
-        street: '',
+        streetAddress: '',
         isDefault: false,
       });
     }
@@ -73,21 +59,47 @@ export default function AddressModal({
 
   if (!show) return null;
 
-  const handleSave = () => {
-    // Validate form
-    if (!formData.name || !formData.phone || !formData.city || !formData.district || !formData.ward || !formData.street) {
+  const handleSave = async () => {
+    if (
+      !formData.recipientName ||
+      !formData.recipientPhone ||
+      !formData.city ||
+      !formData.district ||
+      !formData.ward ||
+      !formData.streetAddress
+    ) {
       alert('Vui lòng điền đầy đủ thông tin!');
       return;
     }
-    
-    alert('Đã lưu địa chỉ!');
-    onClose();
+
+    if (!userId) {
+      alert('Không tìm thấy thông tin người dùng!');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      if (type === 'add') {
+        await createAddress(userId, formData);
+        alert('Đã thêm địa chỉ thành công!');
+      } else if (address) {
+        await updateAddress(address.id, formData);
+        alert('Đã cập nhật địa chỉ thành công!');
+      }
+
+      onClose();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Có lỗi xảy ra khi lưu địa chỉ');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedProvince = provinces.find(p => p.name === e.target.value);
+    const selectedProvince = provinces.find((p) => p.name === e.target.value);
     if (selectedProvince) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         city: selectedProvince.name,
         district: '',
@@ -98,9 +110,9 @@ export default function AddressModal({
   };
 
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedDistrict = districts.find(d => d.name === e.target.value);
+    const selectedDistrict = districts.find((d) => d.name === e.target.value);
     if (selectedDistrict) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         district: selectedDistrict.name,
         ward: '',
@@ -110,7 +122,7 @@ export default function AddressModal({
   };
 
   const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       ward: e.target.value,
     }));
@@ -118,7 +130,6 @@ export default function AddressModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-xs">
-      {' '}
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white">
         <div className="sticky top-0 flex items-center justify-between bg-white px-6 py-4">
           <h3 className="text-xl font-bold">
@@ -133,39 +144,29 @@ export default function AddressModal({
         </div>
 
         <div className="space-y-4 p-6">
-          <div>
-            <input
-              type="text"
-              placeholder="Tên địa chỉ (vd: Văn phòng, Nhà, ...)"
-              value={formData.label}
-              onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Họ và tên"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="col-span-2 rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
           <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            type="text"
+            placeholder="Họ và tên người nhận"
+            value={formData.recipientName}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                recipientName: e.target.value,
+              }))
+            }
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
           <input
             type="tel"
             placeholder="Số điện thoại (vd: 0867418359)"
-            value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            value={formData.recipientPhone}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                recipientPhone: e.target.value,
+              }))
+            }
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
@@ -187,7 +188,7 @@ export default function AddressModal({
               value={formData.district}
               onChange={handleDistrictChange}
               disabled={!formData.city}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="">Chọn Quận/Huyện</option>
               {districts.map((district) => (
@@ -200,7 +201,7 @@ export default function AddressModal({
               value={formData.ward}
               onChange={handleWardChange}
               disabled={!formData.district}
-              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="">Chọn Phường/Xã</option>
               {wards.map((ward) => (
@@ -214,8 +215,13 @@ export default function AddressModal({
           <input
             type="text"
             placeholder="Tòa nhà, số nhà, tên đường"
-            value={formData.street}
-            onChange={(e) => setFormData(prev => ({ ...prev, street: e.target.value }))}
+            value={formData.streetAddress}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                streetAddress: e.target.value,
+              }))
+            }
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-purple-500"
           />
 
@@ -223,7 +229,12 @@ export default function AddressModal({
             <input
               type="checkbox"
               checked={formData.isDefault}
-              onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isDefault: e.target.checked,
+                }))
+              }
               className="h-5 w-5"
             />
             <span>Đặt làm địa chỉ mặc định</span>
@@ -231,9 +242,10 @@ export default function AddressModal({
 
           <button
             onClick={handleSave}
-            className="w-full rounded-lg bg-gradient-to-r from-yellow-500 to-purple-600 py-3 font-semibold text-white transition hover:shadow-lg"
+            disabled={loading}
+            className="w-full rounded-lg bg-gradient-to-r from-yellow-500 to-purple-600 py-3 font-semibold text-white transition hover:shadow-lg disabled:opacity-50"
           >
-            LƯU
+            {loading ? 'ĐANG LƯU...' : 'LƯU'}
           </button>
         </div>
       </div>

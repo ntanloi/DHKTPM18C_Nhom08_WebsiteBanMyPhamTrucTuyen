@@ -55,12 +55,10 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                         // Store user info in WebSocket session attributes
                         attributes.put("username", username);
                         attributes.put("token", token);
-                        
-                        log.debug("WebSocket handshake authenticated for user: {}", username);
+
                         return true;
                     }
                 } catch (Exception e) {
-                    log.warn("Invalid JWT token in WebSocket handshake: {}", e.getMessage());
                     return false;
                 }
             }
@@ -70,11 +68,9 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             if (sessionId != null && !sessionId.isEmpty()) {
                 attributes.put("guestSessionId", sessionId);
                 attributes.put("isGuest", true);
-                log.debug("WebSocket handshake for guest with sessionId: {}", sessionId);
                 return true;
             }
 
-            log.warn("WebSocket handshake rejected: No valid token or guest session");
             return false;
         }
 

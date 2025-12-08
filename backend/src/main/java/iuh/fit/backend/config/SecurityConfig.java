@@ -82,6 +82,7 @@ public class SecurityConfig {
                         // Public access for payment methods and guest orders
                         .requestMatchers(HttpMethod.GET, "/api/payment-methods").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/orders/guest").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/guest/**").permitAll()
 
                         // Admin only - User management
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -123,6 +124,17 @@ public class SecurityConfig {
                         
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
+                        
+                        // User endpoints - authenticated users can access their own data
+                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/orders/**").authenticated()
+                        .requestMatchers("/api/addresses/**").authenticated()
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/reviews/**").authenticated()
+                        .requestMatchers("/api/payments/**").authenticated()
+                        
+                        // Coupon endpoints - read access for authenticated users
+                        .requestMatchers(HttpMethod.GET, "/api/coupons/**").authenticated()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

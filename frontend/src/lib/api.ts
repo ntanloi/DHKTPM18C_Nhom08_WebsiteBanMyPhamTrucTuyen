@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const baseURL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 const TOKEN_KEY = 'beautybox_access_token';
 const REFRESH_TOKEN_KEY = 'beautybox_refresh_token';
 const USER_KEY = 'beautybox_user';
@@ -37,12 +38,15 @@ api.interceptors.request.use(
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token added to request:', config.url);
+    } else {
+      console.warn('⚠️ No token found for request:', config.url);
     }
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling and token refresh
@@ -82,12 +86,16 @@ api.interceptors.response.use(
       }
 
       try {
-        // Call refresh token API
-        const response = await axios.post(`${baseURL}/auth/refresh-token`, {
+        console.log('🔄 Attempting to refresh token...');
+
+        // Call refresh token API (endpoint is /refresh not /refresh-token)
+        const response = await axios.post(`${baseURL}/auth/refresh`, {
           refreshToken,
         });
 
         const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+        console.log('✅ Token refreshed successfully');
 
         // Update tokens in localStorage
         localStorage.setItem(TOKEN_KEY, accessToken);
@@ -104,11 +112,23 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
+        console.error('❌ Refresh token failed:', refreshError);
         // Refresh token failed, clear auth state
         processQueue(refreshError as Error, null);
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
+
+        // Only clear tokens if refresh explicitly failed (not network error)
+        const err = refreshError as any;
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          console.warn('⚠️ Refresh token invalid, clearing auth');
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        } else {
+          console.warn(
+            '⚠️ Refresh failed due to network/server error, keeping tokens',
+          );
+        }
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -116,8 +136,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
-

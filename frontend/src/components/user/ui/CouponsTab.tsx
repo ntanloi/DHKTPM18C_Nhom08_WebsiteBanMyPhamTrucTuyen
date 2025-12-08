@@ -1,36 +1,31 @@
 import { Tag } from 'lucide-react';
-
-interface Coupon {
-  id: number;
-  code: string;
-  description: string;
-  isActive: boolean;
-  discountType: 'fixed' | 'percentage' | 'shipping';
-  discountValue: number;
-  minOrderValue: number;
-  maxUsageValue: number;
-  validFrom: string;
-  validTo: string;
-}
+import { useNavigate } from 'react-router-dom';
+import type { CouponResponse } from '../../../api/coupon';
 
 interface CouponsTabProps {
-  coupons: Coupon[];
+  coupons: CouponResponse[];
 }
 
 export default function CouponsTab({ coupons }: CouponsTabProps) {
+  const navigate = useNavigate();
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN');
   };
 
-  const getDiscountText = (coupon: Coupon) => {
-    if (coupon.discountType === 'percentage') {
+  const getDiscountText = (coupon: CouponResponse) => {
+    if (coupon.discountType === 'PERCENTAGE') {
       return `Giảm ${coupon.discountValue}%`;
-    } else if (coupon.discountType === 'fixed') {
+    } else if (coupon.discountType === 'FIXED') {
       return `Giảm ${coupon.discountValue.toLocaleString()}đ`;
     } else {
       return 'Miễn phí vận chuyển';
     }
+  };
+
+  const handleUseCoupon = () => {
+    navigate('/products');
   };
 
   return (
@@ -83,7 +78,10 @@ export default function CouponsTab({ coupons }: CouponsTabProps) {
                   </div>
                 </div>
 
-                <button className="mt-4 w-full rounded-lg bg-purple-600 py-2 font-semibold text-white transition hover:bg-purple-700">
+                <button
+                  onClick={handleUseCoupon}
+                  className="mt-4 w-full rounded-lg bg-purple-600 py-2 font-semibold text-white transition hover:bg-purple-700"
+                >
                   Sử dụng ngay
                 </button>
               </div>
@@ -94,7 +92,10 @@ export default function CouponsTab({ coupons }: CouponsTabProps) {
         <div className="py-16 text-center">
           <Tag size={64} className="mx-auto mb-4 text-gray-300" />
           <p className="text-lg text-gray-500">Bạn chưa có mã giảm giá nào</p>
-          <button className="mt-4 rounded-lg bg-purple-600 px-6 py-2 text-white hover:bg-purple-700">
+          <button
+            onClick={handleUseCoupon}
+            className="mt-4 rounded-lg bg-purple-600 px-6 py-2 text-white hover:bg-purple-700"
+          >
             Khám phá ưu đãi
           </button>
         </div>

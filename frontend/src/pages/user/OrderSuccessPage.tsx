@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import CancelOrderModal from '../../components/user/ui/CancelOrderModal';
-import { getOrderDetail, type OrderDetailResponse } from '../../api/order';
+import {
+  getOrderDetail,
+  getGuestOrderDetail,
+  type OrderDetailResponse,
+} from '../../api/order';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
 
 interface OrderSuccessPageProps {
@@ -59,8 +63,28 @@ export default function OrderSuccessPage({
     const loadOrderDetail = async () => {
       try {
         setLoading(true);
+        console.log('📡 Loading order detail for order:', orderCode);
         const orderId = parseInt(orderCode);
-        const orderDetail: OrderDetailResponse = await getOrderDetail(orderId);
+
+        // Try guest endpoint first (no auth required), fallback to authenticated endpoint
+        let orderDetail: OrderDetailResponse;
+        try {
+          console.log('Trying guest order endpoint...');
+          orderDetail = await getGuestOrderDetail(orderId);
+          console.log(
+            '✅ Order detail loaded from guest endpoint:',
+            orderDetail,
+          );
+        } catch (guestError) {
+          console.log(
+            'Guest endpoint failed, trying authenticated endpoint...',
+          );
+          orderDetail = await getOrderDetail(orderId);
+          console.log(
+            '✅ Order detail loaded from authenticated endpoint:',
+            orderDetail,
+          );
+        }
 
         // Transform API response to OrderInfo format
         const transformedInfo: OrderInfo = {
@@ -98,10 +122,35 @@ export default function OrderSuccessPage({
         setOrderInfo(transformedInfo);
         setError(null);
       } catch (err: any) {
-        console.error('Error loading order detail:', err);
-        const errorMessage = err.message || 'Không thể tải thông tin đơn hàng';
-        setError(errorMessage);
-        showToast(errorMessage, 'error');
+        console.error('❌ Error loading order detail:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+
+        // Create fallback order info if API fails
+        const fallbackInfo: OrderInfo = {
+          code: orderCode,
+          customer: 'Khách hàng',
+          customerId: '',
+          address: 'Đang cập nhật',
+          paymentMethod: 'Trả tiền mặt khi nhận hàng (COD)',
+          deliveryDate: 'Đang cập nhật',
+          items: [],
+          subtotal: 0,
+          discount: 0,
+          shipping: 0,
+          total: 0,
+        };
+
+        setOrderInfo(fallbackInfo);
+        const errorMessage =
+          err.response?.data?.error ||
+          err.message ||
+          'Không thể tải chi tiết đơn hàng';
+        console.warn('⚠️ Using fallback order info:', errorMessage);
+        showToast(
+          'Đơn hàng đã được tạo thành công! Chi tiết đơn hàng sẽ được cập nhật sau.',
+          'info',
+        );
       } finally {
         setLoading(false);
       }

@@ -1,9 +1,27 @@
 -- Add new columns to payment_method table
-ALTER TABLE payment_method 
-ADD COLUMN IF NOT EXISTS description VARCHAR(500) NULL AFTER code,
-ADD COLUMN IF NOT EXISTS icon VARCHAR(255) NULL AFTER description,
-ADD COLUMN IF NOT EXISTS is_recommended BOOLEAN DEFAULT FALSE AFTER is_active,
-ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0 AFTER is_recommended;
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'payment_method' AND COLUMN_NAME = 'description';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE payment_method ADD COLUMN description VARCHAR(500) NULL AFTER code', 'SELECT "Column description already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'payment_method' AND COLUMN_NAME = 'icon';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE payment_method ADD COLUMN icon VARCHAR(255) NULL AFTER description', 'SELECT "Column icon already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'payment_method' AND COLUMN_NAME = 'is_recommended';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE payment_method ADD COLUMN is_recommended BOOLEAN DEFAULT FALSE AFTER is_active', 'SELECT "Column is_recommended already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = 'beautyboxdb' AND TABLE_NAME = 'payment_method' AND COLUMN_NAME = 'sort_order';
+SET @query = IF(@col_exists = 0, 'ALTER TABLE payment_method ADD COLUMN sort_order INT DEFAULT 0 AFTER is_recommended', 'SELECT "Column sort_order already exists"');
+PREPARE stmt FROM @query; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Seed payment methods data
 INSERT INTO payment_method (name, code, description, icon, is_active, is_recommended, sort_order, created_at, updated_at) VALUES
