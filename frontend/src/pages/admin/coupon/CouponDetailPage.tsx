@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import type { CouponResponse } from '../../../api/coupon';
-import { mockCouponService } from '../../../mocks/couponMockData';
+import {
+  type CouponResponse,
+  getCouponById,
+  deactivateCoupon,
+  deleteCoupon,
+} from '../../../api/coupon';
 import CouponStatusBadge from '../../../components/admin/coupon/CouponStatusBadge';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ErrorDisplay from '../../../components/admin/ErrorDisplay';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { parseApiError, type ErrorInfo } from '../../../utils/errorHandler';
+import { useToast } from '../../../hooks/useToast';
 
 interface CouponDetailPageProps {
   couponId: number;
   onNavigate: (path: string) => void;
+}
+
+interface ConfirmDialogState {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  variant: 'danger' | 'warning' | 'info' | 'success';
+  confirmText?: string;
 }
 
 const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
@@ -15,7 +32,17 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
 }) => {
   const [coupon, setCoupon] = useState<CouponResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const { showToast } = useToast();
+
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    variant: 'danger',
+  });
 
   useEffect(() => {
     fetchCoupon();
@@ -24,11 +51,18 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
   const fetchCoupon = async () => {
     try {
       setLoading(true);
-      const data = await mockCouponService.getCouponById(couponId);
-      setCoupon(data);
       setError(null);
+      const data = await getCouponById(couponId);
+      setCoupon(data);
     } catch (err: any) {
-      setError(err.message || 'Không tìm thấy mã giảm giá');
+      const errorInfo = parseApiError(err);
+      setError(errorInfo);
+      
+      if (errorInfo.shouldRedirect) {
+        setTimeout(() => {
+          onNavigate(errorInfo.shouldRedirect!);
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -38,40 +72,78 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
     onNavigate(`/admin/coupons/${couponId}/edit`);
   };
 
-  const handleDeactivate = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa mã giảm giá này?'))
-      return;
+  const handleDeactivate = () => {
+    if (!coupon) return;
 
-    try {
-      await mockCouponService.deactivateCoupon(couponId);
-      alert(' Đã vô hiệu hóa mã giảm giá thành công!');
-      fetchCoupon();
-    } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Vô hiệu hóa mã giảm giá',
+      message: `Bạn có chắc chắn muốn vô hiệu hóa mã giảm giá "${coupon.code}"? Khách hàng sẽ không thể sử dụng mã này nữa.`,
+      variant: 'warning',
+      confirmText: 'Vô hiệu hóa',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await deactivateCoupon(couponId);
+          showToast('Đã vô hiệu hóa mã giảm giá thành công!', 'success');
+          setConfirmDialog({ ...confirmDialog, open: false });
+          await fetchCoupon();
+        } catch (err: any) {
+          const errorInfo = parseApiError(err);
+          showToast(
+            errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''),
+            'error'
+          );
+          
+          if (errorInfo.shouldRedirect) {
+            onNavigate(errorInfo.shouldRedirect);
+          }
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        'Bạn có chắc chắn muốn XÓA mã giảm giá này? Hành động này không thể hoàn tác!',
-      )
-    )
-      return;
+  const handleDelete = () => {
+    if (!coupon) return;
 
-    try {
-      await mockCouponService.deleteCoupon(couponId);
-      alert(' Đã xóa mã giảm giá thành công!');
-      onNavigate('/admin/coupons');
-    } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Xóa mã giảm giá',
+      message: `Bạn có chắc chắn muốn XÓA mã giảm giá "${coupon.code}"? Hành động này không thể hoàn tác và tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.`,
+      variant: 'danger',
+      confirmText: 'Xóa vĩnh viễn',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await deleteCoupon(couponId);
+          showToast('Đã xóa mã giảm giá thành công!', 'success');
+          setConfirmDialog({ ...confirmDialog, open: false });
+          setTimeout(() => {
+            onNavigate('/admin/coupons');
+          }, 1500);
+        } catch (err: any) {
+          const errorInfo = parseApiError(err);
+          showToast(
+            errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''),
+            'error'
+          );
+          
+          if (errorInfo.shouldRedirect) {
+            onNavigate(errorInfo.shouldRedirect);
+          }
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const handleCopyCode = () => {
     if (coupon) {
       navigator.clipboard.writeText(coupon.code);
-      alert(` Đã sao chép mã: ${coupon.code}`);
+      showToast(`Đã sao chép mã: ${coupon.code}`, 'success');
     }
   };
 
@@ -169,32 +241,47 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
 
   if (error || !coupon) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-lg font-medium text-red-800">
-            {error || 'Không tìm thấy mã giảm giá'}
-          </h3>
-          <button
-            onClick={() => onNavigate('/admin/coupons')}
-            className="mt-4 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-          >
-            Quay lại danh sách
-          </button>
+      <AdminLayout onNavigate={onNavigate}>
+        <div className="p-6">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <svg
+                className="mx-auto h-16 w-16 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            {error ? (
+              <ErrorDisplay
+                error={error}
+                onRetry={error.canRetry ? fetchCoupon : undefined}
+              />
+            ) : (
+              <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center">
+                <p className="text-lg font-medium text-red-800">
+                  Không tìm thấy mã giảm giá
+                </p>
+              </div>
+            )}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => onNavigate('/admin/coupons')}
+                className="rounded bg-gray-600 px-6 py-2 text-white hover:bg-gray-700"
+              >
+                Quay lại danh sách
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -522,6 +609,18 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog({ ...confirmDialog, open: false })}
+          confirmText={confirmDialog.confirmText}
+          variant={confirmDialog.variant}
+          loading={actionLoading}
+        />
       </div>
     </AdminLayout>
   );

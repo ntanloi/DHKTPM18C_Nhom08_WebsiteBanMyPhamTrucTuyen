@@ -1,21 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import type { CouponResponse } from '../../../api/coupon';
-import { mockCouponService } from '../../../mocks/couponMockData';
+import { getAllCoupons, deactivateCoupon, deleteCoupon } from '../../../api/coupon';
 import CouponTable from '../../../components/admin/coupon/CouponTable';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ErrorDisplay from '../../../components/admin/ErrorDisplay';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { parseApiError, type ErrorInfo } from '../../../utils/errorHandler';
 
 interface CouponListPageProps {
   onNavigate: (path: string) => void;
 }
 
+interface ConfirmDialogState {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  variant: 'danger' | 'warning' | 'info' | 'success';
+  confirmText?: string;
+}
+
 const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
   const [coupons, setCoupons] = useState<CouponResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    variant: 'danger',
+  });
 
   useEffect(() => {
     fetchCoupons();
@@ -24,11 +45,18 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const data = await mockCouponService.getAllCoupons();
-      setCoupons(data);
       setError(null);
+      const data = await getAllCoupons();
+      setCoupons(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch coupons');
+      const errorInfo = parseApiError(err);
+      setError(errorInfo);
+      
+      if (errorInfo.shouldRedirect) {
+        setTimeout(() => {
+          onNavigate(errorInfo.shouldRedirect!);
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -42,27 +70,60 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
     onNavigate(`/admin/coupons/${couponId}/edit`);
   };
 
-  const handleDeactivate = async (couponId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa mã giảm giá này?'))
-      return;
-
-    try {
-      await mockCouponService.deactivateCoupon(couponId);
-      fetchCoupons();
-    } catch (err: any) {
-      alert(err.message || 'Failed to deactivate coupon');
-    }
+  const handleDeactivate = (couponId: number) => {
+    const coupon = coupons.find(c => c.id === couponId);
+    setConfirmDialog({
+      open: true,
+      title: 'Vô hiệu hóa mã giảm giá',
+      message: `Bạn có chắc chắn muốn vô hiệu hóa mã giảm giá "${coupon?.code}"? Mã này sẽ không thể sử dụng được nữa.`,
+      variant: 'warning',
+      confirmText: 'Vô hiệu hóa',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await deactivateCoupon(couponId);
+          await fetchCoupons();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        } catch (err: any) {
+          const errorInfo = parseApiError(err);
+          alert(errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''));
+          
+          if (errorInfo.shouldRedirect) {
+            onNavigate(errorInfo.shouldRedirect);
+          }
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
-  const handleDelete = async (couponId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?')) return;
-
-    try {
-      await mockCouponService.deleteCoupon(couponId);
-      fetchCoupons();
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete coupon');
-    }
+  const handleDelete = (couponId: number) => {
+    const coupon = coupons.find(c => c.id === couponId);
+    setConfirmDialog({
+      open: true,
+      title: 'Xóa mã giảm giá',
+      message: `Bạn có chắc chắn muốn xóa mã giảm giá "${coupon?.code}"? Hành động này không thể hoàn tác.`,
+      variant: 'danger',
+      confirmText: 'Xóa',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await deleteCoupon(couponId);
+          await fetchCoupons();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        } catch (err: any) {
+          const errorInfo = parseApiError(err);
+          alert(errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''));
+          
+          if (errorInfo.shouldRedirect) {
+            onNavigate(errorInfo.shouldRedirect);
+          }
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const getCouponStatus = (coupon: CouponResponse): string => {
@@ -76,27 +137,31 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
     return 'active';
   };
 
-  const filteredCoupons = coupons.filter((coupon) => {
-    const matchesSearch =
-      coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCoupons = useMemo(() => {
+    return coupons.filter((coupon) => {
+      const matchesSearch =
+        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coupon.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const couponStatus = getCouponStatus(coupon);
-    const matchesStatus =
-      filterStatus === 'all' || couponStatus === filterStatus;
+      const couponStatus = getCouponStatus(coupon);
+      const matchesStatus =
+        filterStatus === 'all' || couponStatus === filterStatus;
 
-    const matchesType =
-      filterType === 'all' || coupon.discountType === filterType;
+      const matchesType =
+        filterType === 'all' || coupon.discountType === filterType;
 
-    return matchesSearch && matchesStatus && matchesType;
-  });
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [coupons, searchTerm, filterStatus, filterType]);
 
-  const stats = {
-    total: coupons.length,
-    active: coupons.filter((c) => getCouponStatus(c) === 'active').length,
-    inactive: coupons.filter((c) => getCouponStatus(c) === 'inactive').length,
-    expired: coupons.filter((c) => getCouponStatus(c) === 'expired').length,
-  };
+  const stats = useMemo(() => {
+    return {
+      total: coupons.length,
+      active: coupons.filter((c) => getCouponStatus(c) === 'active').length,
+      inactive: coupons.filter((c) => getCouponStatus(c) === 'inactive').length,
+      expired: coupons.filter((c) => getCouponStatus(c) === 'expired').length,
+    };
+  }, [coupons]);
 
   if (loading) {
     return (
@@ -117,7 +182,7 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
     return (
       <AdminLayout onNavigate={onNavigate}>
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100">
-          <div className="rounded-3xl bg-white p-12 text-center shadow-2xl">
+          <div className="max-w-2xl rounded-3xl bg-white p-12 shadow-2xl">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-red-100">
               <svg
                 className="h-12 w-12 text-red-600"
@@ -133,9 +198,12 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
                 />
               </svg>
             </div>
-            <p className="mt-6 text-lg font-medium text-red-600">
-              Lỗi: {error}
-            </p>
+            <div className="mt-6">
+              <ErrorDisplay
+                error={error}
+                onRetry={error.canRetry ? fetchCoupons : undefined}
+              />
+            </div>
           </div>
         </div>
       </AdminLayout>
@@ -508,6 +576,18 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
             )}
           </div>
         </main>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog({ ...confirmDialog, open: false })}
+          confirmText={confirmDialog.confirmText}
+          variant={confirmDialog.variant}
+          loading={actionLoading}
+        />
       </div>
     </AdminLayout>
   );

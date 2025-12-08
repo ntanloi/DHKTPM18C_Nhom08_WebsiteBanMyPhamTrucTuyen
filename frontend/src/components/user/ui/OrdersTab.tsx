@@ -1,56 +1,83 @@
 import { useState } from 'react';
-
-interface Order {
-  id: string;
-  date: string;
-  status: string;
-  items: number;
-  total: number;
-  address: string;
-}
+import { useNavigate } from 'react-router-dom';
+import { cancelOrder } from '../../../api/order';
+import type { OrderResponse } from '../../../api/order';
 
 interface OrdersTabProps {
-  orders: Order[];
+  orders: OrderResponse[];
+  onUpdate?: () => void;
 }
 
-export default function OrdersTab({ orders }: OrdersTabProps) {
+export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
 
   const statusTabs = [
     { label: 'Tất cả', value: 'all' },
-    { label: 'Chờ xác nhận', value: 'chờ xác nhận' },
-    { label: 'Đang chuẩn bị đơn hàng', value: 'đang chuẩn bị đơn hàng' },
-    { label: 'Đang giao', value: 'đang giao' },
-    { label: 'Đã giao', value: 'đã giao' },
-    { label: 'Đã huỷ', value: 'đã huỷ' }, // Thêm tab Đã huỷ
+    { label: 'Chờ xác nhận', value: 'PENDING' },
+    { label: 'Đã xác nhận', value: 'CONFIRMED' },
+    { label: 'Đang giao', value: 'SHIPPING' },
+    { label: 'Đã giao', value: 'DELIVERED' },
+    { label: 'Đã hủy', value: 'CANCELLED' },
   ];
 
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      SHIPPING: 'Đang giao',
+      DELIVERED: 'Đã giao',
+      CANCELLED: 'Đã hủy',
+    };
+    return statusMap[status] || status;
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'đã giao':
+    switch (status) {
+      case 'DELIVERED':
         return 'text-green-600 bg-green-50 border border-green-100';
-      case 'đang giao':
+      case 'SHIPPING':
         return 'text-blue-600 bg-blue-50 border border-blue-100';
-      case 'đang chuẩn bị đơn hàng':
+      case 'CONFIRMED':
         return 'text-yellow-600 bg-yellow-50 border border-yellow-100';
-      case 'chờ xác nhận':
+      case 'PENDING':
         return 'text-orange-600 bg-orange-50 border border-orange-100';
-      case 'đã huỷ':
+      case 'CANCELLED':
         return 'text-red-600 bg-red-50 border border-red-100';
       default:
         return 'text-gray-600 bg-gray-50 border border-gray-100';
     }
   };
 
-  // Filter orders based on selected status
-  const filteredOrders =
-    selectedStatus === 'all'
-      ? orders
-      : orders.filter(
-          (order) =>
-            order.status.toLowerCase() === selectedStatus.toLowerCase(),
-        );
+  const handleCancelOrder = async (orderId: number) => {
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+
+    try {
+      setCancelingOrderId(orderId);
+      await cancelOrder(orderId);
+      alert('Đã hủy đơn hàng thành công!');
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Có lỗi xảy ra khi hủy đơn hàng');
+    } finally {
+      setCancelingOrderId(null);
+    }
+  };
+
+  const handleViewDetail = (orderId: number) => {
+    navigate(`/orders/${orderId}`);
+  };
+
+  // Filter orders based on selected status and search term
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus =
+      selectedStatus === 'all' || order.status === selectedStatus;
+    const matchesSearch =
+      searchTerm === '' || order.id.toString().includes(searchTerm);
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="rounded-lg bg-white p-8 shadow-sm">
@@ -93,40 +120,59 @@ export default function OrdersTab({ orders }: OrdersTabProps) {
                 <div className="flex-1">
                   <div className="mb-3 flex flex-wrap items-center gap-4">
                     <div className="text-lg font-semibold text-gray-800">
-                      {order.date}
+                      {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                     </div>
                     <span
                       className={`rounded-full px-3 py-1.5 text-sm font-medium ${getStatusColor(order.status)}`}
                     >
-                      {order.status}
+                      {getStatusLabel(order.status)}
                     </span>
                   </div>
                   <div className="mb-2 text-gray-600">
                     <span className="font-medium">Mã đơn hàng:</span>{' '}
-                    <span className="font-mono">{order.id}</span>
+                    <span className="font-mono">#{order.id}</span>
                   </div>
                   <div className="mb-2 text-gray-600">
-                    <span className="font-medium">Số lượng:</span> {order.items}{' '}
-                    sản phẩm
+                    <span className="font-medium">Tổng phụ:</span>{' '}
+                    {order.subtotal.toLocaleString('vi-VN')}đ
                   </div>
-                  <div className="text-gray-600">
-                    <span className="font-medium">Địa chỉ giao hàng:</span>{' '}
-                    {order.address}
-                  </div>
+                  {order.discountAmount > 0 && (
+                    <div className="mb-2 text-gray-600">
+                      <span className="font-medium">Giảm giá:</span> -
+                      {order.discountAmount.toLocaleString('vi-VN')}đ
+                    </div>
+                  )}
+                  {order.notes && (
+                    <div className="text-gray-600">
+                      <span className="font-medium">Ghi chú:</span>{' '}
+                      {order.notes}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-start gap-4 lg:items-end">
                   <div className="text-right">
                     <div className="text-sm text-gray-500">Tổng tiền</div>
                     <div className="text-xl font-bold text-[rgb(235,97,164)]">
-                      {order.total.toLocaleString('vi-VN')}đ
+                      {order.totalAmount.toLocaleString('vi-VN')}đ
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50">
-                      Mua lại
-                    </button>
-                    <button className="rounded-lg bg-[rgb(235,97,164)] px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-[rgb(235,97,164)]/90">
+                    {order.status === 'PENDING' && (
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancelingOrderId === order.id}
+                        className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {cancelingOrderId === order.id
+                          ? 'Đang hủy...'
+                          : 'Hủy đơn'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleViewDetail(order.id)}
+                      className="rounded-lg bg-[rgb(235,97,164)] px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-[rgb(235,97,164)]/90"
+                    >
                       Xem chi tiết
                     </button>
                   </div>

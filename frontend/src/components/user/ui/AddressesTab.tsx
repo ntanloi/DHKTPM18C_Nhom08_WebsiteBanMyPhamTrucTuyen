@@ -1,30 +1,27 @@
 import { useState } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 import AddressModal from './AddressModal';
-
-interface Address {
-  id: number;
-  date: string;
-  name: string;
-  phone: string;
-  email: string;
-  city: string;
-  district: string;
-  ward: string;
-  street: string;
-  isDefault: boolean;
-}
+import { deleteAddress } from '../../../api/address';
+import type { AddressResponse } from '../../../api/address';
 
 interface AddressesTabProps {
-  addresses: Address[];
+  addresses: AddressResponse[];
+  onUpdate?: () => void;
+  userId?: number;
 }
 
-export default function AddressesTab({ addresses }: AddressesTabProps) {
+export default function AddressesTab({
+  addresses,
+  onUpdate,
+  userId,
+}: AddressesTabProps) {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [selectedAddress, setSelectedAddress] =
+    useState<AddressResponse | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const handleEdit = (address: Address) => {
+  const handleEdit = (address: AddressResponse) => {
     setSelectedAddress(address);
     setModalType('edit');
     setShowModal(true);
@@ -36,10 +33,24 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
     setShowModal(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-      alert(`Đã xóa địa chỉ với ID: ${id}!`);
+  const handleDelete = async (id: number) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) return;
+
+    try {
+      setDeletingId(id);
+      await deleteAddress(id);
+      alert('Đã xóa địa chỉ thành công!');
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Có lỗi xảy ra khi xóa địa chỉ');
+    } finally {
+      setDeletingId(null);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    if (onUpdate) onUpdate();
   };
 
   return (
@@ -67,7 +78,7 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
                 <div className="flex-1">
                   <div className="mb-3 flex items-center gap-2">
                     <span className="font-semibold text-gray-800">
-                      {address.date}
+                      {address.recipientName}
                     </span>
                     {address.isDefault && (
                       <span className="rounded-full bg-[rgb(235,97,164)]/10 px-3 py-1 text-xs font-medium text-[rgb(235,97,164)]">
@@ -76,17 +87,12 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
                     )}
                   </div>
                   <div className="space-y-2 text-gray-700">
-                    <div className="font-medium text-gray-900">
-                      {address.name}
-                    </div>
                     <div className="flex items-center gap-4">
-                      <div>{address.phone}</div>
-                      <div className="text-gray-400">•</div>
-                      <div>{address.email}</div>
+                      <div>{address.recipientPhone}</div>
                     </div>
                     <div className="text-gray-600">
-                      {address.street}, {address.ward}, {address.district},{' '}
-                      {address.city}
+                      {address.streetAddress}, {address.ward},{' '}
+                      {address.district}, {address.city}
                     </div>
                   </div>
                 </div>
@@ -100,7 +106,8 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
                   </button>
                   <button
                     onClick={() => handleDelete(address.id)}
-                    className="rounded-full p-2 text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-red-600"
+                    disabled={deletingId === address.id}
+                    className="rounded-full p-2 text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50"
                     title="Xóa"
                   >
                     <Trash2 size={18} />
@@ -130,9 +137,10 @@ export default function AddressesTab({ addresses }: AddressesTabProps) {
 
       <AddressModal
         show={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={handleModalClose}
         type={modalType}
         address={selectedAddress}
+        userId={userId}
       />
     </>
   );

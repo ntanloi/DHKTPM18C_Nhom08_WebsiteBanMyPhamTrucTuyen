@@ -61,7 +61,6 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                         return true;
                     }
                 } catch (Exception e) {
-                    log.warn("Invalid JWT token in WebSocket handshake: {}", e.getMessage());
                     return false;
                 }
             }

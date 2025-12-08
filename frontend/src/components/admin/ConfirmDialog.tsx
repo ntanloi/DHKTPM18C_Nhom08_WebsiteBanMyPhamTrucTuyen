@@ -123,12 +123,12 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div
-        className="bg-opacity-50 fixed inset-0 bg-black transition-opacity"
+        className="fixed inset-0 bg-white/70 backdrop-blur-sm transition-opacity"
         onClick={onCancel}
       />
 
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white shadow-xl transition-all">
+        <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all">
           <div className="bg-white p-6">
             <div
               className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${variantStyles.iconBg}`}

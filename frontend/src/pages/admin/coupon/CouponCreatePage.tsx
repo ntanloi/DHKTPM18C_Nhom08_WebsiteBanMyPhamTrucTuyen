@@ -5,8 +5,13 @@ import type {
   CreateCouponRequest,
   UpdateCouponRequest,
 } from '../../../api/coupon';
-import { mockCouponService } from '../../../mocks/couponMockData';
+import { createCoupon } from '../../../api/coupon';
 import CouponForm from '../../../components/admin/coupon/CouponForm';
+import ErrorDisplay from '../../../components/admin/ErrorDisplay';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { parseApiError, type ErrorInfo } from '../../../utils/errorHandler';
+import { Toast } from '../../../components/user/ui/Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface CouponCreatePageProps {
   onNavigate: (path: string) => void;
@@ -14,7 +19,9 @@ interface CouponCreatePageProps {
 
 const CouponCreatePage: React.FC<CouponCreatePageProps> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   const handleSubmit = async (
     data: CreateCouponRequest | UpdateCouponRequest,
@@ -24,35 +31,37 @@ const CouponCreatePage: React.FC<CouponCreatePageProps> = ({ onNavigate }) => {
       setLoading(true);
       setError(null);
 
-      try {
-        await mockCouponService.getCouponByCode(createData.code);
-        setError(
-          `Mã coupon "${createData.code}" đã tồn tại. Vui lòng chọn mã khác.`,
-        );
-        setLoading(false);
-        return;
-      } catch {
-        // Code doesn't exist, continue with creation
-      }
+      const response = await createCoupon(createData);
 
-      const response = await mockCouponService.createCoupon(createData);
-
-      alert(
-        ` Tạo mã giảm giá thành công!\n\nMã: ${response.code}\nID: ${response.id}`,
+      showToast(
+        `Tạo mã giảm giá thành công! Mã: ${response.code}`,
+        'success',
       );
 
-      onNavigate('/admin/coupons');
+      setTimeout(() => {
+        onNavigate(`/admin/coupons/${response.id}`);
+      }, 1500);
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra khi tạo mã giảm giá');
+      const errorInfo = parseApiError(err);
+      setError(errorInfo);
+      
+      if (errorInfo.shouldRedirect) {
+        setTimeout(() => {
+          onNavigate(errorInfo.shouldRedirect!);
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (window.confirm('Bạn có chắc muốn hủy? Dữ liệu sẽ không được lưu.')) {
-      onNavigate('/admin/coupons');
-    }
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onNavigate('/admin/coupons');
   };
 
   return (
@@ -107,23 +116,12 @@ const CouponCreatePage: React.FC<CouponCreatePageProps> = ({ onNavigate }) => {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
-            <div className="flex items-center gap-2">
-              <svg
-                className="h-5 w-5 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-sm font-medium text-red-800">{error}</p>
-            </div>
+          <div className="mb-6">
+            <ErrorDisplay
+              error={error}
+              onRetry={error.canRetry ? () => setError(null) : undefined}
+              onDismiss={() => setError(null)}
+            />
           </div>
         )}
 
@@ -143,8 +141,29 @@ const CouponCreatePage: React.FC<CouponCreatePageProps> = ({ onNavigate }) => {
             mode="create"
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            loading={loading}
           />
         </div>
+
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
+        )}
+
+        {/* Cancel Confirmation Dialog */}
+        <ConfirmDialog
+          open={showCancelDialog}
+          title="Hủy tạo mã giảm giá?"
+          message="Bạn có chắc muốn hủy? Tất cả thông tin bạn đã nhập sẽ không được lưu và bạn sẽ quay lại danh sách mã giảm giá."
+          onConfirm={confirmCancel}
+          onCancel={() => setShowCancelDialog(false)}
+          confirmText="Hủy và quay lại"
+          cancelText="Tiếp tục tạo"
+          variant="warning"
+        />
       </div>
     </AdminLayout>
   );

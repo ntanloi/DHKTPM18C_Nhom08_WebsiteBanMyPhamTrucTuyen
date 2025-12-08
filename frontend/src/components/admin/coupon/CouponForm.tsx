@@ -5,11 +5,26 @@ import type {
   UpdateCouponRequest,
 } from '../../../api/coupon';
 
+/**
+ * CouponForm Component
+ * 
+ * Reusable form component for creating and editing coupons.
+ * Handles client-side validation, form state management, and provides
+ * a live preview of the coupon being created/edited.
+ * 
+ * Features:
+ * - Client-side validation with real-time error feedback
+ * - Auto-generate coupon codes
+ * - Live preview of coupon appearance
+ * - Supports both create and edit modes
+ * - Form data persistence on validation errors
+ */
 interface CouponFormProps {
   mode: 'create' | 'edit';
   initialData?: CouponResponse;
   onSubmit: (data: CreateCouponRequest | UpdateCouponRequest) => void;
   onCancel: () => void;
+  loading?: boolean;
 }
 
 const CouponForm: React.FC<CouponFormProps> = ({
@@ -17,6 +32,7 @@ const CouponForm: React.FC<CouponFormProps> = ({
   initialData,
   onSubmit,
   onCancel,
+  loading = false,
 }) => {
   const [formData, setFormData] = useState({
     code: initialData?.code || '',
@@ -64,9 +80,15 @@ const CouponForm: React.FC<CouponFormProps> = ({
     }
   };
 
+  /**
+   * Client-side validation for coupon form
+   * Validates all required fields and business rules before submission
+   * @returns true if validation passes, false otherwise
+   */
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Validate coupon code format
     if (!formData.code.trim()) {
       newErrors.code = 'Mã coupon không được để trống';
     } else if (!/^[A-Z0-9]+$/.test(formData.code)) {
@@ -74,14 +96,17 @@ const CouponForm: React.FC<CouponFormProps> = ({
         'Mã coupon chỉ được chứa chữ in hoa và số, không có khoảng trắng';
     }
 
+    // Validate description
     if (!formData.description.trim()) {
       newErrors.description = 'Mô tả không được để trống';
     }
 
+    // Validate discount value
     if (formData.discountValue <= 0) {
       newErrors.discountValue = 'Giá trị giảm phải lớn hơn 0';
     }
 
+    // Validate percentage doesn't exceed 100%
     if (
       formData.discountType === 'percentage' &&
       formData.discountValue > 100
@@ -89,14 +114,17 @@ const CouponForm: React.FC<CouponFormProps> = ({
       newErrors.discountValue = 'Phần trăm giảm không được vượt quá 100%';
     }
 
+    // Validate minimum order value
     if (formData.minOrderValue < 0) {
       newErrors.minOrderValue = 'Giá trị đơn hàng tối thiểu không được âm';
     }
 
+    // Validate maximum usage value
     if (formData.maxUsageValue <= 0) {
       newErrors.maxUsageValue = 'Giá trị giảm tối đa phải lớn hơn 0';
     }
 
+    // Validate validity dates
     if (!formData.validFrom) {
       newErrors.validFrom = 'Ngày bắt đầu không được để trống';
     }
@@ -105,6 +133,7 @@ const CouponForm: React.FC<CouponFormProps> = ({
       newErrors.validTo = 'Ngày kết thúc không được để trống';
     }
 
+    // Validate date range logic
     if (formData.validFrom && formData.validTo) {
       const startDate = new Date(formData.validFrom);
       const endDate = new Date(formData.validTo);
@@ -376,14 +405,16 @@ const CouponForm: React.FC<CouponFormProps> = ({
       <div className="flex gap-3">
         <button
           type="submit"
-          className="flex-1 rounded bg-pink-600 px-6 py-3 font-medium text-white hover:bg-pink-700"
+          disabled={loading}
+          className="flex-1 rounded bg-pink-600 px-6 py-3 font-medium text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {mode === 'create' ? ' Tạo Mã Giảm Giá' : 'Cập Nhật'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border border-gray-300 px-6 py-3 font-medium text-gray-700 hover:bg-gray-50"
+          disabled={loading}
+          className="rounded border border-gray-300 px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Hủy
         </button>

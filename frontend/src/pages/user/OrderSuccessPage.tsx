@@ -61,6 +61,7 @@ export default function OrderSuccessPage({
     const loadOrderDetail = async () => {
       try {
         setLoading(true);
+        console.log('📡 Loading order detail for order:', orderCode);
         const orderId = parseInt(orderCode);
         let orderDetail: OrderDetailResponse;
         
