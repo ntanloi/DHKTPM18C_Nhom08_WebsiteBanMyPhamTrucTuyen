@@ -1,15 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { CheckCircle, XCircle, Loader2, Home, FileText } from 'lucide-react';
-import { processVNPayCallback, type VNPayResponse } from '../../api/payment';
+import { type VNPayResponse } from '../../api/payment';
+import {
+  createOrder,
+  createGuestOrder,
+  type CreateOrderRequest,
+  type CreateGuestOrderRequest,
+} from '../../api/order';
+import { AuthContext } from '../../context/auth-context';
+import { useCart } from '../../context/CartContext';
+import api from '../../lib/api';
 
 interface PaymentCallbackPageProps {
   onNavigate?: (path: string) => void;
 }
 
-export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageProps) {
-  const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
-  const [paymentResult, setPaymentResult] = useState<VNPayResponse | null>(null);
+export default function PaymentCallbackPage({
+  onNavigate,
+}: PaymentCallbackPageProps) {
+  const [status, setStatus] = useState<'loading' | 'success' | 'failed'>(
+    'loading',
+  );
+  const [paymentResult, setPaymentResult] = useState<VNPayResponse | null>(
+    null,
+  );
   const [error, setError] = useState<string>('');
+  const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+
+  const authContext = useContext(AuthContext);
+  const { clearCart } = useCart();
+  const user = authContext?.user || null;
 
   useEffect(() => {
     processPaymentCallback();
@@ -20,7 +40,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
       // Get URL params from current URL
       const urlParams = new URLSearchParams(window.location.search);
       const params: Record<string, string> = {};
-      
+
       urlParams.forEach((value, key) => {
         params[key] = value;
       });
@@ -32,15 +52,99 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
         return;
       }
 
-      // Process callback
-      const result = await processVNPayCallback(params);
-      setPaymentResult(result);
-      
-      if (result.success) {
-        setStatus('success');
+      // Check payment response code
+      const responseCode = params.vnp_ResponseCode;
+      const transactionStatus = params.vnp_TransactionStatus;
+
+      // Payment successful
+      if (responseCode === '00' && transactionStatus === '00') {
+        // Create order after successful payment
+        try {
+          let orderId: number | null = null;
+
+          // Check if user is logged in
+          if (user) {
+            // Logged in user - get pending order from localStorage
+            const pendingOrderStr = localStorage.getItem(
+              'pending_logged_order',
+            );
+            if (pendingOrderStr) {
+              const orderRequest: CreateOrderRequest =
+                JSON.parse(pendingOrderStr);
+              const order = await createOrder(orderRequest);
+              orderId = order.id;
+
+              // Clear localStorage
+              localStorage.removeItem('pending_logged_order');
+              localStorage.removeItem('pending_cart');
+            }
+          } else {
+            // Guest user - get pending order from localStorage
+            const pendingOrderStr = localStorage.getItem('pending_guest_order');
+            if (pendingOrderStr) {
+              const orderRequest: CreateGuestOrderRequest =
+                JSON.parse(pendingOrderStr);
+              const order = await createGuestOrder(orderRequest);
+              orderId = order.id;
+
+              // Clear localStorage
+              localStorage.removeItem('pending_guest_order');
+              localStorage.removeItem('pending_cart');
+            }
+          }
+
+          if (orderId) {
+            setCreatedOrderId(orderId);
+
+            // Mark payment as completed
+            try {
+              await api.put(`/orders/${orderId}/payment/complete`);
+              console.log('Payment marked as completed for order:', orderId);
+            } catch (e) {
+              console.warn('Failed to mark payment as completed:', e);
+            }
+
+            // Clear cart after successful order creation
+            try {
+              await clearCart();
+            } catch (e) {
+              console.warn('Failed to clear cart:', e);
+            }
+
+            // Set success result
+            setPaymentResult({
+              success: true,
+              orderId: orderId.toString(),
+              transactionNo: params.vnp_BankTranNo || params.vnp_TxnRef,
+              message: 'Thanh toán thành công',
+              paymentUrl: '',
+            });
+            setStatus('success');
+
+            // Auto redirect to order success page after 2 seconds
+            setTimeout(() => {
+              onNavigate?.(`/order-success/${orderId}`);
+            }, 2000);
+          } else {
+            throw new Error('Không tìm thấy thông tin đơn hàng');
+          }
+        } catch (orderError: any) {
+          console.error('Error creating order after payment:', orderError);
+          setStatus('failed');
+          setError(
+            'Thanh toán thành công nhưng không thể tạo đơn hàng. Vui lòng liên hệ hỗ trợ.',
+          );
+        }
       } else {
+        // Payment failed
         setStatus('failed');
-        setError(result.message || 'Thanh toán không thành công');
+        setError(getVNPayErrorMessage(responseCode));
+
+        // Restore cart if payment failed
+        const pendingCartStr = localStorage.getItem('pending_cart');
+        if (pendingCartStr) {
+          console.log('Payment failed, cart items preserved in localStorage');
+        }
       }
     } catch (err) {
       console.error('Payment callback error:', err);
@@ -49,13 +153,33 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
     }
   };
 
+  const getVNPayErrorMessage = (code: string): string => {
+    const errorMessages: Record<string, string> = {
+      '07': 'Giao dịch bị nghi ngờ gian lận',
+      '09': 'Thẻ/Tài khoản chưa đăng ký dịch vụ InternetBanking',
+      '10': 'Xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+      '11': 'Đã hết hạn chờ thanh toán',
+      '12': 'Thẻ/Tài khoản bị khóa',
+      '13': 'Sai mật khẩu xác thực giao dịch (OTP)',
+      '24': 'Khách hàng hủy giao dịch',
+      '51': 'Tài khoản không đủ số dư',
+      '65': 'Tài khoản đã vượt quá hạn mức giao dịch trong ngày',
+      '75': 'Ngân hàng thanh toán đang bảo trì',
+      '79': 'Nhập sai mật khẩu thanh toán quá số lần quy định',
+      '99': 'Lỗi không xác định',
+    };
+    return errorMessages[code] || 'Thanh toán không thành công';
+  };
+
   const handleGoHome = () => {
     onNavigate?.('/');
   };
 
   const handleViewOrder = () => {
-    if (paymentResult?.orderId) {
-      onNavigate?.(`/orders/${paymentResult.orderId}`);
+    const orderId = createdOrderId || paymentResult?.orderId;
+    if (orderId) {
+      // Use order-success page for better UX
+      onNavigate?.(`/order-success/${orderId}`);
     }
   };
 
@@ -72,9 +196,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
               <h2 className="mb-2 text-xl font-bold text-gray-900">
                 Đang xử lý thanh toán
               </h2>
-              <p className="text-gray-500">
-                Vui lòng đợi trong giây lát...
-              </p>
+              <p className="text-gray-500">Vui lòng đợi trong giây lát...</p>
             </div>
           )}
 
@@ -96,7 +218,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
                 <div className="mb-3 flex justify-between">
                   <span className="text-gray-500">Mã đơn hàng</span>
                   <span className="font-semibold text-gray-900">
-                    #{paymentResult?.orderId}
+                    #{createdOrderId || paymentResult?.orderId}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -169,9 +291,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
 
         {/* VNPay Logo */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-400">
-            Thanh toán được xử lý bởi
-          </p>
+          <p className="text-sm text-gray-400">Thanh toán được xử lý bởi</p>
           <img
             src="https://vnpay.vn/wp-content/uploads/2019/09/logo-vnpay-768x254.png"
             alt="VNPay"
