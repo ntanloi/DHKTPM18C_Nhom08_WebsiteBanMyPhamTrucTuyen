@@ -430,7 +430,7 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
                 Không tìm thấy sản phẩm nào
               </p>
               <p className="mt-1 text-sm text-gray-500">
-                Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác
+                Hãy thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác
               </p>
             </div>
           )}
