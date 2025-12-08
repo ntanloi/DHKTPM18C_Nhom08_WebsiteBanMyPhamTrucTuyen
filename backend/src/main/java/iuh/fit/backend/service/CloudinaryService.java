@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,8 +14,10 @@ import java.util.Map;
 
 /**
  * Service for uploading images to Cloudinary
+ * Only enabled when cloudinary.enabled=true in properties
  */
 @Service
+@ConditionalOnProperty(name = "cloudinary.enabled", havingValue = "true", matchIfMissing = false)
 @Slf4j
 public class CloudinaryService {
 
@@ -23,16 +26,24 @@ public class CloudinaryService {
     public CloudinaryService() {
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         
+        String cloudName = dotenv.get("CLOUDINARY_CLOUD_NAME", "");
+        String apiKey = dotenv.get("CLOUDINARY_API_KEY", "");
+        String apiSecret = dotenv.get("CLOUDINARY_API_SECRET", "");
+        
+        if (cloudName.isEmpty() || apiKey.isEmpty() || apiSecret.isEmpty()) {
+            log.warn("Cloudinary configuration is incomplete. Service will not function properly.");
+        }
+        
         Map<String, String> config = new HashMap<>();
-        config.put("cloud_name", dotenv.get("CLOUDINARY_CLOUD_NAME", ""));
-        config.put("api_key", dotenv.get("CLOUDINARY_API_KEY", ""));
-        config.put("api_secret", dotenv.get("CLOUDINARY_API_SECRET", ""));
+        config.put("cloud_name", cloudName);
+        config.put("api_key", apiKey);
+        config.put("api_secret", apiSecret);
         config.put("secure", "true");
         
         this.cloudinary = new Cloudinary(config);
         
         log.info("CloudinaryService initialized. Cloud name: {}", 
-                config.get("cloud_name").isEmpty() ? "NOT_SET" : config.get("cloud_name"));
+                cloudName.isEmpty() ? "NOT_SET" : cloudName);
     }
 
     /**

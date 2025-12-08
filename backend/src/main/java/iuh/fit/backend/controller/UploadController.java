@@ -3,6 +3,7 @@ package iuh.fit.backend.controller;
 import iuh.fit.backend.service.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,10 +17,12 @@ import java.util.Map;
 
 /**
  * Controller for handling image uploads to Cloudinary
+ * Only enabled when CloudinaryService bean is available
  */
 @RestController
 @RequestMapping("/api/upload")
 @CrossOrigin(origins = "*")
+@ConditionalOnBean(CloudinaryService.class)
 @RequiredArgsConstructor
 @Slf4j
 public class UploadController {
