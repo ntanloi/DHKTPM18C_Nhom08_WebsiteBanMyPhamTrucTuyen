@@ -245,9 +245,9 @@ const ProductDetailPage = ({
           onClose={() => setToast({ show: false, message: '', type: 'info' })}
         />
       )}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-8">
         {/* Breadcrumb */}
-        <div className="mb-6 flex items-center gap-2 text-sm text-gray-600">
+        <div className="mb-4 flex items-center gap-2 text-xs text-gray-600 sm:mb-6 sm:text-sm">
           <a
             href="/"
             className="hover:text-black"
@@ -276,11 +276,11 @@ const ProductDetailPage = ({
         </div>
 
         {/* Product Section */}
-        <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:mb-12 sm:gap-8 lg:grid-cols-2">
           {/* Left - Images */}
           <div>
             {/* Main Image */}
-            <div className="relative mb-4 aspect-square overflow-hidden rounded-lg bg-pink-50">
+            <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-pink-50 sm:mb-4">
               <img
                 src={displayImages[currentImageIndex]}
                 alt={product.name}
@@ -306,12 +306,12 @@ const ProductDetailPage = ({
             </div>
 
             {/* Thumbnail Images */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto">
               {displayImages.map((img: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`h-20 w-20 overflow-hidden rounded-lg border-2 transition-all ${
+                  className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all sm:h-20 sm:w-20 ${
                     index === currentImageIndex
                       ? 'border-black'
                       : 'border-gray-200 hover:border-gray-400'
@@ -329,15 +329,15 @@ const ProductDetailPage = ({
 
           {/* Right - Product Info */}
           <div>
-            <div className="mb-2 text-sm font-bold text-red-500">
+            <div className="mb-2 text-xs font-bold text-red-500 sm:text-sm">
               {product.brandName}
             </div>
 
-            <h1 className="mb-4 text-3xl font-bold text-gray-900">
+            <h1 className="mb-3 text-xl font-bold text-gray-900 sm:mb-4 sm:text-2xl lg:text-3xl">
               {product.name}
             </h1>
 
-            <div className="mb-4 flex items-center gap-3 text-sm">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:mb-4 sm:gap-3 sm:text-sm">
               <span className="text-gray-600">
                 Danh mục: {product.categoryName}
               </span>
@@ -353,8 +353,8 @@ const ProductDetailPage = ({
 
             {/* Variants Selection */}
             {variants.length > 0 && (
-              <div className="mb-6">
-                <div className="mb-3 text-base font-semibold">
+              <div className="mb-4 sm:mb-6">
+                <div className="mb-2 text-sm font-semibold sm:mb-3 sm:text-base">
                   Chọn phiên bản:
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -383,8 +383,8 @@ const ProductDetailPage = ({
 
             {/* Price */}
             {selectedVariant && (
-              <div className="mb-6 flex items-center gap-4">
-                <span className="text-4xl font-bold text-gray-900">
+              <div className="mb-4 flex flex-wrap items-center gap-2 sm:mb-6 sm:gap-4">
+                <span className="text-2xl font-bold text-gray-900 sm:text-3xl lg:text-4xl">
                   {formatPrice(
                     selectedVariant.salePrice || selectedVariant.price,
                   )}
@@ -392,10 +392,10 @@ const ProductDetailPage = ({
                 {selectedVariant.salePrice &&
                   selectedVariant.salePrice < selectedVariant.price && (
                     <>
-                      <span className="text-xl text-gray-400 line-through">
+                      <span className="text-base text-gray-400 line-through sm:text-lg lg:text-xl">
                         {formatPrice(selectedVariant.price)}
                       </span>
-                      <span className="rounded-full bg-red-500 px-3 py-1 text-sm font-bold text-white">
+                      <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white sm:px-3 sm:py-1 sm:text-sm">
                         -
                         {calculateDiscount(
                           selectedVariant.price,
@@ -439,21 +439,21 @@ const ProductDetailPage = ({
               )}
 
             {/* Delivery Method */}
-            <div className="mb-6 rounded-lg border border-gray-300 p-5">
-              <div className="mb-4 text-base font-semibold">
+            <div className="mb-4 rounded-lg border border-gray-300 p-3 sm:mb-6 sm:p-5">
+              <div className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">
                 Hình thức mua hàng
               </div>
 
-              <label className="mb-3 flex cursor-pointer items-center">
+              <label className="mb-2 flex cursor-pointer items-center sm:mb-3">
                 <input
                   type="radio"
                   name="delivery"
                   value="home"
                   checked={deliveryMethod === 'home'}
                   onChange={() => setDeliveryMethod('home')}
-                  className="mr-3 h-4 w-4"
+                  className="mr-2 h-4 w-4 sm:mr-3"
                 />
-                <span className="text-base">Giao hàng tận nơi</span>
+                <span className="text-sm sm:text-base">Giao hàng tận nơi</span>
               </label>
 
               <label className="flex cursor-pointer items-center">
@@ -463,93 +463,102 @@ const ProductDetailPage = ({
                   value="pickup"
                   checked={deliveryMethod === 'pickup'}
                   onChange={() => setDeliveryMethod('pickup')}
-                  className="mr-3 h-4 w-4"
+                  className="mr-2 h-4 w-4 sm:mr-3"
                 />
-                <span className="text-base">
+                <span className="text-sm sm:text-base">
                   Click & Collect - Mua và lấy hàng tại cửa hàng
                 </span>
               </label>
             </div>
 
             {/* Quantity and Actions */}
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-              <div className="flex items-center rounded-lg border-2 border-gray-300">
+            <div className="mb-4 space-y-3 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center rounded-lg border-2 border-gray-300">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-2 text-lg hover:bg-gray-100 sm:px-5 sm:py-3 sm:text-xl"
+                  >
+                    −
+                  </button>
+                  <span className="w-12 text-center text-base font-semibold sm:w-16 sm:text-lg">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-3 py-2 text-lg hover:bg-gray-100 sm:px-5 sm:py-3 sm:text-xl"
+                    disabled={
+                      selectedVariant
+                        ? quantity >= selectedVariant.stockQuantity
+                        : false
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-5 py-3 text-xl hover:bg-gray-100"
-                >
-                  −
-                </button>
-                <span className="w-16 text-center text-lg font-semibold">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-5 py-3 text-xl hover:bg-gray-100"
+                  onClick={handleAddToCart}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 sm:px-6 sm:py-3 sm:text-base"
                   disabled={
-                    selectedVariant
-                      ? quantity >= selectedVariant.stockQuantity
-                      : false
+                    !selectedVariant ||
+                    selectedVariant.stockQuantity === 0 ||
+                    isAddingToCart
                   }
                 >
-                  +
+                  <svg
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">
+                    {isAddingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
+                  </span>
+                  <span className="sm:hidden">
+                    {isAddingToCart ? 'Đang thêm...' : 'Thêm'}
+                  </span>
                 </button>
               </div>
 
-              <button
-                onClick={handleAddToCart}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-black px-6 py-3 text-base font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
-                disabled={
-                  !selectedVariant ||
-                  selectedVariant.stockQuantity === 0 ||
-                  isAddingToCart
-                }
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                  />
-                </svg>
-                {isAddingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
-              </button>
-
-              <button
-                onClick={handleBuyNow}
-                className="rounded-full bg-gradient-to-r from-yellow-400 to-purple-500 px-8 py-3 text-base font-semibold whitespace-nowrap text-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={
-                  !selectedVariant ||
-                  selectedVariant.stockQuantity === 0 ||
-                  isAddingToCart
-                }
-              >
-                {isAddingToCart ? 'Đang xử lý...' : 'MUA NGAY'}
-              </button>
-
-              <button
-                onClick={() => setIsFavorite(!isFavorite)}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 hover:bg-gray-100"
-              >
-                <Heart
-                  size={22}
-                  className={
-                    isFavorite
-                      ? 'fill-red-500 stroke-red-500'
-                      : 'stroke-gray-600'
+              <div className="flex gap-2 sm:gap-3">
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 rounded-full bg-gradient-to-r from-yellow-400 to-purple-500 px-4 py-2.5 text-sm font-semibold text-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 sm:px-8 sm:py-3 sm:text-base"
+                  disabled={
+                    !selectedVariant ||
+                    selectedVariant.stockQuantity === 0 ||
+                    isAddingToCart
                   }
-                />
-              </button>
+                >
+                  {isAddingToCart ? 'Đang xử lý...' : 'MUA NGAY'}
+                </button>
 
-              <button className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 hover:bg-gray-100">
-                <Share2 size={22} className="stroke-gray-600" />
-              </button>
+                <button
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 hover:bg-gray-100 sm:h-12 sm:w-12"
+                >
+                  <Heart
+                    size={20}
+                    className={
+                      isFavorite
+                        ? 'fill-red-500 stroke-red-500'
+                        : 'stroke-gray-600'
+                    }
+                  />
+                </button>
+
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 hover:bg-gray-100 sm:h-12 sm:w-12">
+                  <Share2 size={20} className="stroke-gray-600" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

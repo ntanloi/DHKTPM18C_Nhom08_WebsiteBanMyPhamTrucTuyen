@@ -439,10 +439,10 @@ export default function ProductListPage({
 
   return (
     <div className="bg-white">
-      <div className="mx-auto max-w-[1400px] px-4 py-4">
+      <div className="mx-auto max-w-[1400px] px-3 py-3 sm:px-4 sm:py-4">
         {/* Page Title */}
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-wide uppercase">
+        <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-lg font-bold tracking-wide uppercase sm:text-xl">
             {pageTitle}
           </h1>
 
@@ -486,9 +486,9 @@ export default function ProductListPage({
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row">
           {/* Filters Sidebar */}
-          <div className="w-56 shrink-0">
+          <div className="w-full shrink-0 lg:w-56">
             {/* Active Filters Summary */}
             {hasActiveFilters && (
               <div className="mb-4 rounded-lg border border-pink-200 bg-pink-50 p-3">
@@ -626,23 +626,23 @@ export default function ProductListPage({
           {/* Products Grid */}
           <div className="flex-1">
             {/* Toolbar */}
-            <div className="mb-4 flex items-center justify-between border-b border-gray-200 pb-3">
+            <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Sắp xếp theo:</span>
+                <span className="text-xs text-gray-600 sm:text-sm">Sắp xếp:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium focus:border-gray-400 focus:outline-none"
+                  className="flex-1 cursor-pointer rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium focus:border-gray-400 focus:outline-none sm:flex-none sm:px-3 sm:text-sm"
                 >
                   <option value="default">Mặc định</option>
                   <option value="name-asc">Tên: A-Z</option>
                   <option value="name-desc">Tên: Z-A</option>
-                  <option value="price-asc">Giá: Thấp đến cao</option>
-                  <option value="price-desc">Giá: Cao đến thấp</option>
+                  <option value="price-asc">Giá: Thấp → Cao</option>
+                  <option value="price-desc">Giá: Cao → Thấp</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
+              <div className="flex items-center justify-between gap-2 sm:justify-start">
+                <span className="text-xs text-gray-600 sm:text-sm">
                   <span className="font-semibold">
                     {filteredProducts.length}
                   </span>{' '}
@@ -672,7 +672,7 @@ export default function ProductListPage({
 
             {/* Products Grid */}
             {!loading && displayedProducts.length > 0 && (
-              <div className="grid auto-rows-fr grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
+              <div className="grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-8">
                 {displayedProducts.map((product) => (
                   <div key={product.id} className="flex">
                     <ProductCard

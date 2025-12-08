@@ -119,8 +119,8 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Banner Section */}
-      <div className="flex gap-4">
-        <div className="relative h-90 w-2/3 overflow-hidden rounded-xl bg-gray-100">
+      <div className="flex flex-col gap-4 md:flex-row">
+        <div className="relative h-60 w-full overflow-hidden rounded-xl bg-gray-100 sm:h-80 md:h-90 md:w-2/3">
           <div
             className="flex h-full transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
@@ -162,7 +162,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="flex h-90 w-1/3 flex-col gap-4">
+        <div className="hidden h-90 w-1/3 flex-col gap-4 md:flex">
           <div className="h-45 overflow-hidden rounded-xl shadow-lg">
             <img
               src={DocQuyen99}
@@ -206,7 +206,7 @@ export default function HomePage() {
                   (_, pageIndex) => (
                     <div
                       key={pageIndex}
-                      className="flex w-full flex-shrink-0 gap-4 px-2"
+                      className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
                     >
                       {bestSellingProducts
                         .slice(
@@ -214,7 +214,7 @@ export default function HomePage() {
                           (pageIndex + 1) * itemsPerPage,
                         )
                         .map((product) => (
-                          <div key={product.id} className="w-1/4">
+                          <div key={product.id} className="w-1/2 sm:w-1/3 lg:w-1/4">
                             <ProductCard
                               id={product.id}
                               slug={product.slug}
@@ -272,10 +272,10 @@ export default function HomePage() {
       </div>
 
       {/* 3 Images */}
-      <div className="flex gap-1">
-        <img className="w-1/3 rounded-xl" src={Anh1} alt="" />
-        <img className="w-1/3 rounded-xl" src={Anh2} alt="" />
-        <img className="w-1/3 rounded-xl" src={Anh3} alt="" />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-1">
+        <img className="w-full rounded-xl" src={Anh1} alt="" />
+        <img className="w-full rounded-xl" src={Anh2} alt="" />
+        <img className="w-full rounded-xl" src={Anh3} alt="" />
       </div>
 
       {/* Phần Xu hướng làm đẹp */}
@@ -346,7 +346,7 @@ export default function HomePage() {
                     (_, pageIndex) => (
                       <div
                         key={pageIndex}
-                        className="flex w-full flex-shrink-0 gap-4 px-2"
+                        className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
                       >
                         {displayProducts
                           .slice(
@@ -356,7 +356,7 @@ export default function HomePage() {
                           .map((product) => (
                             <div
                               key={`${activeTab}-${product.id}`}
-                              className="w-1/4"
+                              className="w-1/2 sm:w-1/3 lg:w-1/4"
                             >
                               <ProductCard
                                 id={product.id}
@@ -423,7 +423,7 @@ export default function HomePage() {
                   (_, pageIndex) => (
                     <div
                       key={pageIndex}
-                      className="flex w-full flex-shrink-0 gap-4 px-2"
+                      className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
                     >
                       {newProducts
                         .slice(
@@ -431,7 +431,7 @@ export default function HomePage() {
                           (pageIndex + 1) * itemsPerPage,
                         )
                         .map((product) => (
-                          <div key={product.id} className="w-1/4">
+                          <div key={product.id} className="w-1/2 sm:w-1/3 lg:w-1/4">
                             <ProductCard
                               id={product.id}
                               slug={product.slug}
@@ -496,7 +496,7 @@ export default function HomePage() {
         </div>
 
         {/* 4 Banner Images */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <div className="group relative overflow-hidden rounded-xl shadow-lg">
             <img
               src={TimKiem1}
