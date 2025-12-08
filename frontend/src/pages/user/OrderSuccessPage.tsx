@@ -111,7 +111,7 @@ export default function OrderSuccessPage({
             sku: item.productVariantId?.toString() || '000000',
             quantity: item.quantity,
             price: item.price || 0,
-            image: 'https://via.placeholder.com/80', // TODO: Add image from product variant
+            image: item.imageUrl || 'https://via.placeholder.com/80',
           })),
           subtotal: orderDetail.subtotal || 0,
           discount: orderDetail.discountAmount || 0,

@@ -134,6 +134,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/reviews/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()
+                        .requestMatchers("/api/favorites/**").authenticated()
+                        .requestMatchers("/api/cart/**").authenticated()
                         
                         // Coupon endpoints - read access for authenticated users
                         .requestMatchers(HttpMethod.GET, "/api/coupons/**").authenticated()
