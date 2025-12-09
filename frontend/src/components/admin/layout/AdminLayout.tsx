@@ -352,28 +352,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
                 <button
                   onClick={() => {
                     setAccountMenuOpen(false);
-                    onNavigate('/admin');
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-pink-50"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m0 0h4m-4 0H7"
-                    />
-                  </svg>
-                  {isAdmin ? 'Quản trị hệ thống' : 'Vận hành hệ thống'}
-                </button>
-                <button
-                  onClick={() => {
-                    setAccountMenuOpen(false);
                     logout();
                     onNavigate('/');
                   }}
