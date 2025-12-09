@@ -7,8 +7,8 @@ interface VNPayPaymentModalProps {
   amount: number;
   orderInfo: string;
   onClose: () => void;
-  onSuccess: () => void;
-  onCheckStatus: () => Promise<{ isPaid: boolean; status: string }>;
+  _onSuccess: () => void;
+  _onCheckStatus: () => Promise<{ isPaid: boolean; status: string }>;
 }
 
 export default function VNPayPaymentModal({
@@ -18,8 +18,6 @@ export default function VNPayPaymentModal({
   amount,
   orderInfo,
   onClose,
-  onSuccess,
-  onCheckStatus,
 }: VNPayPaymentModalProps) {
   // Auto-redirect to VNPay when modal opens and payment URL is ready
   useEffect(() => {

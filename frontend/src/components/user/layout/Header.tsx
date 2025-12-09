@@ -343,7 +343,6 @@ export default function Header({
               )}
 
               <HeartIconWithBadge
-                count={2} // Số lượng yêu thích
                 onClick={() => setIsFavoriteOpen(true)}
               />
 

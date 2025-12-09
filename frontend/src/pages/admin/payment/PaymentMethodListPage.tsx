@@ -66,11 +66,11 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
     });
   };
 
-  const handleCreate = async (data: PaymentMethodFormData) => {
+  const handleCreate = async (_data: PaymentMethodFormData) => {
     try {
       setSubmitting(true);
       // TODO: Backend API doesn't support CREATE yet
-      // await paymentMethodApi.createPaymentMethod(data);
+      // await paymentMethodApi.createPaymentMethod(_data);
       alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       setShowCreateModal(false);
       // fetchMethods();
@@ -81,13 +81,13 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
     }
   };
 
-  const handleEdit = async (data: PaymentMethodFormData) => {
+  const handleEdit = async (_data: PaymentMethodFormData) => {
     if (!editingMethod) return;
 
     try {
       setSubmitting(true);
       // TODO: Backend API doesn't support UPDATE yet
-      // await paymentMethodApi.updatePaymentMethod(editingMethod.id, data);
+      // await paymentMethodApi.updatePaymentMethod(editingMethod.id, _data);
       alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       setShowEditModal(false);
       setEditingMethod(null);
@@ -99,7 +99,7 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
     }
   };
 
-  const handleToggleActive = async (id: number, currentStatus: boolean) => {
+  const handleToggleActive = async (_id: number, currentStatus: boolean) => {
     if (
       !window.confirm(
         `Bạn có chắc chắn muốn ${currentStatus ? 'tắt' : 'kích hoạt'} phương thức này?`,
@@ -110,7 +110,7 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
 
     try {
       // TODO: Backend API doesn't support TOGGLE yet
-      // await paymentMethodApi.togglePaymentMethod(id);
+      // await paymentMethodApi.togglePaymentMethod(_id);
       alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       // fetchMethods();
     } catch (error: any) {
