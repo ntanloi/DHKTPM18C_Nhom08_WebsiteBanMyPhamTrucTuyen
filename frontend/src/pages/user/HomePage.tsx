@@ -61,9 +61,16 @@ export default function HomePage() {
     .slice(0, 12);
 
   const navigateToProducts = (filter?: string) => {
-    // Navigate to products page with optional filter
-    const url = filter ? `/products?filter=${filter}` : '/products';
-    window.location.href = url;
+    // Navigate to products page
+    // For skincare/makeup, use search with keywords
+    // For others, just go to all products
+    if (filter === 'skincare') {
+      window.location.href = '/search?q=dưỡng';
+    } else if (filter === 'makeup') {
+      window.location.href = '/search?q=trang điểm';
+    } else {
+      window.location.href = '/products';
+    }
   };
 
   const images = [LuongVe, DocQuyen99, RangRo7Nam, Clio, SachSau, LungLinh];

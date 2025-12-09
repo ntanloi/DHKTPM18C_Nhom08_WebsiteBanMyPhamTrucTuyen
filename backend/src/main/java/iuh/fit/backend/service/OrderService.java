@@ -184,8 +184,13 @@ public class OrderService {
      * Allows user to view their own orders or admin/manager to view any order
      */
     public OrderDetailResponse getOrderDetailWithAuth(Integer orderId, Authentication authentication) {
+        log.info("🔐 getOrderDetailWithAuth called - orderId: {}, username: {}", 
+                orderId, authentication != null ? authentication.getName() : "null");
+        
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        log.info("📦 Order found - orderId: {}, userId: {}", order.getId(), order.getUserId());
         
         // Check if user has permission to view this order
         String username = authentication.getName();
@@ -193,14 +198,24 @@ public class OrderService {
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_MANAGER"));
         
+        log.info("👤 User check - username: {}, isAdminOrManager: {}", username, isAdminOrManager);
+        
         // If not admin/manager, check if order belongs to user
         if (!isAdminOrManager) {
             User user = userRepository.findByEmail(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
+            log.info("🔍 Authorization check - order.userId: {}, user.id: {}", order.getUserId(), user.getId());
+            
             if (!order.getUserId().equals(user.getId())) {
+                log.warn("⛔ Access denied - User {} tried to access order {} belonging to user {}", 
+                        user.getId(), orderId, order.getUserId());
                 throw new RuntimeException("Access denied: You can only view your own orders");
             }
+            
+            log.info("✅ Authorization passed - User owns this order");
+        } else {
+            log.info("✅ Authorization passed - User is admin/manager");
         }
         
         return getOrderDetail(orderId);
@@ -248,6 +263,7 @@ public class OrderService {
                 itemResponse.setVariantName(variant.getName());
                 if (variant.getProduct() != null) {
                     itemResponse.setProductName(variant.getProduct().getName());
+                    itemResponse.setProductSlug(variant.getProduct().getSlug()); // Add product slug
                     
                     // Get first product image
                     List<ProductImage> images = productImageRepository.findByProductId(variant.getProduct().getId());

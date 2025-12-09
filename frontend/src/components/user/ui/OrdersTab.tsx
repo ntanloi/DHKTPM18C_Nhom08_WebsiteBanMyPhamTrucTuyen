@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { cancelOrder } from '../../../api/order';
 import type { OrderResponse } from '../../../api/order';
 
@@ -9,7 +8,6 @@ interface OrdersTabProps {
 }
 
 export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
-  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
@@ -29,6 +27,7 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
       CONFIRMED: 'Đã xác nhận',
       SHIPPING: 'Đang giao',
       DELIVERED: 'Đã giao',
+      DELIVERY: 'Đã giao', // Support both DELIVERED and DELIVERY
       CANCELLED: 'Đã hủy',
     };
     return statusMap[status] || status;
@@ -37,6 +36,7 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DELIVERED':
+      case 'DELIVERY': // Support both DELIVERED and DELIVERY
         return 'text-green-600 bg-green-50 border border-green-100';
       case 'SHIPPING':
         return 'text-blue-600 bg-blue-50 border border-blue-100';
@@ -67,7 +67,8 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
   };
 
   const handleViewDetail = (orderId: number) => {
-    navigate(`/orders/${orderId}`);
+    // Navigate to order success page to view order details
+    window.location.href = `/order-success/${orderId}`;
   };
 
   // Filter orders based on selected status and search term
