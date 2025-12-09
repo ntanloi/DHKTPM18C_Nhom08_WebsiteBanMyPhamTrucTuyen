@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { cancelOrder } from '../../../api/order';
 import type { OrderResponse } from '../../../api/order';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface OrdersTabProps {
   orders: OrderResponse[];
@@ -11,6 +13,7 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const statusTabs = [
     { label: 'Tất cả', value: 'all' },
@@ -57,10 +60,10 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
     try {
       setCancelingOrderId(orderId);
       await cancelOrder(orderId);
-      alert('Đã hủy đơn hàng thành công!');
+      showToast('Đã hủy đơn hàng thành công!', 'success');
       if (onUpdate) onUpdate();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Có lỗi xảy ra khi hủy đơn hàng');
+      showToast(error.response?.data?.error || 'Có lỗi xảy ra khi hủy đơn hàng', 'error');
     } finally {
       setCancelingOrderId(null);
     }
@@ -198,6 +201,14 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
             Mua sắm ngay
           </button>
         </div>
+      )}
+
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
       )}
     </div>
   );

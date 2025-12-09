@@ -1,6 +1,8 @@
 import { useEffect, useContext } from 'react';
 import { AuthContext } from '../../../context/auth-context';
 import { useFavorites } from '../../../context/FavoriteContext';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface FavoriteSidebarProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface FavoriteSidebarProps {
 function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
+  const { toast, showToast, hideToast } = useToast();
 
   const {
     favorites,
@@ -30,9 +33,10 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
   const handleRemoveFavorite = async (favoriteId: number) => {
     try {
       await removeFavoriteById(favoriteId);
+      showToast('Đã xóa sản phẩm khỏi danh sách yêu thích', 'success');
     } catch (err: any) {
       console.error('Error removing favorite:', err);
-      alert('Không thể xóa sản phẩm yêu thích');
+      showToast('Không thể xóa sản phẩm yêu thích', 'error');
     }
   };
 
@@ -41,9 +45,10 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
 
     try {
       await clearAllFavorites();
+      showToast('Đã xóa tất cả sản phẩm yêu thích', 'success');
     } catch (err: any) {
       console.error('Error clearing favorites:', err);
-      alert('Không thể xóa tất cả sản phẩm yêu thích');
+      showToast('Không thể xóa tất cả sản phẩm yêu thích', 'error');
     }
   };
 
@@ -200,6 +205,14 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
             </div>
           )}
         </div>
+
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
+        )}
       </div>
     </>
   );

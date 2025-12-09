@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useAddress } from '../../../hooks/useAddress';
 import { createAddress, updateAddress } from '../../../api/address';
 import type { AddressResponse } from '../../../api/address';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface AddressModalProps {
   show: boolean;
@@ -22,6 +24,7 @@ export default function AddressModal({
   const { provinces, districts, wards, fetchDistricts, fetchWards } =
     useAddress();
   const [loading, setLoading] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   const [formData, setFormData] = useState({
     recipientName: '',
@@ -68,12 +71,12 @@ export default function AddressModal({
       !formData.ward ||
       !formData.streetAddress
     ) {
-      alert('Vui lòng điền đầy đủ thông tin!');
+      showToast('Vui lòng điền đầy đủ thông tin!', 'warning');
       return;
     }
 
     if (!userId) {
-      alert('Không tìm thấy thông tin người dùng!');
+      showToast('Không tìm thấy thông tin người dùng!', 'error');
       return;
     }
 
@@ -82,15 +85,15 @@ export default function AddressModal({
 
       if (type === 'add') {
         await createAddress(userId, formData);
-        alert('Đã thêm địa chỉ thành công!');
+        showToast('Đã thêm địa chỉ thành công!', 'success');
       } else if (address) {
         await updateAddress(address.id, formData);
-        alert('Đã cập nhật địa chỉ thành công!');
+        showToast('Đã cập nhật địa chỉ thành công!', 'success');
       }
 
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Có lỗi xảy ra khi lưu địa chỉ');
+      showToast(error.response?.data?.error || 'Có lỗi xảy ra khi lưu địa chỉ', 'error');
     } finally {
       setLoading(false);
     }
@@ -249,6 +252,14 @@ export default function AddressModal({
           </button>
         </div>
       </div>
+
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
+      )}
     </div>
   );
 }
