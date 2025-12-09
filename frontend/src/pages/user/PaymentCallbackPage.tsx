@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader2, Home, FileText } from 'lucide-react';
 import { processVNPayCallback, type VNPayResponse } from '../../api/payment';
+import { useCart } from '../../context/CartContext';
 
 interface PaymentCallbackPageProps {
   onNavigate?: (path: string) => void;
 }
 
 export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageProps) {
+  const { clearCart } = useCart();
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
   const [paymentResult, setPaymentResult] = useState<VNPayResponse | null>(null);
   const [error, setError] = useState<string>('');
@@ -38,6 +40,14 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
       
       if (result.success) {
         setStatus('success');
+        // Clear cart after successful payment
+        try {
+          await clearCart();
+          console.log('Cart cleared after successful VNPay payment');
+        } catch (cartError) {
+          console.error('Error clearing cart:', cartError);
+          // Don't fail the whole flow if cart clear fails
+        }
       } else {
         setStatus('failed');
         setError(result.message || 'Thanh toán không thành công');
