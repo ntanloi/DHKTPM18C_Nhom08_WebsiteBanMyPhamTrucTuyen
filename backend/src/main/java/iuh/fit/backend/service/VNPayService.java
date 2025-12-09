@@ -57,9 +57,11 @@ public class VNPayService {
             vnp_Params.put("vnp_ReturnUrl", vnpayConfig.getReturnUrl());
             vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-            if (request.getBankCode() != null && !request.getBankCode().isEmpty()) {
-                vnp_Params.put("vnp_BankCode", request.getBankCode());
-            }
+            // Force a specific payment method to avoid the generic option list on VNPay
+            String bankCode = (request.getBankCode() != null && !request.getBankCode().isBlank())
+                    ? request.getBankCode().trim()
+                    : "NCB"; // default to NCB test card form for sandbox testing
+            vnp_Params.put("vnp_BankCode", bankCode);
 
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -73,7 +75,7 @@ public class VNPayService {
             // Build data to hash and query string
             String queryUrl = vnpayConfig.hashAllFields(vnp_Params);
             String vnp_SecureHash = vnpayConfig.hmacSHA512(vnpayConfig.getHashSecret(), queryUrl);
-            queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+            queryUrl += "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + vnp_SecureHash;
 
             String paymentUrl = vnpayConfig.getPayUrl() + "?" + queryUrl;
 

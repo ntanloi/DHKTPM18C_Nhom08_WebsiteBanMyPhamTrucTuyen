@@ -12,16 +12,17 @@ import {
   getPaymentMethods,
   type PaymentMethod,
 } from '../../api/payment';
-import { getAddressesByUserId, type AddressResponse } from '../../api/address';
 import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
-// VNPayPaymentModal removed - now using direct redirect to VNPay
+
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
+
+const VNPAY_TEST_BANK_CODE = 'NCB';
 
 export default function CheckoutInfoPage({
   onNavigate,
@@ -60,14 +61,7 @@ export default function CheckoutInfoPage({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Saved addresses
-  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
-    null,
-  );
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  // VNPay Payment Modal State (removed - now using direct redirect)
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -200,31 +194,6 @@ export default function CheckoutInfoPage({
     loadPaymentMethods();
   }, []);
 
-  // Load saved addresses for logged in users
-  useEffect(() => {
-    const loadSavedAddresses = async () => {
-      if (user && user.userId) {
-        setLoadingAddresses(true);
-        try {
-          const addresses = await getAddressesByUserId(user.userId);
-          setSavedAddresses(addresses);
-
-          // Auto-select default address if available
-          const defaultAddress = addresses.find((addr) => addr.isDefault);
-          if (defaultAddress) {
-            handleSelectAddress(defaultAddress);
-          }
-        } catch (error) {
-          console.error('Error loading addresses:', error);
-        } finally {
-          setLoadingAddresses(false);
-        }
-      }
-    };
-
-    loadSavedAddresses();
-  }, [user]);
-
   // Auto-fill user info if logged in
   useEffect(() => {
     if (user && user.fullName) {
@@ -243,42 +212,6 @@ export default function CheckoutInfoPage({
   }, [user]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
-
-  const handleSelectAddress = (address: AddressResponse) => {
-    setSelectedAddressId(address.id);
-
-    // Parse recipient name
-    const nameParts = address.recipientName.split(' ');
-    const firstName = nameParts[nameParts.length - 1] || '';
-    const lastName = nameParts.slice(0, -1).join(' ') || '';
-
-    // Fill form with selected address
-    setFormData({
-      recipientFirstName: firstName,
-      recipientLastName: lastName,
-      recipientPhone: address.recipientPhone,
-      recipientEmail: formData.recipientEmail || user?.email || '',
-      province: address.city, // city is province/city
-      district: address.district,
-      ward: address.ward,
-      address: address.streetAddress,
-      notes: formData.notes,
-    });
-
-    // Load districts and wards for selected province/district
-    const province = provinces.find((p) => p.name === address.city);
-    if (province) {
-      fetchDistricts(province.code);
-
-      // Wait a bit for districts to load, then load wards
-      setTimeout(() => {
-        const district = districts.find((d) => d.name === address.district);
-        if (district) {
-          fetchWards(district.code);
-        }
-      }, 500);
-    }
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -344,11 +277,9 @@ export default function CheckoutInfoPage({
           return;
         }
 
-        // Nếu chọn thanh toán online (VNPay, Momo, ZaloPay...)
-        // Lưu thông tin tạm vào localStorage để tạo order sau khi thanh toán thành công
-        if (selectedMethod.code !== 'COD') {
-          // Lưu thông tin guest order tạm thời
-          const tempGuestOrder = {
+        // Guest checkout with VNPay: create order first, then redirect
+        if (selectedMethod.code === 'VNPAY') {
+          const guestOrderRequest: CreateGuestOrderRequest = {
             orderItems: cart.cartItems.map((item) => ({
               productVariantId: item.productVariantId,
               quantity: item.quantity,
@@ -363,44 +294,29 @@ export default function CheckoutInfoPage({
               isAnotherReceiver: false,
             },
             paymentMethodId: selectedPaymentMethodId,
-            totalAmount: cart.totalAmount,
           };
 
-          localStorage.setItem(
-            'pending_guest_order',
-            JSON.stringify(tempGuestOrder),
-          );
+          const order = await createGuestOrder(guestOrderRequest);
+          
+          // Save guest email to localStorage for callback page
+          localStorage.setItem(`guestOrder_${order.id}_email`, formData.recipientEmail);
 
-          // Redirect đến trang thanh toán (VNPay, Momo, ZaloPay...)
-          if (selectedMethod.code === 'VNPAY') {
-            // Tạo temporary order ID để tracking
-            const tempOrderId = `TEMP-${Date.now()}`;
-            const vnpayResponse = await createVNPayPayment({
-              orderId: 0, // Temporary, sẽ tạo order thật sau khi thanh toán thành công
-              amount: cart.totalAmount,
-              orderInfo: `Guest Order - ${tempOrderId}`,
-              language: 'vn',
-            });
+          // Create VNPay payment URL
+          const vnpayResponse = await createVNPayPayment({
+            orderId: order.id,
+            amount: cart.totalAmount,
+            orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
+            language: 'vn',
+            bankCode: VNPAY_TEST_BANK_CODE,
+          });
 
-            if (vnpayResponse.success && vnpayResponse.paymentUrl) {
-              // Lưu cart items để restore nếu thanh toán thất bại
-              localStorage.setItem(
-                'pending_cart',
-                JSON.stringify(cart.cartItems),
-              );
-              window.location.href = vnpayResponse.paymentUrl;
-            } else {
-              throw new Error(
-                vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
-              );
-            }
+          if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+            // Redirect directly to VNPay payment page (same tab)
+            window.location.href = vnpayResponse.paymentUrl;
           } else {
-            // TODO: Implement other payment gateways (Momo, ZaloPay, etc.)
-            showToast(
-              `Phương thức thanh toán ${selectedMethod.name} đang được phát triển`,
-              'info',
+            throw new Error(
+              vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
             );
-            setIsProcessing(false);
           }
           return;
         }
@@ -433,12 +349,7 @@ export default function CheckoutInfoPage({
         return;
       }
 
-      // Logged in user - check payment method first
-      const selectedMethod = paymentMethods.find(
-        (m) => m.id === selectedPaymentMethodId,
-      );
-
-      // Prepare order request
+      // Logged in user - create order via API
       const orderRequest: CreateOrderRequest = {
         userId: user.userId,
         orderItems: cart.cartItems.map((item) => ({
@@ -457,26 +368,23 @@ export default function CheckoutInfoPage({
         paymentMethodId: selectedPaymentMethodId,
       };
 
-      // If VNPay or other online payment, save order info and redirect to payment first
-      if (selectedMethod?.code === 'VNPAY') {
-        // Save pending order info to localStorage
-        localStorage.setItem(
-          'pending_logged_order',
-          JSON.stringify(orderRequest),
-        );
-        localStorage.setItem('pending_cart', JSON.stringify(cart.cartItems));
+      const order = await createOrder(orderRequest);
 
-        // Create temporary order ID for tracking
-        const tempOrderId = `TEMP-${Date.now()}`;
+      // Check if payment method requires online payment (VNPay, Momo, ZaloPay, etc.)
+      const selectedMethod = paymentMethods.find(
+        (m) => m.id === selectedPaymentMethodId,
+      );
+      if (selectedMethod?.code === 'VNPAY') {
         const vnpayResponse = await createVNPayPayment({
-          orderId: 0, // Will create real order after payment success
+          orderId: order.id,
           amount: cart.totalAmount,
-          orderInfo: `Thanh toan don hang ${tempOrderId} - BeautyBox`,
+          orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
           language: 'vn',
+          bankCode: VNPAY_TEST_BANK_CODE,
         });
 
         if (vnpayResponse.success && vnpayResponse.paymentUrl) {
-          // Redirect to VNPay payment page
+          // Redirect directly to VNPay payment page
           window.location.href = vnpayResponse.paymentUrl;
         } else {
           throw new Error(
@@ -484,8 +392,7 @@ export default function CheckoutInfoPage({
           );
         }
       } else {
-        // COD or other payment methods - create order immediately
-        const order = await createOrder(orderRequest);
+        // COD and other methods: clear cart and navigate to success page
         await clearCart();
         onNavigate?.(`/order-success/${order.id}`);
       }
@@ -522,7 +429,7 @@ export default function CheckoutInfoPage({
     }
   };
 
-  // VNPay Modal Handlers removed - now using direct redirect
+
 
   if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
     return (
@@ -685,42 +592,6 @@ export default function CheckoutInfoPage({
               <h2 className="mb-5 text-lg font-semibold text-gray-900">
                 Địa chỉ nhận hàng
               </h2>
-
-              {/* Saved Addresses Selector - Only for logged in users */}
-              {user && savedAddresses.length > 0 && (
-                <div className="mb-4">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Chọn địa chỉ đã lưu
-                  </label>
-                  <select
-                    value={selectedAddressId || ''}
-                    onChange={(e) => {
-                      const addressId = parseInt(e.target.value);
-                      if (addressId) {
-                        const address = savedAddresses.find(
-                          (a) => a.id === addressId,
-                        );
-                        if (address) {
-                          handleSelectAddress(address);
-                        }
-                      } else {
-                        setSelectedAddressId(null);
-                      }
-                    }}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none"
-                  >
-                    <option value="">-- Nhập địa chỉ mới --</option>
-                    {savedAddresses.map((address) => (
-                      <option key={address.id} value={address.id}>
-                        {address.recipientName} - {address.recipientPhone} |{' '}
-                        {address.streetAddress}, {address.ward},{' '}
-                        {address.district}, {address.city}
-                        {address.isDefault && ' (Mặc định)'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <div className="space-y-4">
                 <div>
@@ -973,6 +844,8 @@ export default function CheckoutInfoPage({
           </div>
         </div>
       </div>
+
+
     </div>
   );
 }

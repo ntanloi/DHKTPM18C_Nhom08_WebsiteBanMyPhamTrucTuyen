@@ -129,10 +129,13 @@ public class AnalyticsResponse {
         private Long totalOrders;
         private Long todayOrders;
         private Long pendingOrders;
+        private BigDecimal ordersGrowth; // Orders growth percentage
         private Long totalCustomers;
         private Long newCustomersToday;
+        private BigDecimal customersGrowth; // Customers growth percentage
         private Long totalProducts;
         private Long lowStockProducts;
+        private BigDecimal productsGrowth; // Products growth percentage
         private Long totalReturns;
         private Long pendingReturns;
         private Map<String, Long> ordersByStatus;
@@ -155,6 +158,7 @@ public class AnalyticsResponse {
         private BigDecimal totalRevenue;
         private Map<String, Long> ordersByStatus;
         private List<DailyOrderCount> dailyOrders;
+        private List<RecentOrderData> recentOrders; // Recent orders list
     }
     
     /**

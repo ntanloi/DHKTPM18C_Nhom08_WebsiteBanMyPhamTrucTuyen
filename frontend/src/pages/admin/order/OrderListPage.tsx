@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Order } from '../../../types/Order';
-import { mockOrders } from '../../../mocks/orderMockData';
+import { getAllOrders, type OrderResponse } from '../../../api/order';
 import OrderTable from '../../../components/admin/order/OrderTable';
 import SearchBar from '../../../components/admin/SearchBar';
 import Pagination from '../../../components/admin/Pagination';
@@ -13,9 +13,10 @@ interface OrderListPageProps {
 }
 
 const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>(mockOrders);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState<string>('');
 
@@ -37,6 +38,45 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
     cancelled: 0,
     totalRevenue: 0,
   });
+
+  // Fetch orders from backend
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const ordersData = await getAllOrders();
+        
+        // Transform OrderResponse to Order type
+        const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
+          id: order.id,
+          orderNumber: `#${order.id.toString().padStart(6, '0')}`,
+          customer: order.recipientInfo?.recipientFirstName && order.recipientInfo?.recipientLastName
+            ? `${order.recipientInfo.recipientFirstName} ${order.recipientInfo.recipientLastName}`
+            : 'Guest',
+          email: order.recipientInfo?.recipientEmail || '',
+          phone: order.recipientInfo?.recipientPhone || '',
+          address: order.recipientInfo?.shippingRecipientAddress || '',
+          totalAmount: order.totalAmount || 0,
+          status: order.status || 'PENDING',
+          paymentMethod: order.paymentMethod || 'COD',
+          paymentStatus: order.paymentInfo?.status || 'PENDING',
+          createdAt: order.createdAt || new Date().toISOString(),
+          updatedAt: order.updatedAt || new Date().toISOString(),
+          items: order.orderItems || 0,
+        }));
+        
+        setOrders(transformedOrders);
+      } catch (err: any) {
+        console.error('Failed to fetch orders:', err);
+        setError(err.message || 'Không thể tải danh sách đơn hàng');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchOrders();
+  }, []);
 
   useEffect(() => {
     const processingCount = orders.filter((o) =>

@@ -80,21 +80,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         setLoading(true);
         setError(null);
 
+        console.log('[AdminDashboard] Fetching dashboard data...');
+
         // Fetch dashboard summary
+        console.log('[AdminDashboard] Calling getDashboardSummary()...');
         const summary: DashboardSummary = await getDashboardSummary();
+        console.log('[AdminDashboard] Dashboard summary received:', summary);
 
         // Fetch recent orders (last 30 days)
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        console.log('[AdminDashboard] Calling getOrderStats()...', { startDate, endDate });
         const orderStats = await getOrderStats(startDate, endDate);
+        console.log('[AdminDashboard] Order stats received:', orderStats);
 
         // Map to stat cards
         const calculatedStats: StatCard[] = [
           {
             title: 'Tổng doanh thu',
-            value: `₫${summary.totalRevenue.toLocaleString('vi-VN')}`,
-            change: `${summary.revenueGrowth >= 0 ? '+' : ''}${summary.revenueGrowth.toFixed(1)}%`,
-            trend: summary.revenueGrowth >= 0 ? 'up' : 'down',
+            value: `₫${(summary.totalRevenue || 0).toLocaleString('vi-VN')}`,
+            change: `${(summary.revenueGrowth || 0) >= 0 ? '+' : ''}${(summary.revenueGrowth || 0).toFixed(1)}%`,
+            trend: (summary.revenueGrowth || 0) >= 0 ? 'up' : 'down',
             icon: (
               <svg
                 className="h-8 w-8"
@@ -114,9 +120,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
           },
           {
             title: 'Đơn hàng',
-            value: summary.totalOrders.toString(),
-            change: `${summary.ordersGrowth >= 0 ? '+' : ''}${summary.ordersGrowth.toFixed(1)}%`,
-            trend: summary.ordersGrowth >= 0 ? 'up' : 'down',
+            value: String(summary.totalOrders || 0),
+            change: `${(summary.ordersGrowth || 0) >= 0 ? '+' : ''}${(summary.ordersGrowth || 0).toFixed(1)}%`,
+            trend: (summary.ordersGrowth || 0) >= 0 ? 'up' : 'down',
             icon: (
               <svg
                 className="h-8 w-8"
@@ -136,9 +142,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
           },
           {
             title: 'Sản phẩm',
-            value: summary.totalProducts.toString(),
-            change: `${summary.productsGrowth >= 0 ? '+' : ''}${summary.productsGrowth.toFixed(1)}%`,
-            trend: summary.productsGrowth >= 0 ? 'up' : 'down',
+            value: String(summary.totalProducts || 0),
+            change: `${(summary.productsGrowth || 0) >= 0 ? '+' : ''}${(summary.productsGrowth || 0).toFixed(1)}%`,
+            trend: (summary.productsGrowth || 0) >= 0 ? 'up' : 'down',
             icon: (
               <svg
                 className="h-8 w-8"
@@ -158,9 +164,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
           },
           {
             title: 'Khách hàng',
-            value: summary.totalCustomers.toString(),
-            change: `${summary.customersGrowth >= 0 ? '+' : ''}${summary.customersGrowth.toFixed(1)}%`,
-            trend: summary.customersGrowth >= 0 ? 'up' : 'down',
+            value: String(summary.totalCustomers || 0),
+            change: `${(summary.customersGrowth || 0) >= 0 ? '+' : ''}${(summary.customersGrowth || 0).toFixed(1)}%`,
+            trend: (summary.customersGrowth || 0) >= 0 ? 'up' : 'down',
             icon: (
               <svg
                 className="h-8 w-8"
@@ -200,19 +206,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
           return statusMap[status] || 'pending';
         };
 
-        // Map recent orders
-        const mappedOrders: Order[] = orderStats.recentOrders.slice(0, 5).map((order) => ({
-          id: order.id.toString(),
-          customer: order.customerName,
-          amount: `₫${order.totalAmount.toLocaleString('vi-VN')}`,
-          status: formatStatus(order.status),
-          date: new Date(order.createdAt).toLocaleDateString('vi-VN'),
+        // Map recent orders (handle empty recentOrders array)
+        const mappedOrders: Order[] = (orderStats.recentOrders || []).slice(0, 5).map((order) => ({
+          id: order.id ? String(order.id) : 'N/A',
+          customer: order.customerName || 'Unknown',
+          amount: `₫${(order.totalAmount || 0).toLocaleString('vi-VN')}`,
+          status: formatStatus(order.status || 'PENDING'),
+          date: order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A',
         }));
 
+        console.log('[AdminDashboard] Mapped orders:', mappedOrders);
+        setStats(calculatedStats);
         setRecentOrders(mappedOrders);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.');
+        console.log('[AdminDashboard] Dashboard data loaded successfully!');
+      } catch (err: any) {
+        console.error('[AdminDashboard] Error fetching dashboard data:', err);
+        console.error('[AdminDashboard] Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
+        
+        const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
+        setError(`Không thể tải dữ liệu dashboard: ${errorMessage}. Vui lòng kiểm tra console để biết chi tiết.`);
       } finally {
         setLoading(false);
       }
