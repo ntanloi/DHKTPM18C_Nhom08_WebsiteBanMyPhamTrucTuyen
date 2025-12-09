@@ -16,7 +16,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState<string>('');
 
@@ -50,20 +50,20 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
         // Transform OrderResponse to Order type
         const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
           id: order.id,
-          orderNumber: `#${order.id.toString().padStart(6, '0')}`,
-          customer: order.recipientInfo?.recipientFirstName && order.recipientInfo?.recipientLastName
-            ? `${order.recipientInfo.recipientFirstName} ${order.recipientInfo.recipientLastName}`
-            : 'Guest',
-          email: order.recipientInfo?.recipientEmail || '',
-          phone: order.recipientInfo?.recipientPhone || '',
-          address: order.recipientInfo?.shippingRecipientAddress || '',
-          totalAmount: order.totalAmount || 0,
+          userId: order.userId || 0,
           status: order.status || 'PENDING',
-          paymentMethod: order.paymentMethod || 'COD',
-          paymentStatus: order.paymentInfo?.status || 'PENDING',
+          subtotal: order.subtotal || 0,
+          totalAmount: order.totalAmount || 0,
+          notes: order.notes || '',
+          discountAmount: order.discountAmount || 0,
+          shippingFee: order.shippingFee || 0,
+          estimateDeliveryFrom: order.estimateDeliveryFrom || '',
+          estimateDeliveryTo: order.estimateDeliveryTo || '',
           createdAt: order.createdAt || new Date().toISOString(),
           updatedAt: order.updatedAt || new Date().toISOString(),
-          items: order.orderItems || 0,
+          orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
+          payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
+          recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
         }));
         
         setOrders(transformedOrders);

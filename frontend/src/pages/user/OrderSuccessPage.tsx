@@ -3,7 +3,6 @@ import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import CancelOrderModal from '../../components/user/ui/CancelOrderModal';
 import {
   getOrderDetail,
-  getGuestOrderDetail,
   cancelOrder,
   type OrderDetailResponse,
 } from '../../api/order';
@@ -49,7 +48,7 @@ export default function OrderSuccessPage({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [canceling, setCanceling] = useState(false);
+  const [_canceling, setCanceling] = useState(false);
   const [reordering, setReordering] = useState(false);
   const [toast, setToast] = useState<{
     show: boolean;
