@@ -56,6 +56,7 @@ import CheckoutInfoPage from './pages/user/CheckoutInfoPage';
 import PaymentCallbackPage from './pages/user/PaymentCallbackPage';
 
 import OrderSuccessPage from './pages/user/OrderSuccessPage';
+import GuestOrderTrackingPage from './pages/user/GuestOrderTrackingPage';
 import BrandPage from './pages/user/BrandPage';
 import ChatWidget from './components/user/ui/ChatWidget';
 import AccountPage from './pages/user/AccountPage';
@@ -70,6 +71,7 @@ type Page =
   | 'checkout'
   | 'checkout-info'
   | 'order-success'
+  | 'track-order' // NEW: Guest order tracking
   | 'account'
   | 'support-chat'
   | 'admin-dashboard'
@@ -121,6 +123,7 @@ function App() {
     if (path === '/checkout') return 'checkout';
     if (path === '/checkout-info') return 'checkout-info';
     if (path.startsWith('/order-success/')) return 'order-success';
+    if (path === '/track-order') return 'track-order'; // NEW: Guest order tracking
     if (path === '/payment/callback' || path.startsWith('/payment/callback?'))
       return 'payment-callback';
 
@@ -493,6 +496,9 @@ function App() {
                     orderCode={orderSuccessCode}
                     onBack={() => navigate('/')}
                   />
+                )}
+                {page === 'track-order' && (
+                  <GuestOrderTrackingPage onNavigate={navigate} />
                 )}
                 {page === 'product-detail' && (
                   <ProductDetailPage productSlug={productSlug} />

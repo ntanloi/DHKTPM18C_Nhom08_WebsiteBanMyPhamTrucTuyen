@@ -520,7 +520,8 @@ export default function CheckoutInfoPage({
         );
 
         await clearCart();
-        onNavigate?.(`/order-success/${order.id}`);
+        // Force full page reload to ensure clean state
+        window.location.href = `/order-success/${order.id}`;
         return;
       }
 
@@ -572,7 +573,8 @@ export default function CheckoutInfoPage({
       } else {
         // COD and other methods: clear cart and navigate to success page
         await clearCart();
-        onNavigate?.(`/order-success/${order.id}`);
+        // Force full page reload to ensure clean state
+        window.location.href = `/order-success/${order.id}`;
       }
     } catch (error: any) {
       console.error('Place order error:', error);
