@@ -3,6 +3,8 @@ import { AuthContext } from '../../../context/auth-context';
 import { useFavorites } from '../../../context/FavoriteContext';
 import { Toast } from './Toast';
 import { useToast } from '../../../hooks/useToast';
+import ConfirmDialog from '../../admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface FavoriteSidebarProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
   const { toast, showToast, hideToast } = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   const {
     favorites,
@@ -41,7 +44,13 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Bạn có chắc muốn xóa tất cả sản phẩm yêu thích?')) return;
+    const confirmClear = await confirm({
+      title: 'Xóa tất cả yêu thích',
+      message: 'Bạn có chắc muốn xóa tất cả sản phẩm yêu thích?',
+      variant: 'warning'
+    });
+
+    if (!confirmClear) return;
 
     try {
       await clearAllFavorites();
@@ -213,6 +222,18 @@ function FavoriteSidebar({ isOpen, onClose }: FavoriteSidebarProps) {
             onClose={hideToast}
           />
         )}
+
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={confirmState.onCancel}
+          confirmText={confirmState.confirmText}
+          cancelText={confirmState.cancelText}
+          variant={confirmState.variant}
+          loading={confirmState.loading}
+        />
       </div>
     </>
   );
