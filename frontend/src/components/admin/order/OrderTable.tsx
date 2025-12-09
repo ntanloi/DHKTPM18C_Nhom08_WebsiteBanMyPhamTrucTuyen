@@ -85,6 +85,18 @@ const OrderTable: React.FC<OrderTableProps> = ({
         border: 'border-red-200',
         textColor: 'text-red-700',
       },
+      CANCELLED: {
+        text: 'Đã hủy',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        textColor: 'text-gray-700',
+      },
+      REFUNDED: {
+        text: 'Đã hoàn tiền',
+        bg: 'bg-orange-50',
+        border: 'border-orange-200',
+        textColor: 'text-orange-700',
+      },
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;

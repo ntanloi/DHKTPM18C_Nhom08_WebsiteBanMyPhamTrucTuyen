@@ -383,10 +383,10 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Cannot cancel order if it's SHIPPED, DELIVERED or already CANCELLED
-        List<String> nonCancellableStatuses = List.of("SHIPPED", "DELIVERING", "DELIVERED", "CANCELLED");
+        List<String> nonCancellableStatuses = List.of("SHIPPED", "DELIVERED", "CANCELLED");
         if (nonCancellableStatuses.contains(order.getStatus())) {
             throw new RuntimeException("Cannot cancel order with status: " + order.getStatus() + 
-                                       ". Only PENDING and CONFIRMED orders can be cancelled.");
+                                       ". Only PENDING, CONFIRMED and PROCESSING orders can be cancelled.");
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);

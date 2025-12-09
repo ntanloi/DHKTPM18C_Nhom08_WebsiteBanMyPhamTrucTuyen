@@ -80,10 +80,10 @@ public class AnalyticsService {
 
     /**
      * Get total revenue from completed orders
-     * Include CONFIRMED, PROCESSING, SHIPPING, DELIVERED, COMPLETED statuses
+     * Include CONFIRMED, PROCESSING, SHIPPED, DELIVERED statuses
      */
     public BigDecimal getTotalRevenue() {
-        List<String> completedStatuses = List.of("CONFIRMED", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED");
+        List<String> completedStatuses = List.of("CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED");
         BigDecimal total = orderRepository.sumTotalAmountByStatusIn(completedStatuses);
         return total != null ? total : BigDecimal.ZERO;
     }
@@ -373,7 +373,7 @@ public class AnalyticsService {
 
         return OrderStats.builder()
                 .totalOrders(totalOrders)
-                .completedOrders(statusCounts.getOrDefault("DELIVERED", 0L) + statusCounts.getOrDefault("COMPLETED", 0L))
+                .completedOrders(statusCounts.getOrDefault("DELIVERED", 0L))
                 .pendingOrders(statusCounts.getOrDefault("PENDING", 0L))
                 .cancelledOrders(statusCounts.getOrDefault("CANCELLED", 0L))
                 .shippedOrders(statusCounts.getOrDefault("SHIPPED", 0L))
