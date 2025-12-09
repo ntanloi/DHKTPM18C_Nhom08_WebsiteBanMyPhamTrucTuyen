@@ -18,7 +18,15 @@ import type { CouponResponse } from '../../api/coupon';
 export default function AccountPage() {
   const { user, isLoggedIn } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('account');
+
+  // Get tab from URL query parameter
+  const getTabFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    return tab || 'account';
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromURL());
   const [loading, setLoading] = useState(true);
 
   // Data states
@@ -33,6 +41,16 @@ export default function AccountPage() {
       navigate('/');
     }
   }, [isLoggedIn, navigate]);
+
+  // Listen for URL changes to update active tab
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTab(getTabFromURL());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Load user data
   useEffect(() => {

@@ -110,8 +110,8 @@ public class OrderService {
 
         order.setTotalAmount(subtotal.subtract(discountAmount).add(shippingFee));
 
-        order.setEstimateDeliveryFrom(LocalDate.now().plusDays(3));
-        order.setEstimateDeliveryTo(LocalDate.now().plusDays(7));
+        order.setEstimateDeliveryFrom(LocalDate.now().plusDays(2));
+        order.setEstimateDeliveryTo(LocalDate.now().plusDays(5));
 
         Order savedOrder = orderRepository.save(order);
         

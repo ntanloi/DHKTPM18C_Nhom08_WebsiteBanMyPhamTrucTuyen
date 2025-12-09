@@ -145,9 +145,24 @@ export default function OrderSuccessPage({
           console.log(
             'Authenticated endpoint failed, trying guest endpoint...',
           );
-          // For guest orders, we would need email from URL params or localStorage
-          // For now, just throw the error
-          throw authError;
+          // Try guest endpoint with email from localStorage
+          const guestEmail = localStorage.getItem(
+            `guestOrder_${orderId}_email`,
+          );
+          if (guestEmail) {
+            console.log(
+              'Found guest email in localStorage, trying guest endpoint...',
+            );
+            const { getGuestOrderDetail } = await import('../../api/order');
+            orderDetail = await getGuestOrderDetail(orderId, guestEmail);
+            console.log(
+              '✅ Order detail loaded from guest endpoint:',
+              orderDetail,
+            );
+          } else {
+            console.error('No guest email found in localStorage');
+            throw authError;
+          }
         }
 
         // Transform API response to OrderInfo format
