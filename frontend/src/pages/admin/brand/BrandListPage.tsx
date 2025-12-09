@@ -5,6 +5,8 @@ import {
   type BrandResponse,
 } from '../../../api/brand';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface BrandListPageProps {
   onNavigate: (path: string) => void;
@@ -15,6 +17,7 @@ const BrandListPage: React.FC<BrandListPageProps> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { confirm, confirmState } = useConfirm();
 
   useEffect(() => {
     fetchBrands();
@@ -34,7 +37,13 @@ const BrandListPage: React.FC<BrandListPageProps> = ({ onNavigate }) => {
   };
 
   const handleDelete = async (brandId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa thương hiệu này?')) return;
+    const confirmDelete = await confirm({
+      title: 'Xóa thương hiệu',
+      message: 'Bạn có chắc chắn muốn xóa thương hiệu này?',
+      variant: 'danger'
+    });
+
+    if (!confirmDelete) return;
 
     try {
       await deleteBrand(brandId);
@@ -367,6 +376,18 @@ const BrandListPage: React.FC<BrandListPageProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </AdminLayout>
   );
 };

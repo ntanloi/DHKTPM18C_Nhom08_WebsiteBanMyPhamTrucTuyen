@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../../../context/CartContext';
 import { Toast } from './Toast';
 import { useToast } from '../../../hooks/useToast';
+import ConfirmDialog from '../../admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ export default function CartSidebar({
   const [activeTab, setActiveTab] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const { toast, showToast, hideToast } = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   // Fetch cart khi mở sidebar
   useEffect(() => {
@@ -73,7 +76,13 @@ export default function CartSidebar({
   };
 
   const handleRemoveItem = async (id: number) => {
-    if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+    const confirmRemove = await confirm({
+      title: 'Xóa sản phẩm',
+      message: 'Bạn có chắc muốn xóa sản phẩm này?',
+      variant: 'warning'
+    });
+
+    if (confirmRemove) {
       try {
         await removeCartItem(id);
       } catch (error: any) {
@@ -314,6 +323,18 @@ export default function CartSidebar({
             onClose={hideToast}
           />
         )}
+
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={confirmState.onCancel}
+          confirmText={confirmState.confirmText}
+          cancelText={confirmState.cancelText}
+          variant={confirmState.variant}
+          loading={confirmState.loading}
+        />
       </div>
     </>
   );

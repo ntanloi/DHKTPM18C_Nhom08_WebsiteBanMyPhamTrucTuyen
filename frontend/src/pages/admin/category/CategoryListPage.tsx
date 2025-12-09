@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 import {
   getAllCategories,
@@ -16,6 +18,7 @@ const CategoryListPage: React.FC<CategoryListPageProps> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { confirm, confirmState } = useConfirm();
 
   useEffect(() => {
     fetchCategories();
@@ -35,7 +38,13 @@ const CategoryListPage: React.FC<CategoryListPageProps> = ({ onNavigate }) => {
   };
 
   const handleDelete = async (categoryId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    const confirmDelete = await confirm({
+      title: 'Xóa danh mục',
+      message: 'Bạn có chắc chắn muốn xóa danh mục này?',
+      variant: 'danger'
+    });
+
+    if (!confirmDelete) return;
 
     try {
       await deleteCategory(categoryId);
@@ -582,6 +591,18 @@ const CategoryListPage: React.FC<CategoryListPageProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </AdminLayout>
   );
 };

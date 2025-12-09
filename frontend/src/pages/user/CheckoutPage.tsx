@@ -2,6 +2,8 @@ import { useCart } from '../../context/CartContext';
 import { AuthContext } from '../../context/auth-context';
 import CartItemCard from '../../components/user/ui/CartItemCard';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useEffect, useContext, useState } from 'react';
 
 interface CheckoutPageProps {
@@ -15,6 +17,7 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
     throw new Error('CheckoutPage must be used within AuthProvider');
   }
   const { user } = authContext;
+  const { confirm, confirmState } = useConfirm();
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -53,7 +56,11 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
   };
 
   const handleRemoveItem = async (cartItemId: number) => {
-    const confirmDelete = window.confirm('Bạn có chắc muốn xóa sản phẩm này?');
+    const confirmDelete = await confirm({
+      title: 'Xóa sản phẩm',
+      message: 'Bạn có chắc muốn xóa sản phẩm này?',
+      variant: 'warning'
+    });
 
     if (confirmDelete) {
       try {
@@ -290,6 +297,18 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </>
   );
 }
