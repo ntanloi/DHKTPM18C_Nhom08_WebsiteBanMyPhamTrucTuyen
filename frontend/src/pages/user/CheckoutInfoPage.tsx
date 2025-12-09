@@ -22,7 +22,7 @@ interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
 
-const VNPAY_TEST_BANK_CODE = 'INTCARD';
+const VNPAY_TEST_BANK_CODE = 'NCB';
 
 export default function CheckoutInfoPage({
   onNavigate,
