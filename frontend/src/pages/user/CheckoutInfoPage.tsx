@@ -277,11 +277,9 @@ export default function CheckoutInfoPage({
           return;
         }
 
-        // Nếu chọn thanh toán online (VNPay, Momo, ZaloPay...)
-        // Lưu thông tin tạm vào localStorage để tạo order sau khi thanh toán thành công
-        if (selectedMethod.code !== 'COD') {
-          // Lưu thông tin guest order tạm thời
-          const tempGuestOrder = {
+        // Guest checkout with VNPay: create order first, then redirect
+        if (selectedMethod.code === 'VNPAY') {
+          const guestOrderRequest: CreateGuestOrderRequest = {
             orderItems: cart.cartItems.map((item) => ({
               productVariantId: item.productVariantId,
               quantity: item.quantity,
@@ -296,45 +294,29 @@ export default function CheckoutInfoPage({
               isAnotherReceiver: false,
             },
             paymentMethodId: selectedPaymentMethodId,
-            totalAmount: cart.totalAmount,
           };
 
-          localStorage.setItem(
-            'pending_guest_order',
-            JSON.stringify(tempGuestOrder),
-          );
+          const order = await createGuestOrder(guestOrderRequest);
+          
+          // Save guest email to localStorage for callback page
+          localStorage.setItem(`guestOrder_${order.id}_email`, formData.recipientEmail);
 
-          // Redirect đến trang thanh toán (VNPay, Momo, ZaloPay...)
-          if (selectedMethod.code === 'VNPAY') {
-            // Tạo temporary order ID để tracking
-            const tempOrderId = `TEMP-${Date.now()}`;
-            const vnpayResponse = await createVNPayPayment({
-              orderId: 0, // Temporary, sẽ tạo order thật sau khi thanh toán thành công
-              amount: cart.totalAmount,
-              orderInfo: `Guest Order - ${tempOrderId}`,
-              language: 'vn',
-              bankCode: VNPAY_TEST_BANK_CODE,
-            });
+          // Create VNPay payment URL
+          const vnpayResponse = await createVNPayPayment({
+            orderId: order.id,
+            amount: cart.totalAmount,
+            orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
+            language: 'vn',
+            bankCode: VNPAY_TEST_BANK_CODE,
+          });
 
-            if (vnpayResponse.success && vnpayResponse.paymentUrl) {
-              // Lưu cart items để restore nếu thanh toán thất bại
-              localStorage.setItem(
-                'pending_cart',
-                JSON.stringify(cart.cartItems),
-              );
-              window.location.href = vnpayResponse.paymentUrl;
-            } else {
-              throw new Error(
-                vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
-              );
-            }
+          if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+            // Redirect directly to VNPay payment page (same tab)
+            window.location.href = vnpayResponse.paymentUrl;
           } else {
-            // TODO: Implement other payment gateways (Momo, ZaloPay, etc.)
-            showToast(
-              `Phương thức thanh toán ${selectedMethod.name} đang được phát triển`,
-              'info',
+            throw new Error(
+              vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
             );
-            setIsProcessing(false);
           }
           return;
         }

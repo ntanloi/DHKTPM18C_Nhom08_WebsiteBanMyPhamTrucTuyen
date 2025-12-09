@@ -60,7 +60,7 @@ public class VNPayService {
             // Force a specific payment method to avoid the generic option list on VNPay
             String bankCode = (request.getBankCode() != null && !request.getBankCode().isBlank())
                     ? request.getBankCode().trim()
-                    : "NCB"; // default to NCB test card form for sandbox testing
+                    : "INTCARD"; // default to international card form for sandbox testing
             vnp_Params.put("vnp_BankCode", bankCode);
 
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
