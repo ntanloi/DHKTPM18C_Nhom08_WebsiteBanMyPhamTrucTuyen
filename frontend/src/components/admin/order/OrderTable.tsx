@@ -10,7 +10,6 @@ import {
 interface OrderTableProps {
   orders: Order[];
   onViewDetail: (orderId: number) => void;
-  onUpdateStatus?: (orderId: number) => void;
   onCancelOrder?: (orderId: number) => void;
   onDeleteOrder?: (orderId: number) => void;
   loading?: boolean;
@@ -23,7 +22,6 @@ interface OrderTableProps {
 const OrderTable: React.FC<OrderTableProps> = ({
   orders,
   onViewDetail,
-  onUpdateStatus,
   onCancelOrder,
   onDeleteOrder,
   loading = false,
@@ -280,14 +278,13 @@ const OrderTable: React.FC<OrderTableProps> = ({
                         Hủy đơn
                       </button>
                     )}
-                  {onUpdateStatus && (
-                    <button
-                      onClick={() => onUpdateStatus(order.id)}
-                      className="rounded-lg bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
-                    >
-                      Cập nhật trạng thái
-                    </button>
-                  )}
+                  {/* Removed "Cập nhật trạng thái" button - use detail page instead */}
+                  <button
+                    onClick={() => onViewDetail(order.id)}
+                    className="rounded-lg bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
+                  >
+                    Xem chi tiết
+                  </button>
                 </>
               )}
 
@@ -295,6 +292,15 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 <button
                   onClick={() => onViewDetail(order.id)}
                   className="rounded-lg border border-pink-600 bg-white px-4 py-2 text-sm font-medium text-pink-600 hover:bg-pink-50"
+                >
+                  Xem chi tiết
+                </button>
+              )}
+
+              {activeTab === 'cancelled' && (
+                <button
+                  onClick={() => onViewDetail(order.id)}
+                  className="rounded-lg border border-gray-600 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
                 >
                   Xem chi tiết
                 </button>

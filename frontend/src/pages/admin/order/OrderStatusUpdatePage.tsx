@@ -78,7 +78,8 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
 
   const handleCancel = () => {
     if (submitting) return;
-    onNavigate(`/admin/orders/${orderId}`);
+    // Navigate back to order list instead of detail page
+    onNavigate('/admin/orders');
   };
 
   if (loading) {
@@ -146,7 +147,7 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Quay lại chi tiết đơn hàng
+              Quay lại danh sách đơn hàng
             </button>
 
             <div>
