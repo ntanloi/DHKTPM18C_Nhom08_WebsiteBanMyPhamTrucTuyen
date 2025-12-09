@@ -154,12 +154,8 @@ export default function VNPayPaymentModal({
       return;
     }
 
-    const newTab = window.open(paymentUrl, '_blank', 'noopener,noreferrer');
-    if (!newTab) {
-      alert(
-        'Trình duyệt đã chặn cửa sổ mới. Vui lòng cho phép pop-up cho trang này và thử lại.',
-      );
-    }
+    // Redirect trong cùng tab để mở thẳng form thanh toán
+    window.location.href = paymentUrl;
   };
 
   if (!isOpen) return null;

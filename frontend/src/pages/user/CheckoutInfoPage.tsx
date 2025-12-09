@@ -23,6 +23,8 @@ interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
 
+const VNPAY_TEST_BANK_CODE = 'NCB';
+
 export default function CheckoutInfoPage({
   onNavigate,
 }: CheckoutInfoPageProps) {
@@ -315,6 +317,7 @@ export default function CheckoutInfoPage({
               amount: cart.totalAmount,
               orderInfo: `Guest Order - ${tempOrderId}`,
               language: 'vn',
+              bankCode: VNPAY_TEST_BANK_CODE,
             });
 
             if (vnpayResponse.success && vnpayResponse.paymentUrl) {
@@ -393,13 +396,16 @@ export default function CheckoutInfoPage({
       const selectedMethod = paymentMethods.find(
         (m) => m.id === selectedPaymentMethodId,
       );
-        if (selectedMethod?.code === 'VNPAY') {
-          const vnpayResponse = await createVNPayPayment({
-            orderId: order.id,
-            amount: cart.totalAmount,
-            orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
-            language: 'vn',
-          });        if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+      if (selectedMethod?.code === 'VNPAY') {
+        const vnpayResponse = await createVNPayPayment({
+          orderId: order.id,
+          amount: cart.totalAmount,
+          orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
+          language: 'vn',
+          bankCode: VNPAY_TEST_BANK_CODE,
+        });
+
+        if (vnpayResponse.success && vnpayResponse.paymentUrl) {
           // Show VNPay modal instead of redirecting
           setCurrentOrderId(order.id);
           setVnpayPaymentUrl(vnpayResponse.paymentUrl);

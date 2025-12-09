@@ -57,8 +57,11 @@ public class VNPayService {
             vnp_Params.put("vnp_ReturnUrl", vnpayConfig.getReturnUrl());
             vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-            // Use empty bankCode to show test card input form in sandbox
-            vnp_Params.put("vnp_BankCode", "");
+            // Force a specific payment method to avoid the generic option list on VNPay
+            String bankCode = (request.getBankCode() != null && !request.getBankCode().isBlank())
+                    ? request.getBankCode().trim()
+                    : "NCB"; // default to NCB test card form for sandbox testing
+            vnp_Params.put("vnp_BankCode", bankCode);
 
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
