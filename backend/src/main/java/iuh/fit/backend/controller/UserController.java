@@ -5,6 +5,7 @@ import iuh.fit.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,6 +20,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    // Create user - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
         try {
@@ -31,6 +34,8 @@ public class UserController {
         }
     }
 
+    // Get user by ID - User can get their own, Admin/Manager can get any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     @GetMapping("/{userId}")
     public ResponseEntity<?> getUserById(@PathVariable Integer userId) {
         try {
@@ -43,6 +48,8 @@ public class UserController {
         }
     }
 
+    // Get user by email - Admin/Manager only
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/email/{email}")
     public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
         try {
@@ -55,12 +62,16 @@ public class UserController {
         }
     }
 
+    // Get all users - Admin/Manager only
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
+    // Update user - User can update their own, Admin can update any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasRole('ADMIN'))")
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUser(
             @PathVariable Integer userId,
@@ -75,6 +86,8 @@ public class UserController {
         }
     }
 
+    // Change password - User can change their own password only
+    @PreAuthorize("isAuthenticated() and #userId == authentication.principal.userId")
     @PutMapping("/{userId}/change-password")
     public ResponseEntity<?> changePassword(
             @PathVariable Integer userId,
@@ -89,6 +102,8 @@ public class UserController {
         }
     }
 
+    // Set password - User can set their own password, Admin can set any
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasRole('ADMIN'))")
     @PutMapping("/{userId}/set-password")
     public ResponseEntity<?> setPassword(
             @PathVariable Integer userId,
@@ -103,6 +118,8 @@ public class UserController {
         }
     }
 
+    // Deactivate user - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{userId}/deactivate")
     public ResponseEntity<?> deactivateUser(@PathVariable Integer userId) {
         try {
@@ -117,6 +134,8 @@ public class UserController {
         }
     }
 
+    // Activate user - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{userId}/activate")
     public ResponseEntity<?> activateUser(@PathVariable Integer userId) {
         try {
@@ -131,6 +150,8 @@ public class UserController {
         }
     }
 
+    // Delete user - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteUser(@PathVariable Integer userId) {
         try {

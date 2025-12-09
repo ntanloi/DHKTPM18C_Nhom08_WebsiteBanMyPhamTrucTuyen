@@ -68,8 +68,10 @@ public class SecurityConfig {
                     })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Auth endpoints - allow login/registration/refresh, but require JWT for verification
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/send-otp",
+                                "/api/auth/verify-otp", "/api/auth/refresh").permitAll()
+                        .requestMatchers("/api/auth/verify", "/api/auth/logout").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         
                         // Public read-only for products

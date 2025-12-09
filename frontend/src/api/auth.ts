@@ -75,6 +75,13 @@ export const authApi = {
     const response = await api.post<{ message: string }>('/auth/logout');
     return response.data;
   },
+
+  // Verify current user - gets actual role from database, not JWT claims
+  // CRITICAL SECURITY: Use this to verify user permissions, don't trust localStorage
+  verifyUser: async (): Promise<AuthResponse> => {
+    const response = await api.get<AuthResponse>('/auth/verify');
+    return response.data;
+  },
 };
 
 // Helper functions for token management

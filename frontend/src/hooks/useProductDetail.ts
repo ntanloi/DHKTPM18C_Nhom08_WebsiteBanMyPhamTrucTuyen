@@ -130,7 +130,10 @@ export function useProductDetail(
         }
       }
     } catch (err: any) {
-      console.error('Error fetching product detail:', err);
+      // Only log errors that are not 404 (missing products are expected)
+      if (err?.response?.status !== 404) {
+        console.error('Error fetching product detail:', err);
+      }
       setError(err?.message || 'Không thể tải thông tin sản phẩm');
       setProduct(null);
       setVariants([]);

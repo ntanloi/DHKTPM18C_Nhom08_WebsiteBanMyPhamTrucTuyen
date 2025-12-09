@@ -116,4 +116,19 @@ public class AuthController {
         response.put("message", "Logout successful");
         return ResponseEntity.ok(response);
     }
+
+    // Verify current user - returns actual user info from database, not JWT claims
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyCurrentUser() {
+        try {
+            AuthResponse response = authService.verifyCurrentUser();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error verifying user: {}", e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Verification failed");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+    }
 }

@@ -6,6 +6,7 @@ import iuh.fit.backend.dto.OrderResponse;
 import iuh.fit.backend.dto.UpdateOrderStatusRequest;
 import iuh.fit.backend.service.OrderService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,13 +22,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class OrderController {
 
     @Autowired
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    @PreAuthorize("isAuthenticated() and #request.userId == authentication.principal.userId")
+    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request, Authentication authentication) {
         try {
             OrderDetailResponse response = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -41,12 +44,17 @@ public class OrderController {
     @PostMapping("/guest")
     public ResponseEntity<?> createGuestOrder(@Valid @RequestBody CreateOrderRequest request) {
         try {
+            log.info("Guest order request received: orderItems={}, recipientEmail={}", 
+                request.getOrderItems() != null ? request.getOrderItems().size() : 0,
+                request.getRecipientInfo() != null ? request.getRecipientInfo().getRecipientEmail() : "null");
+            
             // Create a new guest user for each order
             // userId will be set by the service based on recipient info
             OrderDetailResponse response = orderService.createGuestOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             // Log the full stack trace for debugging
+            log.error("Error creating guest order", e);
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -71,16 +79,19 @@ public class OrderController {
         }
     }
 
-    // Public endpoint for guest orders - no authentication required
     @GetMapping("/guest/{orderId}")
-    public ResponseEntity<?> getGuestOrderDetail(@PathVariable Integer orderId) {
+    public ResponseEntity<?> getGuestOrderDetail(
+            @PathVariable Integer orderId,
+            @RequestParam String email) {
         try {
-            OrderDetailResponse response = orderService.getOrderDetail(orderId);
+            log.info("Guest order detail request: orderId={}, email={}", orderId, email);
+            OrderDetailResponse response = orderService.getGuestOrderDetail(orderId, email);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Error retrieving guest order: orderId={}, email={}", orderId, email, e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
         }
     }
 
@@ -120,10 +131,12 @@ public class OrderController {
         }
     }
 
+    // Cancel order - User can cancel their own, Admin/Manager can cancel any
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<?> cancelOrder(@PathVariable Integer orderId) {
+    public ResponseEntity<?> cancelOrder(@PathVariable Integer orderId, Authentication authentication) {
         try {
-            OrderResponse response = orderService.cancelOrder(orderId);
+            OrderResponse response = orderService.cancelOrderWithAuth(orderId, authentication);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -132,6 +145,8 @@ public class OrderController {
         }
     }
 
+    // Delete order - Admin only
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{orderId}")
     public ResponseEntity<?> deleteOrder(@PathVariable Integer orderId) {
         try {

@@ -7,6 +7,7 @@ import iuh.fit.backend.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -21,6 +22,8 @@ public class AddressController {
     @Autowired
     private AddressService addressService;
 
+    // Create address - User can only create address for themselves
+    @PreAuthorize("isAuthenticated() and #userId == authentication.principal.userId")
     @PostMapping("/user/{userId}")
     public ResponseEntity<?> createAddress(
             @PathVariable Integer userId,
@@ -35,6 +38,8 @@ public class AddressController {
         }
     }
 
+    // Get address by ID - Authenticated users only
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{addressId}")
     public ResponseEntity<?> getAddressById(@PathVariable Integer addressId) {
         try {
@@ -47,12 +52,16 @@ public class AddressController {
         }
     }
 
+    // Get addresses by user ID - User can only get their own addresses
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<AddressResponse>> getAddressesByUserId(@PathVariable Integer userId) {
         List<AddressResponse> addresses = addressService.getAddressesByUserId(userId);
         return ResponseEntity.ok(addresses);
     }
 
+    // Get default address - User can only get their own default address
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasAnyRole('ADMIN', 'MANAGER'))")
     @GetMapping("/user/{userId}/default")
     public ResponseEntity<?> getDefaultAddress(@PathVariable Integer userId) {
         try {
@@ -65,6 +74,8 @@ public class AddressController {
         }
     }
 
+    // Update address - Authenticated users only (ownership checked in service)
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{addressId}")
     public ResponseEntity<?> updateAddress(
             @PathVariable Integer addressId,
@@ -79,6 +90,8 @@ public class AddressController {
         }
     }
 
+    // Delete address - Authenticated users only (ownership checked in service)
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{addressId}")
     public ResponseEntity<?> deleteAddress(@PathVariable Integer addressId) {
         try {
