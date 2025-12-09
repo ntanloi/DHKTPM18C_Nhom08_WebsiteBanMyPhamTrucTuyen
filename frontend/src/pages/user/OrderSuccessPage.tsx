@@ -81,7 +81,7 @@ export default function OrderSuccessPage({
           );
           orderDetail = await getOrderDetail(orderId);
           console.log(
-            '✅ Order detail loaded from authenticated endpoint:',
+            '✅ Order detail loaded from authenticated endpoint: ',
             orderDetail,
           );
         }
