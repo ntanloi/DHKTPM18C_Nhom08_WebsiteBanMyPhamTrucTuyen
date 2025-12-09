@@ -90,6 +90,7 @@ export default function Header({
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+    onNavigate?.('/'); // Navigate to homepage after logout
   };
 
   return (

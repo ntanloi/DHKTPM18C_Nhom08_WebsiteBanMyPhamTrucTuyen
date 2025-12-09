@@ -57,7 +57,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
     } catch (err: any) {
       const errorInfo = parseApiError(err);
       setError(errorInfo);
-      
+
       if (errorInfo.shouldRedirect) {
         setTimeout(() => {
           onNavigate(errorInfo.shouldRedirect!);
@@ -91,10 +91,13 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
         } catch (err: any) {
           const errorInfo = parseApiError(err);
           showToast(
-            errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''),
-            'error'
+            errorInfo.message +
+              (errorInfo.supportContact
+                ? '\n\n' + errorInfo.supportContact
+                : ''),
+            'error',
           );
-          
+
           if (errorInfo.shouldRedirect) {
             onNavigate(errorInfo.shouldRedirect);
           }
@@ -126,10 +129,13 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
         } catch (err: any) {
           const errorInfo = parseApiError(err);
           showToast(
-            errorInfo.message + (errorInfo.supportContact ? '\n\n' + errorInfo.supportContact : ''),
-            'error'
+            errorInfo.message +
+              (errorInfo.supportContact
+                ? '\n\n' + errorInfo.supportContact
+                : ''),
+            'error',
           );
-          
+
           if (errorInfo.shouldRedirect) {
             onNavigate(errorInfo.shouldRedirect);
           }
@@ -166,7 +172,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
 
   const getDiscountDisplay = (): string => {
     if (!coupon) return '';
-    if (coupon.discountType === 'percentage') {
+    if (coupon.discountType === 'PERCENTAGE') {
       return `${coupon.discountValue}%`;
     }
     return formatCurrency(coupon.discountValue);
@@ -188,8 +194,8 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
     }
 
     const now = new Date();
-    const startDate = new Date(coupon.validFrom);
-    const endDate = new Date(coupon.validTo);
+    const startDate = coupon.validFrom ? new Date(coupon.validFrom) : null;
+    const endDate = coupon.validTo ? new Date(coupon.validTo) : null;
 
     if (!coupon.isActive) {
       return {
@@ -201,7 +207,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
       };
     }
 
-    if (endDate < now) {
+    if (endDate && endDate < now) {
       return {
         label: 'Hết hạn',
         description:
@@ -211,10 +217,10 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
       };
     }
 
-    if (startDate > now) {
+    if (startDate && startDate > now) {
       return {
         label: 'Sắp có hiệu lực',
-        description: `Mã giảm giá sẽ có hiệu lực từ ${formatDate(coupon.validFrom)}.`,
+        description: `Mã giảm giá sẽ có hiệu lực từ ${formatDate(coupon.validFrom || '')}.`,
         canEdit: true,
         canDeactivate: true,
       };
@@ -243,8 +249,8 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
     return (
       <AdminLayout onNavigate={onNavigate}>
         <div className="p-6">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-6">
+          <div className="mx-auto max-w-2xl">
+            <div className="mb-6 text-center">
               <svg
                 className="mx-auto h-16 w-16 text-red-600"
                 fill="none"
@@ -422,8 +428,8 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
                 </div>
                 <CouponStatusBadge
                   isActive={coupon.isActive}
-                  validFrom={coupon.validFrom}
-                  validTo={coupon.validTo}
+                  validFrom={coupon.validFrom || ''}
+                  validTo={coupon.validTo || ''}
                 />
               </div>
 
@@ -435,7 +441,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
                 <div>
                   <p className="text-xs text-pink-100">Loại</p>
                   <p className="text-sm font-medium">
-                    {coupon.discountType === 'percentage'
+                    {coupon.discountType === 'PERCENTAGE'
                       ? 'Phần trăm'
                       : 'Cố định'}
                   </p>
@@ -443,13 +449,13 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
                 <div>
                   <p className="text-xs text-pink-100">Đơn tối thiểu</p>
                   <p className="text-sm font-medium">
-                    {formatCurrency(coupon.minOrderValue)}
+                    {formatCurrency(coupon.minOrderValue || 0)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-pink-100">Giảm tối đa</p>
                   <p className="text-sm font-medium">
-                    {formatCurrency(coupon.maxUsageValue)}
+                    {formatCurrency(coupon.maxUsageValue || 0)}
                   </p>
                 </div>
               </div>
@@ -511,7 +517,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
                         Ngày bắt đầu
                       </p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {formatDate(coupon.validFrom)}
+                        {formatDate(coupon.validFrom || '')}
                       </p>
                     </div>
                   </div>
@@ -539,7 +545,7 @@ const CouponDetailPage: React.FC<CouponDetailPageProps> = ({
                         Ngày kết thúc
                       </p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {formatDate(coupon.validTo)}
+                        {formatDate(coupon.validTo || '')}
                       </p>
                     </div>
                   </div>

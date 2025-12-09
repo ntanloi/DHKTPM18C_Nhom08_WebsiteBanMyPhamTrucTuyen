@@ -110,4 +110,40 @@ public class CouponController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
+
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateAndCalculateDiscount(@RequestBody Map<String, Object> request) {
+        try {
+            String couponCode = (String) request.get("couponCode");
+            Double subtotalDouble = ((Number) request.get("subtotal")).doubleValue();
+            Integer userId = request.get("userId") != null ? ((Number) request.get("userId")).intValue() : null;
+
+            java.math.BigDecimal subtotal = java.math.BigDecimal.valueOf(subtotalDouble);
+
+            // Validate coupon
+            if (userId != null) {
+                couponService.validateCouponForUser(couponCode, userId, subtotal);
+            }
+
+            // Get coupon and calculate discount
+            iuh.fit.backend.model.Coupon coupon = couponService.getCouponEntityByCode(couponCode);
+            java.math.BigDecimal discountAmount = couponService.calculateDiscount(coupon, subtotal);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("valid", true);
+            response.put("couponId", coupon.getId());
+            response.put("couponCode", coupon.getCode());
+            response.put("discountType", coupon.getDiscountType());
+            response.put("discountValue", coupon.getDiscountValue());
+            response.put("discountAmount", discountAmount);
+            response.put("description", coupon.getDescription());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("valid", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
 }

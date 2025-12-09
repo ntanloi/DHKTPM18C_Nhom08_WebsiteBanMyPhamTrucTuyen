@@ -29,17 +29,23 @@ export default function CartItemCard({
   return (
     <div className="flex gap-3">
       <div className="relative flex-shrink-0">
-        <div className="h-[90px] w-[90px] rounded-lg border border-gray-200 bg-gray-100 overflow-hidden">
-          <img 
-            src={item.imageUrl || 'https://via.placeholder.com/90'} 
+        <div className="h-[90px] w-[90px] overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+          <img
+            src={
+              item.imageUrl || 'https://via.placeholder.com/90?text=No+Image'
+            }
             alt={item.productName}
             className="h-full w-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src =
+                'https://via.placeholder.com/90?text=No+Image';
+            }}
           />
         </div>
         <button
           onClick={() => onRemove(item.id)}
           disabled={disabled}
-          className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-[11px] font-bold text-gray-700 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-[11px] font-bold text-gray-700 hover:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <X size={12} strokeWidth={3} />
         </button>
@@ -56,15 +62,17 @@ export default function CartItemCard({
             <button
               onClick={handleDecrease}
               disabled={disabled || item.quantity <= 1}
-              className="flex h-7 w-7 items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-7 w-7 items-center justify-center hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Minus size={12} strokeWidth={2.5} />
             </button>
-            <span className="px-3 text-[13px] font-medium">{item.quantity}</span>
+            <span className="px-3 text-[13px] font-medium">
+              {item.quantity}
+            </span>
             <button
               onClick={handleIncrease}
               disabled={disabled}
-              className="flex h-7 w-7 items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-7 w-7 items-center justify-center hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={12} strokeWidth={2.5} />
             </button>

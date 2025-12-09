@@ -643,6 +643,10 @@ const ProductCard = ({
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
               isHovered ? 'opacity-0' : 'opacity-100'
             }`}
+            onError={(e) => {
+              e.currentTarget.src =
+                'https://via.placeholder.com/400?text=No+Image';
+            }}
           />
           <img
             src={image2}
@@ -650,6 +654,10 @@ const ProductCard = ({
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}
+            onError={(e) => {
+              e.currentTarget.src =
+                'https://via.placeholder.com/400?text=No+Image';
+            }}
           />
 
           {badge && (

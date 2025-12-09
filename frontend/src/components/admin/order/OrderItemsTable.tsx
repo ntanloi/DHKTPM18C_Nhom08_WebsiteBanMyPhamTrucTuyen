@@ -14,6 +14,14 @@ const OrderItemsTable: React.FC<OrderItemsTableProps> = ({
   onRemoveItem,
 }) => {
   const calculateItemTotal = (item: OrderItem): number => {
+    // Check if item has direct price/subtotal from API (OrderItemResponse)
+    if ((item as any).subtotal) {
+      return (item as any).subtotal;
+    }
+    if ((item as any).price) {
+      return (item as any).price * item.quantity;
+    }
+    // Fallback to productVariant structure
     const price =
       item.productVariant?.salePrice || item.productVariant?.price || 0;
     return price * item.quantity;
@@ -61,39 +69,68 @@ const OrderItemsTable: React.FC<OrderItemsTableProps> = ({
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {items.map((item) => {
-              const variant = item.productVariant;
-              const price = variant?.salePrice || variant?.price || 0;
-              const originalPrice = variant?.price || 0;
+              // Support both API response format (OrderItemResponse) and full object format (OrderItem)
+              const itemData = item as any;
+
+              // Get data from API response format first, fallback to nested structure
+              const imageUrl = itemData.imageUrl;
+              const productName =
+                itemData.productName || item.productVariant?.product?.name;
+              const variantName =
+                itemData.variantName || item.productVariant?.name;
+              const sku = item.productVariant?.sku;
+              const price =
+                itemData.price ||
+                item.productVariant?.salePrice ||
+                item.productVariant?.price ||
+                0;
+              const originalPrice = item.productVariant?.price || 0;
               const hasDiscount =
-                variant?.salePrice && variant.salePrice < originalPrice;
+                item.productVariant?.salePrice &&
+                item.productVariant.salePrice < originalPrice;
 
               return (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                        <svg
-                          className="h-6 w-6 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={variantName || productName || 'Product'}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = `
+                                <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              `;
+                            }}
                           />
-                        </svg>
+                        ) : (
+                          <svg
+                            className="h-6 w-6 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {variant?.name || 'N/A'}
+                          {variantName || 'N/A'}
                         </p>
-                        {variant?.product && (
-                          <p className="text-xs text-gray-500">
-                            {variant.product.name}
-                          </p>
+                        {productName && (
+                          <p className="text-xs text-gray-500">{productName}</p>
                         )}
                       </div>
                     </div>
@@ -102,7 +139,7 @@ const OrderItemsTable: React.FC<OrderItemsTableProps> = ({
                   {/* SKU */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-700">
-                      {variant?.sku || 'N/A'}
+                      {sku || 'N/A'}
                     </span>
                   </td>
 

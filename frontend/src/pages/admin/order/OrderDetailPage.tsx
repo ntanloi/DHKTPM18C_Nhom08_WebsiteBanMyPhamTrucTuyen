@@ -19,6 +19,7 @@ import {
 } from '../../../utils/orderStatusUtils';
 
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { Toast, type ToastType } from '../../../components/user/ui/Toast';
 
 interface OrderDetailPageProps {
   orderId: string;
@@ -35,6 +36,22 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
   const [statusHistory, setStatusHistory] = useState<OrderStatusHistory[]>([]);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: ToastType;
+  }>({
+    show: false,
+    message: '',
+    type: 'info',
+  });
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  };
 
   useEffect(() => {
     fetchOrderDetails();
@@ -47,7 +64,7 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
       if (!orderData) {
         throw new Error('Không tìm thấy đơn hàng');
       }
-      
+
       // Transform OrderDetailResponse to Order type
       const transformedOrder: Order = {
         id: orderData.id,
@@ -105,18 +122,23 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
   const handleCancelOrder = async () => {
     try {
       setCancelling(true);
-      
+
       // Call real API to cancel order
       await cancelOrder(Number(orderId));
-      
+
       // Refetch order details to get updated status
       await fetchOrderDetails();
-      
+
       setShowCancelDialog(false);
-      alert('Hủy đơn hàng thành công!');
+      showToast('Hủy đơn hàng thành công!', 'success');
     } catch (error: any) {
       console.error('Failed to cancel order:', error);
-      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+      showToast(
+        error.response?.data?.error ||
+          error.message ||
+          'Có lỗi xảy ra khi hủy đơn hàng',
+        'error',
+      );
     } finally {
       setCancelling(false);
     }
@@ -431,6 +453,12 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
           loading={cancelling}
         />
       </div>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
     </AdminLayout>
   );
 };

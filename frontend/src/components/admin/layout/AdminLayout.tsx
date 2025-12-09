@@ -122,26 +122,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       link: '/admin/coupons',
     },
     {
-      id: 'returns',
-      icon: (
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
-          />
-        </svg>
-      ),
-      label: 'Yêu cầu hoàn trả',
-      link: '/admin/returns',
-    },
-    {
       id: 'payments',
       icon: (
         <svg
@@ -181,26 +161,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       label: 'Thống kê',
       link: '/admin/analytics',
     },
-    {
-      id: 'chat',
-      icon: (
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          />
-        </svg>
-      ),
-      label: 'Hỗ trợ khách hàng',
-      link: '/admin/chat',
-    },
   ];
 
   return (
@@ -208,11 +168,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       <div className="w-64 bg-gradient-to-b from-pink-600 to-rose-600 text-white shadow-2xl">
         {/* Logo */}
         <div className="border-b border-pink-500 p-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold">BeautyBox</h1>
               <p className="text-xs text-pink-200">Admin Panel</p>
             </div>
+            <button
+              onClick={() => onNavigate('/')}
+              className="group rounded-lg p-2 transition-all hover:bg-white/10"
+              title="Về trang chủ"
+            >
+              <svg
+                className="h-5 w-5 transition-transform group-hover:scale-110"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+            </button>
           </div>
         </div>
 

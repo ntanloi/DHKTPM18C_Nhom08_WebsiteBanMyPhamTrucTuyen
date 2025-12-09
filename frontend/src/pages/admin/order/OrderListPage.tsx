@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import type { Order } from '../../../types/Order';
-import { getAllOrders, cancelOrder, deleteOrder, updateOrderStatus, type OrderResponse } from '../../../api/order';
+import {
+  getAllOrders,
+  cancelOrder,
+  deleteOrder,
+  updateOrderStatus,
+  type OrderResponse,
+} from '../../../api/order';
 import OrderTable from '../../../components/admin/order/OrderTable';
 import SearchBar from '../../../components/admin/SearchBar';
 import Pagination from '../../../components/admin/Pagination';
 import { matchesSearchQuery } from '../../../utils/orderStatusUtils';
 import { DEFAULT_PAGE_SIZE } from '../../../contants/orderConstants';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { Toast, type ToastType } from '../../../components/user/ui/Toast';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 
 interface OrderListPageProps {
   onNavigate: (path: string) => void;
@@ -31,6 +39,26 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: ToastType;
+  } | null>(null);
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   const [stats, setStats] = useState({
     total: 0,
     processing: 0,
@@ -45,26 +73,28 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
       setLoading(true);
       setError(null);
       const ordersData = await getAllOrders();
-      
+
       // Transform OrderResponse to Order type
-      const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
-        id: order.id,
-        userId: order.userId || 0,
-        status: order.status || 'PENDING',
-        subtotal: order.subtotal || 0,
-        totalAmount: order.totalAmount || 0,
-        notes: order.notes || '',
-        discountAmount: order.discountAmount || 0,
-        shippingFee: order.shippingFee || 0,
-        estimateDeliveryFrom: order.estimateDeliveryFrom || '',
-        estimateDeliveryTo: order.estimateDeliveryTo || '',
-        createdAt: order.createdAt || new Date().toISOString(),
-        updatedAt: order.updatedAt || new Date().toISOString(),
-        orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
-        payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
-        recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
-      }));
-      
+      const transformedOrders: Order[] = ordersData.map(
+        (order: OrderResponse) => ({
+          id: order.id,
+          userId: order.userId || 0,
+          status: order.status || 'PENDING',
+          subtotal: order.subtotal || 0,
+          totalAmount: order.totalAmount || 0,
+          notes: order.notes || '',
+          discountAmount: order.discountAmount || 0,
+          shippingFee: order.shippingFee || 0,
+          estimateDeliveryFrom: order.estimateDeliveryFrom || '',
+          estimateDeliveryTo: order.estimateDeliveryTo || '',
+          createdAt: order.createdAt || new Date().toISOString(),
+          updatedAt: order.updatedAt || new Date().toISOString(),
+          orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
+          payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
+          recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
+        }),
+      );
+
       setOrders(transformedOrders);
     } catch (err: any) {
       console.error('Failed to fetch orders:', err);
@@ -157,43 +187,62 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   };
 
   const handleCancelOrder = async (orderId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
-
-    try {
-      setLoading(true);
-      // Call real API to cancel order
-      await cancelOrder(orderId);
-      
-      // Refetch orders to get updated data from backend
-      await fetchOrders();
-      
-      alert('Hủy đơn hàng thành công!');
-    } catch (error: any) {
-      console.error('Cancel order error:', error);
-      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
-    } finally {
-      setLoading(false);
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Xác nhận hủy đơn hàng',
+      message: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog({ ...confirmDialog, open: false });
+        try {
+          setLoading(true);
+          await cancelOrder(orderId);
+          await fetchOrders();
+          setToast({ message: 'Hủy đơn hàng thành công!', type: 'success' });
+        } catch (error: any) {
+          console.error('Cancel order error:', error);
+          setToast({
+            message:
+              error.response?.data?.error ||
+              error.message ||
+              'Có lỗi xảy ra khi hủy đơn hàng',
+            type: 'error',
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleDeleteOrder = async (orderId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác!')) return;
-
-    try {
-      setLoading(true);
-      // Call real API to delete order
-      await deleteOrder(orderId);
-      
-      // Refetch orders to get updated data from backend
-      await fetchOrders();
-      
-      alert('Xóa đơn hàng thành công!');
-    } catch (error: any) {
-      console.error('Delete order error:', error);
-      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi xóa đơn hàng');
-    } finally {
-      setLoading(false);
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Xác nhận xóa đơn hàng',
+      message:
+        'Bạn có chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác!',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog({ ...confirmDialog, open: false });
+        try {
+          setLoading(true);
+          await deleteOrder(orderId);
+          await fetchOrders();
+          setToast({ message: 'Xóa đơn hàng thành công!', type: 'success' });
+        } catch (error: any) {
+          console.error('Delete order error:', error);
+          setToast({
+            message:
+              error.response?.data?.error ||
+              error.message ||
+              'Có lỗi xảy ra khi xóa đơn hàng',
+            type: 'error',
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleClearFilters = () => {
@@ -214,7 +263,9 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
     } else {
       // Only deselect orders on current page
       const currentPageOrderIds = getPaginatedOrders().map((o) => o.id);
-      setSelectedOrders((prev) => prev.filter((id) => !currentPageOrderIds.includes(id)));
+      setSelectedOrders((prev) =>
+        prev.filter((id) => !currentPageOrderIds.includes(id)),
+      );
     }
   };
 
@@ -228,55 +279,71 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
 
   const handleBulkAction = async () => {
     if (!bulkAction || selectedOrders.length === 0) {
-      alert('Vui lòng chọn hành động và ít nhất một đơn hàng');
+      setToast({
+        message: 'Vui lòng chọn hành động và ít nhất một đơn hàng',
+        type: 'warning',
+      });
       return;
     }
 
-    const statusLabel = {
-      CONFIRMED: 'xác nhận',
-      PROCESSING: 'chuyển sang xử lý',
-      SHIPPED: 'đánh dấu đã gửi hàng',
-      DELIVERED: 'đánh dấu đã giao hàng',
-      CANCELLED: 'hủy',
-    }[bulkAction] || bulkAction;
+    const statusLabel =
+      {
+        CONFIRMED: 'xác nhận',
+        PROCESSING: 'chuyển sang xử lý',
+        SHIPPED: 'đánh dấu đã gửi hàng',
+        DELIVERED: 'đánh dấu đã giao hàng',
+        CANCELLED: 'hủy',
+      }[bulkAction] || bulkAction;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn ${statusLabel} ${selectedOrders.length} đơn hàng đã chọn?`)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      let successCount = 0;
-      let failCount = 0;
-
-      // Call real API for each selected order
-      for (const orderId of selectedOrders) {
+    setConfirmDialog({
+      open: true,
+      title: 'Xác nhận cập nhật hàng loạt',
+      message: `Bạn có chắc chắn muốn ${statusLabel} ${selectedOrders.length} đơn hàng đã chọn?`,
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog({ ...confirmDialog, open: false });
         try {
-          await updateOrderStatus(orderId, { status: bulkAction });
-          successCount++;
-        } catch (err) {
-          console.error(`Failed to update order ${orderId}:`, err);
-          failCount++;
+          setLoading(true);
+          let successCount = 0;
+          let failCount = 0;
+
+          for (const orderId of selectedOrders) {
+            try {
+              await updateOrderStatus(orderId, { status: bulkAction });
+              successCount++;
+            } catch (err) {
+              console.error(`Failed to update order ${orderId}:`, err);
+              failCount++;
+            }
+          }
+
+          await fetchOrders();
+
+          if (failCount === 0) {
+            setToast({
+              message: `Đã cập nhật ${successCount} đơn hàng thành công!`,
+              type: 'success',
+            });
+          } else {
+            setToast({
+              message: `Cập nhật hoàn tất: ${successCount} thành công, ${failCount} thất bại`,
+              type: 'warning',
+            });
+          }
+
+          setSelectedOrders([]);
+          setBulkAction('');
+        } catch (error) {
+          console.error('Bulk action error:', error);
+          setToast({
+            message: 'Có lỗi xảy ra khi cập nhật đơn hàng',
+            type: 'error',
+          });
+        } finally {
+          setLoading(false);
         }
-      }
-
-      // Refetch orders to get updated data from backend
-      await fetchOrders();
-
-      if (failCount === 0) {
-        alert(`Đã cập nhật ${successCount} đơn hàng thành công!`);
-      } else {
-        alert(`Cập nhật hoàn tất: ${successCount} thành công, ${failCount} thất bại`);
-      }
-      
-      setSelectedOrders([]);
-      setBulkAction('');
-    } catch (error) {
-      console.error('Bulk action error:', error);
-      alert('Có lỗi xảy ra khi cập nhật đơn hàng');
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   };
 
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
@@ -503,7 +570,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
               <button
                 onClick={handleBulkAction}
                 disabled={!bulkAction}
-                className="rounded-lg bg-pink-600 px-6 py-2 text-sm font-medium text-white hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg bg-pink-600 px-6 py-2 text-sm font-medium text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Áp dụng
               </button>
@@ -543,6 +610,23 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        variant={confirmDialog.variant}
+      />
     </AdminLayout>
   );
 };
