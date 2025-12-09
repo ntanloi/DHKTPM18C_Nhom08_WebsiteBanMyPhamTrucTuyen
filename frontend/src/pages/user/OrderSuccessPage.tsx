@@ -77,7 +77,7 @@ export default function OrderSuccessPage({
           );
         } catch (guestError) {
           console.log(
-            'Guest endpoint failed, trying authenticated endpoint...',
+            'Guest endpoint failed, trying authenticated endpoint... ',
           );
           orderDetail = await getOrderDetail(orderId);
           console.log(
