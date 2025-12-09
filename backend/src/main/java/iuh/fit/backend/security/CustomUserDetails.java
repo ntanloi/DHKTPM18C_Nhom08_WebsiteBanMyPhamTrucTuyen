@@ -70,8 +70,4 @@ public class CustomUserDetails implements UserDetails {
         return isActive;
     }
 
-    // Alias for id to support @PreAuthorize expressions
-    public Integer getUserId() {
-        return id;
-    }
 }
