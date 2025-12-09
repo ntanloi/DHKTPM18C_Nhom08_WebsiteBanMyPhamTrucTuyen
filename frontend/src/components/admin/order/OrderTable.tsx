@@ -172,12 +172,14 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     />
                   </svg>
                   <span className="font-medium text-gray-900">
-                    {order.user?.fullName || 'N/A'}
+                    {order.recipientInformation?.recipientFirstName && order.recipientInformation?.recipientLastName
+                      ? `${order.recipientInformation.recipientFirstName} ${order.recipientInformation.recipientLastName}`
+                      : 'N/A'}
                   </span>
                 </div>
                 <div className="ml-7 text-sm text-gray-600">
-                  <div>{order.user?.phoneNumber || 'N/A'}</div>
-                  <div>{order.user?.email || 'N/A'}</div>
+                  <div>{order.recipientInformation?.recipientPhone || 'N/A'}</div>
+                  <div>{order.recipientInformation?.recipientEmail || 'N/A'}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -185,7 +187,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <>
                     {getPaymentBadge(order.payment.status)}
                     <div className="mt-1 text-xs text-gray-500">
-                      {order.payment.paymentMethods?.[0]?.name || 'N/A'}
+                      {order.payment.paymentMethods?.[0]?.name || 'COD'}
                     </div>
                   </>
                 ) : (

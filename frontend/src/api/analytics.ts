@@ -38,7 +38,7 @@ export interface OrderStats {
   totalOrders: number;
   ordersByStatus: Record<string, number>;
   recentOrders: Array<{
-    id: number;
+    orderId: number;
     customerName: string;
     totalAmount: number;
     status: string;
@@ -50,10 +50,10 @@ export interface ProductStats {
   totalProducts: number;
   lowStockProducts: number;
   topSellingProducts: Array<{
-    id: number;
-    name: string;
-    sold: number;
-    revenue: number;
+    productId: number;
+    productName: string;
+    quantitySold: number;
+    totalRevenue: number;
   }>;
 }
 

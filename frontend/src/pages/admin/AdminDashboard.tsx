@@ -208,11 +208,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
 
         // Map recent orders (handle empty recentOrders array)
         const mappedOrders: Order[] = (orderStats.recentOrders || []).slice(0, 5).map((order) => ({
-          id: order.id ? String(order.id) : 'N/A',
+          id: order.orderId ? String(order.orderId) : 'N/A',
           customer: order.customerName || 'Unknown',
           amount: `₫${(order.totalAmount || 0).toLocaleString('vi-VN')}`,
           status: formatStatus(order.status || 'PENDING'),
-          date: order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A',
+          date: order.createdAt || 'N/A',
         }));
 
         console.log('[AdminDashboard] Mapped orders:', mappedOrders);

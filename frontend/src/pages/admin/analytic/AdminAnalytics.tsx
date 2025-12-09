@@ -84,8 +84,12 @@ const AdminAnalytics = ({
             break;
         }
 
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
+        // Set to start of day for startDate and end of day for endDate
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+
+        const startDateStr = startDate.toISOString();
+        const endDateStr = endDate.toISOString();
 
         // Fetch all data in parallel
         const [dashboardData, orderStatsData, productStatsData] = await Promise.all([
@@ -164,9 +168,9 @@ const AdminAnalytics = ({
         // Process top products data
         const topProducts = productStatsData.topSellingProducts || [];
         const topProductsChartData: TopProductData[] = topProducts.map((product) => ({
-          name: product.name,
-          sales: product.sold,
-          revenue: product.revenue,
+          name: product.productName,
+          sales: product.quantitySold,
+          revenue: product.totalRevenue,
         }));
         setTopProductsData(topProductsChartData);
 
