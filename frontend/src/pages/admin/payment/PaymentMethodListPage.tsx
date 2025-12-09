@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { PaymentMethod } from '../../../types/PaymentMethod';
-import { mockPaymentMethodService } from '../../../mocks/mockPaymentMethodService';
+import * as paymentMethodApi from '../../../api/paymentMethod';
 import PaymentMethodTable from '../../../components/admin/payment/PaymentMethodTable';
 import PaymentMethodForm, {
   type PaymentMethodFormData,
@@ -49,7 +49,7 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
   const fetchMethods = async () => {
     try {
       setLoading(true);
-      const data = await mockPaymentMethodService.getAllPaymentMethods();
+      const data = await paymentMethodApi.getAllPaymentMethods();
       setMethods(data);
     } catch (error: any) {
       alert(error.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -69,10 +69,11 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
   const handleCreate = async (data: PaymentMethodFormData) => {
     try {
       setSubmitting(true);
-      await mockPaymentMethodService.createPaymentMethod(data);
-      alert('Tạo phương thức thanh toán thành công!');
+      // TODO: Backend API doesn't support CREATE yet
+      // await paymentMethodApi.createPaymentMethod(data);
+      alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       setShowCreateModal(false);
-      fetchMethods();
+      // fetchMethods();
     } catch (error: any) {
       alert(error.message || 'Có lỗi xảy ra khi tạo phương thức');
     } finally {
@@ -85,14 +86,12 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
 
     try {
       setSubmitting(true);
-      await mockPaymentMethodService.updatePaymentMethod(
-        editingMethod.id,
-        data,
-      );
-      alert('Cập nhật phương thức thanh toán thành công!');
+      // TODO: Backend API doesn't support UPDATE yet
+      // await paymentMethodApi.updatePaymentMethod(editingMethod.id, data);
+      alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       setShowEditModal(false);
       setEditingMethod(null);
-      fetchMethods();
+      // fetchMethods();
     } catch (error: any) {
       alert(error.message || 'Có lỗi xảy ra khi cập nhật phương thức');
     } finally {
@@ -110,8 +109,10 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
     }
 
     try {
-      await mockPaymentMethodService.togglePaymentMethod(id);
-      fetchMethods();
+      // TODO: Backend API doesn't support TOGGLE yet
+      // await paymentMethodApi.togglePaymentMethod(id);
+      alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
+      // fetchMethods();
     } catch (error: any) {
       alert(error.message || 'Có lỗi xảy ra khi thay đổi trạng thái');
     }
@@ -126,11 +127,12 @@ const PaymentMethodListPage: React.FC<PaymentMethodListPageProps> = ({
     if (!deletingId) return;
 
     try {
-      await mockPaymentMethodService.deletePaymentMethod(deletingId);
-      alert('Xóa phương thức thanh toán thành công!');
+      // TODO: Backend API doesn't support DELETE yet
+      // await paymentMethodApi.deletePaymentMethod(deletingId);
+      alert('Chức năng này chưa được hỗ trợ. Vui lòng liên hệ developer.');
       setShowDeleteDialog(false);
       setDeletingId(null);
-      fetchMethods();
+      // fetchMethods();
     } catch (error: any) {
       alert(error.message || 'Có lỗi xảy ra khi xóa phương thức');
       setShowDeleteDialog(false);
