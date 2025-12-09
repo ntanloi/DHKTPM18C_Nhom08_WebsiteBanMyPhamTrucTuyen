@@ -63,9 +63,9 @@ public class User {
     @JsonIgnore
     private List<Order> orders;
 
-    @OneToOne(mappedBy = "user")
+    @OneToMany(mappedBy = "user")
     @JsonIgnore
-    private FavoriteList favoriteList;
+    private List<FavoriteList> favoriteLists;
 
     @ManyToOne
     @JoinColumn(name = "role_id")

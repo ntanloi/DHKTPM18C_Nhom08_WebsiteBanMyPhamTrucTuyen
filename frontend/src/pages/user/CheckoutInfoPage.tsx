@@ -12,6 +12,7 @@ import {
   getPaymentMethods,
   type PaymentMethod,
 } from '../../api/payment';
+import { getAddressesByUserId, type AddressResponse } from '../../api/address';
 import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
@@ -58,6 +59,13 @@ export default function CheckoutInfoPage({
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Saved addresses
+  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   // VNPay Payment Modal State (removed - now using direct redirect)
 
@@ -192,6 +200,31 @@ export default function CheckoutInfoPage({
     loadPaymentMethods();
   }, []);
 
+  // Load saved addresses for logged in users
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (user && user.userId) {
+        setLoadingAddresses(true);
+        try {
+          const addresses = await getAddressesByUserId(user.userId);
+          setSavedAddresses(addresses);
+
+          // Auto-select default address if available
+          const defaultAddress = addresses.find((addr) => addr.isDefault);
+          if (defaultAddress) {
+            handleSelectAddress(defaultAddress);
+          }
+        } catch (error) {
+          console.error('Error loading addresses:', error);
+        } finally {
+          setLoadingAddresses(false);
+        }
+      }
+    };
+
+    loadSavedAddresses();
+  }, [user]);
+
   // Auto-fill user info if logged in
   useEffect(() => {
     if (user && user.fullName) {
@@ -210,6 +243,42 @@ export default function CheckoutInfoPage({
   }, [user]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
+
+  const handleSelectAddress = (address: AddressResponse) => {
+    setSelectedAddressId(address.id);
+
+    // Parse recipient name
+    const nameParts = address.recipientName.split(' ');
+    const firstName = nameParts[nameParts.length - 1] || '';
+    const lastName = nameParts.slice(0, -1).join(' ') || '';
+
+    // Fill form with selected address
+    setFormData({
+      recipientFirstName: firstName,
+      recipientLastName: lastName,
+      recipientPhone: address.recipientPhone,
+      recipientEmail: formData.recipientEmail || user?.email || '',
+      province: address.city, // city is province/city
+      district: address.district,
+      ward: address.ward,
+      address: address.streetAddress,
+      notes: formData.notes,
+    });
+
+    // Load districts and wards for selected province/district
+    const province = provinces.find((p) => p.name === address.city);
+    if (province) {
+      fetchDistricts(province.code);
+
+      // Wait a bit for districts to load, then load wards
+      setTimeout(() => {
+        const district = districts.find((d) => d.name === address.district);
+        if (district) {
+          fetchWards(district.code);
+        }
+      }, 500);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -616,6 +685,42 @@ export default function CheckoutInfoPage({
               <h2 className="mb-5 text-lg font-semibold text-gray-900">
                 Địa chỉ nhận hàng
               </h2>
+
+              {/* Saved Addresses Selector - Only for logged in users */}
+              {user && savedAddresses.length > 0 && (
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Chọn địa chỉ đã lưu
+                  </label>
+                  <select
+                    value={selectedAddressId || ''}
+                    onChange={(e) => {
+                      const addressId = parseInt(e.target.value);
+                      if (addressId) {
+                        const address = savedAddresses.find(
+                          (a) => a.id === addressId,
+                        );
+                        if (address) {
+                          handleSelectAddress(address);
+                        }
+                      } else {
+                        setSelectedAddressId(null);
+                      }
+                    }}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none"
+                  >
+                    <option value="">-- Nhập địa chỉ mới --</option>
+                    {savedAddresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.recipientName} - {address.recipientPhone} |{' '}
+                        {address.streetAddress}, {address.ward},{' '}
+                        {address.district}, {address.city}
+                        {address.isDefault && ' (Mặc định)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>

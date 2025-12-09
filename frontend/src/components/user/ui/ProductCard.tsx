@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Heart, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useProductDetail } from '../../../hooks/useProductDetail';
 import { useCart } from '../../../context/CartContext';
 import { useNavigation } from '../../../context/NavigationContext';
+import { useFavorites } from '../../../context/FavoriteContext';
+import { AuthContext } from '../../../context/auth-context';
 import { Toast, type ToastType } from '../ui/Toast';
 
 interface ProductCardProps {
@@ -40,6 +42,10 @@ const QuickViewModal = ({
   const { navigate } = useNavigation();
   const [isAdding, setIsAdding] = useState(false);
 
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const { isFavorited, addToFavorites, removeFromFavorites } = useFavorites();
+
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -55,6 +61,29 @@ const QuickViewModal = ({
     setTimeout(() => {
       setToast({ show: false, message: '', type: 'info' });
     }, 3000);
+  };
+
+  const isFavorite = isFavorited(productId);
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user) {
+      showToast('Vui lòng đăng nhập để thêm vào yêu thích', 'warning');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(productId);
+        showToast('Đã xóa khỏi danh sách yêu thích', 'success');
+      } else {
+        await addToFavorites(productId);
+        showToast('Đã thêm vào danh sách yêu thích', 'success');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Có lỗi xảy ra', 'error');
+    }
   };
 
   console.log(product);
@@ -451,8 +480,18 @@ const QuickViewModal = ({
                     {isAdding ? 'Đang xử lý...' : 'MUA NGAY'}
                   </button>
 
-                  <button className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100">
-                    <Heart size={20} />
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100"
+                  >
+                    <Heart
+                      size={20}
+                      className={
+                        isFavorite
+                          ? 'fill-red-500 stroke-red-500'
+                          : 'stroke-gray-600'
+                      }
+                    />
                   </button>
                 </div>
 
@@ -495,7 +534,6 @@ const ProductCard = ({
   badge,
 }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -503,6 +541,50 @@ const ProductCard = ({
     id,
     'id',
   );
+
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const { isFavorited, addToFavorites, removeFromFavorites } = useFavorites();
+
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: ToastType;
+  }>({
+    show: false,
+    message: '',
+    type: 'info',
+  });
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  };
+
+  const isFavorite = isFavorited(id);
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user) {
+      showToast('Vui lòng đăng nhập để thêm vào yêu thích', 'warning');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(id);
+        showToast('Đã xóa khỏi danh sách yêu thích', 'success');
+      } else {
+        await addToFavorites(id);
+        showToast('Đã thêm vào danh sách yêu thích', 'success');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Có lỗi xảy ra', 'error');
+    }
+  };
 
   const navigateToDetail = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -539,6 +621,13 @@ const ProductCard = ({
 
   return (
     <>
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'info' })}
+        />
+      )}
       <div
         className="w-80 overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-lg"
         onMouseEnter={() => setIsHovered(true)}
@@ -571,10 +660,7 @@ const ProductCard = ({
 
           <button
             className="absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-colors hover:bg-gray-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFavorite(!isFavorite);
-            }}
+            onClick={handleToggleFavorite}
           >
             <Heart
               size={20}
