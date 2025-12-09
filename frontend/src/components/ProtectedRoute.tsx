@@ -6,12 +6,14 @@ import { useState, useEffect } from 'react';
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRole?: 'ADMIN' | 'MANAGER' | 'SUPPORT';
+  allowedRoles?: Array<'ADMIN' | 'MANAGER' | 'SUPPORT' | 'USER' | 'CUSTOMER'>;
   fallback?: ReactNode;
 }
 
 export default function ProtectedRoute({ 
   children, 
   requiredRole, 
+  allowedRoles,
   fallback 
 }: ProtectedRouteProps) {
   const { user, isLoggedIn, isLoading, logout } = useAuth();
@@ -115,10 +117,38 @@ export default function ProtectedRoute({
 
   // Check role if required - USE VERIFIED ROLE FROM DATABASE
   if (requiredRole && verifiedRole !== requiredRole) {
-    // Manager can access admin pages except user management
-    const isManagerAccessingAllowed = requiredRole === 'ADMIN' && verifiedRole === 'MANAGER';
-    
-    if (!isManagerAccessingAllowed) {
+    return fallback || (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+        <div className="rounded-lg bg-white p-8 shadow-lg">
+          <h2 className="mb-4 text-2xl font-bold text-red-600">
+            Truy cập bị từ chối
+          </h2>
+          <p className="mb-4 text-gray-600">
+            Bạn không có quyền truy cập trang này
+          </p>
+          <p className="mb-4 text-sm text-gray-500">
+            Yêu cầu: <span className="font-semibold">{requiredRole}</span> <br />
+            Role hiện tại: <span className="font-semibold">{verifiedRole}</span>
+          </p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="rounded-lg bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
+          >
+            Về trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const effectiveRoles = allowedRoles ?? (requiredRole ? [requiredRole] : []);
+  if (effectiveRoles.length > 0) {
+    const isAdmin = verifiedRole === 'ADMIN';
+    const hasRole =
+      effectiveRoles.includes(verifiedRole as any) ||
+      (isAdmin && effectiveRoles.includes('MANAGER'));
+
+    if (!hasRole) {
       return fallback || (
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
           <div className="rounded-lg bg-white p-8 shadow-lg">
@@ -129,7 +159,11 @@ export default function ProtectedRoute({
               Bạn không có quyền truy cập trang này
             </p>
             <p className="mb-4 text-sm text-gray-500">
-              Yêu cầu: <span className="font-semibold">{requiredRole}</span> <br />
+              Cần một trong các role:{" "}
+              <span className="font-semibold">
+                {effectiveRoles.join(', ')}
+              </span>
+              <br />
               Role hiện tại: <span className="font-semibold">{verifiedRole}</span>
             </p>
             <button

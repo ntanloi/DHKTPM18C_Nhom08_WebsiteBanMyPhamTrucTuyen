@@ -87,7 +87,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/orders/guest/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/orders/*/payment/complete").permitAll()
 
-                        // Admin only - User management
+                        // Admin only - user/role management; allow manager for analytics dashboard
+                        .requestMatchers("/api/admin/analytics/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         
                         // Manager + Admin - Product management (write operations)

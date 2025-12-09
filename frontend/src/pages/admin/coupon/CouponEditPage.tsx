@@ -91,7 +91,7 @@ const CouponEditPage: React.FC<CouponEditPageProps> = ({
     onNavigate('/admin/coupons');
   };
 
-  const isExpired = coupon ? new Date(coupon.validTo) < new Date() : false;
+  const isExpired = coupon && coupon.validTo ? new Date(coupon.validTo) < new Date() : false;
 
   if (loading) {
     return (

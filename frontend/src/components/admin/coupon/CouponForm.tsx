@@ -159,7 +159,7 @@ const CouponForm: React.FC<CouponFormProps> = ({
       code: formData.code.toUpperCase(),
       validFrom: new Date(formData.validFrom).toISOString(),
       validTo: new Date(formData.validTo).toISOString(),
-    };
+    } as CreateCouponRequest | UpdateCouponRequest;
 
     onSubmit(submitData);
   };

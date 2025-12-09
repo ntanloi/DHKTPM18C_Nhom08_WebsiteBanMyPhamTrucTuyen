@@ -52,7 +52,7 @@ export default function CouponsTab({ coupons }: CouponsTabProps) {
                     <div className="text-2xl font-bold">
                       {getDiscountText(coupon)}
                     </div>
-                    {coupon.maxUsageValue > 0 && (
+                    {coupon.maxUsageValue && coupon.maxUsageValue > 0 && (
                       <div className="mt-1 text-xs">
                         Tối đa {coupon.maxUsageValue.toLocaleString()}đ
                       </div>
@@ -66,14 +66,14 @@ export default function CouponsTab({ coupons }: CouponsTabProps) {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Đơn tối thiểu:</span>
                     <span className="font-semibold">
-                      {coupon.minOrderValue.toLocaleString()}đ
+                      {(coupon.minOrderValue || 0).toLocaleString()}đ
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Có hiệu lực:</span>
                     <span className="font-semibold">
-                      {formatDate(coupon.validFrom)} -{' '}
-                      {formatDate(coupon.validTo)}
+                      {formatDate(coupon.validFrom || '')} -{' '}
+                      {formatDate(coupon.validTo || '')}
                     </span>
                   </div>
                 </div>

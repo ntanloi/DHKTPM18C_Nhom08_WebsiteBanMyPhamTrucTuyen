@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface MenuItem {
   id: string;
@@ -6,6 +7,7 @@ interface MenuItem {
   label: string;
   link?: string;
   subItems?: { label: string; link: string }[];
+  roles?: Array<'ADMIN' | 'MANAGER'>;
 }
 
 interface AdminLayoutProps {
@@ -14,9 +16,13 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
+  const { user, logout } = useAuth();
+  const role = user?.role;
+  const isAdmin = role === 'ADMIN';
   const [activeSidebar, setActiveSidebar] = useState<string | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
-  const menuItems: MenuItem[] = [
+  const baseMenuItems: MenuItem[] = [
     {
       id: 'overview',
       icon: (
@@ -82,7 +88,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       link: '/admin/orders',
     },
     {
-      id: 'users',
+      id: 'customers',
       icon: (
         <svg
           className="h-5 w-5"
@@ -98,8 +104,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
           />
         </svg>
       ),
-      label: 'Quản lý người dùng',
+      label: 'Quản lý khách hàng',
       link: '/admin/users',
+      roles: ['ADMIN', 'MANAGER'],
     },
     {
       id: 'promotions',
@@ -140,6 +147,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       ),
       label: 'Phương thức thanh toán',
       link: '/admin/payment-methods',
+      roles: ['ADMIN'],
     },
     {
       id: 'analytics',
@@ -162,6 +170,48 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
       link: '/admin/analytics',
     },
   ];
+
+  const menuItems: MenuItem[] = [
+    ...baseMenuItems,
+    ...(isAdmin
+      ? [
+          {
+            id: 'accounts',
+            icon: (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5.121 17.804A4 4 0 019 15h6a4 4 0 013.879 2.804M12 22s7-2.5 7-8V7l-7-3-7 3v7c0 5.5 7 8 7 8z"
+                />
+              </svg>
+            ),
+            label: 'Tài khoản & phân quyền',
+            link: '/admin/accounts',
+            roles: ['ADMIN'] as ('ADMIN' | 'MANAGER')[],
+          },
+        ]
+      : []),
+  ].filter((item) => {
+    if (!item.roles) return true;
+    if (!role) return false;
+    return (
+      item.roles.includes(role as any) ||
+      (role === 'ADMIN' && item.roles.includes('MANAGER'))
+    );
+  });
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -265,22 +315,65 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
 
         {/* User Profile */}
         <div className="absolute bottom-0 w-64 border-t border-pink-500 p-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                  clipRule="evenodd"
-                />
+          <div
+            className="group relative rounded-lg p-2 transition-colors hover:bg-white/10"
+            onClick={() => setAccountMenuOpen((prev) => !prev)}
+          >
+            <div className="flex items-center gap-3 px-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-sm font-medium">
+                  {user?.email || 'Tài khoản nội bộ'}
+                </p>
+                <p className="truncate text-xs text-pink-200">
+                  {role ? `Role: ${role}` : 'Đang xác thực quyền'}
+                </p>
+              </div>
+              <svg
+                className={`h-4 w-4 text-white/80 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">Admin User</p>
-              <p className="truncate text-xs text-pink-200">
-                admin@beautybox.com
-              </p>
-            </div>
+
+            {accountMenuOpen && (
+              <div className="absolute right-2 bottom-14 w-48 rounded-lg bg-white/95 p-2 text-sm text-pink-700 shadow-lg backdrop-blur">
+                <button
+                  onClick={() => {
+                    setAccountMenuOpen(false);
+                    logout();
+                    onNavigate('/');
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-pink-50"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5"
+                    />
+                  </svg>
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

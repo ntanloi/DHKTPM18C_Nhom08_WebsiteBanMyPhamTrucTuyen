@@ -6,7 +6,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'SUMMER2025',
     description: 'Giảm 20% cho đơn hàng mua mỹ phẩm mùa hè',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 20,
     minOrderValue: 500000,
     maxUsageValue: 100000,
@@ -21,7 +21,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'NEWMEMBER50K',
     description: 'Mã giảm 50,000đ cho khách hàng mới',
     isActive: true,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 50000,
     minOrderValue: 300000,
     maxUsageValue: 50000,
@@ -36,7 +36,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'BEAUTY100K',
     description: 'Giảm 100,000đ cho đơn hàng từ 1 triệu',
     isActive: true,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 100000,
     minOrderValue: 1000000,
     maxUsageValue: 100000,
@@ -51,7 +51,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'FLASH15',
     description: 'Flash Sale - Giảm 15% cho tất cả sản phẩm',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 15,
     minOrderValue: 200000,
     maxUsageValue: 150000,
@@ -66,7 +66,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'SKINCARE30',
     description: 'Giảm 30% cho các sản phẩm chăm sóc da',
     isActive: false,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 30,
     minOrderValue: 400000,
     maxUsageValue: 200000,
@@ -81,7 +81,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'FREESHIP30K',
     description: 'Miễn phí vận chuyển cho đơn từ 300,000đ',
     isActive: true,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 30000,
     minOrderValue: 300000,
     maxUsageValue: 30000,
@@ -96,7 +96,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'VIP25',
     description: 'Ưu đãi VIP - Giảm 25% cho thành viên thân thiết',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 25,
     minOrderValue: 800000,
     maxUsageValue: 300000,
@@ -111,7 +111,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'WEEKEND200K',
     description: 'Giảm 200,000đ cho đơn hàng cuối tuần',
     isActive: true,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 200000,
     minOrderValue: 1500000,
     maxUsageValue: 200000,
@@ -126,7 +126,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'MAKEUP50K',
     description: 'Giảm 50,000đ cho sản phẩm trang điểm',
     isActive: false,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 50000,
     minOrderValue: 350000,
     maxUsageValue: 50000,
@@ -141,7 +141,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'LOVESALE10',
     description: 'Sale Tình Yêu - Giảm 10% toàn bộ đơn hàng',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 10,
     minOrderValue: 250000,
     maxUsageValue: 80000,
@@ -156,7 +156,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'NEWYEAR2025',
     description: 'Chào năm mới - Giảm 2025K cho đơn từ 2 triệu',
     isActive: false,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 2025000,
     minOrderValue: 2000000,
     maxUsageValue: 2025000,
@@ -171,7 +171,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'FIRSTBUY100K',
     description: 'Giảm 100,000đ cho đơn hàng đầu tiên',
     isActive: true,
-    discountType: 'fixed_amount',
+    discountType: 'FIXED',
     discountValue: 100000,
     minOrderValue: 500000,
     maxUsageValue: 100000,
@@ -186,7 +186,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'BLACKFRIDAY50',
     description: 'Black Friday - Giảm 50% tất cả sản phẩm',
     isActive: false,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 50,
     minOrderValue: 600000,
     maxUsageValue: 500000,
@@ -201,7 +201,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'PAYDAY15',
     description: 'Ngày lương vui vẻ - Giảm 15% toàn bộ đơn',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 15,
     minOrderValue: 400000,
     maxUsageValue: 120000,
@@ -216,7 +216,7 @@ export const mockCoupons: CouponResponse[] = [
     code: 'WOMENSDAY35',
     description: 'Ngày Quốc Tế Phụ Nữ - Giảm 35%',
     isActive: true,
-    discountType: 'percentage',
+    discountType: 'PERCENTAGE',
     discountValue: 35,
     minOrderValue: 700000,
     maxUsageValue: 250000,
@@ -250,7 +250,7 @@ export const getCouponByCode = (code: string): CouponResponse | undefined => {
 export const getActiveCoupons = (): CouponResponse[] => {
   const now = new Date();
   return mockCoupons.filter((coupon) => {
-    const validTo = new Date(coupon.validTo);
+    const validTo = coupon.validTo ? new Date(coupon.validTo) : new Date();
     return coupon.isActive && validTo >= now;
   });
 };
@@ -268,7 +268,7 @@ export const getInactiveCoupons = (): CouponResponse[] => {
 export const getExpiredCoupons = (): CouponResponse[] => {
   const now = new Date();
   return mockCoupons.filter((coupon) => {
-    const validTo = new Date(coupon.validTo);
+    const validTo = coupon.validTo ? new Date(coupon.validTo) : new Date();
     return validTo < now;
   });
 };
@@ -279,7 +279,7 @@ export const getExpiredCoupons = (): CouponResponse[] => {
 export const getUpcomingCoupons = (): CouponResponse[] => {
   const now = new Date();
   return mockCoupons.filter((coupon) => {
-    const validFrom = new Date(coupon.validFrom);
+    const validFrom = coupon.validFrom ? new Date(coupon.validFrom) : new Date();
     return validFrom > now;
   });
 };
@@ -288,7 +288,7 @@ export const getUpcomingCoupons = (): CouponResponse[] => {
  * Get coupons by discount type
  */
 export const getCouponsByType = (
-  type: 'percentage' | 'fixed_amount',
+  type: 'PERCENTAGE' | 'FIXED',
 ): CouponResponse[] => {
   return mockCoupons.filter((coupon) => coupon.discountType === type);
 };

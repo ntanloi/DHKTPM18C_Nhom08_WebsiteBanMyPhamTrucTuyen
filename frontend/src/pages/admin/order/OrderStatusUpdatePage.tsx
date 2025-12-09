@@ -275,7 +275,6 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
       <Toast
         message={toast.message}
         type={toast.type}
-        isVisible={toast.show}
         onClose={() => setToast({ ...toast, show: false })}
       />
     </AdminLayout>
