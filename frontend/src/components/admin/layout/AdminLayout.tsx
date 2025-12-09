@@ -200,7 +200,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onNavigate }) => {
             ),
             label: 'Tài khoản & phân quyền',
             link: '/admin/accounts',
-            roles: ['ADMIN'],
+            roles: ['ADMIN'] as ('ADMIN' | 'MANAGER')[],
           },
         ]
       : []),

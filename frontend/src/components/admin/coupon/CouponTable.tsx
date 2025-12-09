@@ -322,7 +322,7 @@ const CouponTable: React.FC<CouponTableProps> = ({
                             Tối thiểu:
                           </span>{' '}
                           <span className="font-bold text-blue-900">
-                            {formatCurrency(coupon.minOrderValue)}
+                            {formatCurrency(coupon.minOrderValue || 0)}
                           </span>
                         </div>
                       </div>
@@ -345,7 +345,7 @@ const CouponTable: React.FC<CouponTableProps> = ({
                             Tối đa:
                           </span>{' '}
                           <span className="font-bold text-green-900">
-                            {formatCurrency(coupon.maxUsageValue)}
+                            {formatCurrency(coupon.maxUsageValue || 0)}
                           </span>
                         </div>
                       </div>
@@ -367,7 +367,7 @@ const CouponTable: React.FC<CouponTableProps> = ({
                           />
                         </svg>
                         <span className="text-xs font-medium text-green-700">
-                          {formatDate(coupon.validFrom)}
+                          {formatDate(coupon.validFrom || '')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
@@ -383,7 +383,7 @@ const CouponTable: React.FC<CouponTableProps> = ({
                           />
                         </svg>
                         <span className="text-xs font-medium text-red-700">
-                          {formatDate(coupon.validTo)}
+                          {formatDate(coupon.validTo || '')}
                         </span>
                       </div>
                     </div>
@@ -392,8 +392,8 @@ const CouponTable: React.FC<CouponTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <CouponStatusBadge
                       isActive={coupon.isActive}
-                      validFrom={coupon.validFrom}
-                      validTo={coupon.validTo}
+                      validFrom={coupon.validFrom || ''}
+                      validTo={coupon.validTo || ''}
                     />
                   </td>
 

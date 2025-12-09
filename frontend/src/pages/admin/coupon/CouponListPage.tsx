@@ -128,8 +128,8 @@ const CouponListPage: React.FC<CouponListPageProps> = ({ onNavigate }) => {
 
   const getCouponStatus = (coupon: CouponResponse): string => {
     const now = new Date();
-    const endDate = new Date(coupon.validTo);
-    const startDate = new Date(coupon.validFrom);
+    const endDate = coupon.validTo ? new Date(coupon.validTo) : new Date();
+    const startDate = coupon.validFrom ? new Date(coupon.validFrom) : new Date();
 
     if (!coupon.isActive) return 'inactive';
     if (endDate < now) return 'expired';

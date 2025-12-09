@@ -13,7 +13,6 @@ interface UserListPageProps {
 
 const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
   const canEditCustomer = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
