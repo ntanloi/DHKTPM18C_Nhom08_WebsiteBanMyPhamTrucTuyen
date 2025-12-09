@@ -10,7 +10,6 @@ import {
 interface OrderTableProps {
   orders: Order[];
   onViewDetail: (orderId: number) => void;
-  onUpdateStatus?: (orderId: number) => void;
   onCancelOrder?: (orderId: number) => void;
   onDeleteOrder?: (orderId: number) => void;
   loading?: boolean;
@@ -23,7 +22,6 @@ interface OrderTableProps {
 const OrderTable: React.FC<OrderTableProps> = ({
   orders,
   onViewDetail,
-  onUpdateStatus,
   onCancelOrder,
   onDeleteOrder,
   loading = false,
@@ -84,6 +82,18 @@ const OrderTable: React.FC<OrderTableProps> = ({
         bg: 'bg-red-50',
         border: 'border-red-200',
         textColor: 'text-red-700',
+      },
+      CANCELLED: {
+        text: 'Đã hủy',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        textColor: 'text-gray-700',
+      },
+      REFUNDED: {
+        text: 'Đã hoàn tiền',
+        bg: 'bg-orange-50',
+        border: 'border-orange-200',
+        textColor: 'text-orange-700',
       },
     };
 
@@ -172,12 +182,14 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     />
                   </svg>
                   <span className="font-medium text-gray-900">
-                    {order.user?.fullName || 'N/A'}
+                    {order.recipientInformation?.recipientFirstName && order.recipientInformation?.recipientLastName
+                      ? `${order.recipientInformation.recipientFirstName} ${order.recipientInformation.recipientLastName}`
+                      : 'N/A'}
                   </span>
                 </div>
                 <div className="ml-7 text-sm text-gray-600">
-                  <div>{order.user?.phoneNumber || 'N/A'}</div>
-                  <div>{order.user?.email || 'N/A'}</div>
+                  <div>{order.recipientInformation?.recipientPhone || 'N/A'}</div>
+                  <div>{order.recipientInformation?.recipientEmail || 'N/A'}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -185,7 +197,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <>
                     {getPaymentBadge(order.payment.status)}
                     <div className="mt-1 text-xs text-gray-500">
-                      {order.payment.paymentMethods?.[0]?.name || 'N/A'}
+                      {order.payment.paymentMethods?.[0]?.name || 'COD'}
                     </div>
                   </>
                 ) : (
@@ -266,14 +278,13 @@ const OrderTable: React.FC<OrderTableProps> = ({
                         Hủy đơn
                       </button>
                     )}
-                  {onUpdateStatus && (
-                    <button
-                      onClick={() => onUpdateStatus(order.id)}
-                      className="rounded-lg bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
-                    >
-                      Cập nhật trạng thái
-                    </button>
-                  )}
+                  {/* Removed "Cập nhật trạng thái" button - use detail page instead */}
+                  <button
+                    onClick={() => onViewDetail(order.id)}
+                    className="rounded-lg bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
+                  >
+                    Xem chi tiết
+                  </button>
                 </>
               )}
 
@@ -281,6 +292,15 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 <button
                   onClick={() => onViewDetail(order.id)}
                   className="rounded-lg border border-pink-600 bg-white px-4 py-2 text-sm font-medium text-pink-600 hover:bg-pink-50"
+                >
+                  Xem chi tiết
+                </button>
+              )}
+
+              {activeTab === 'cancelled' && (
+                <button
+                  onClick={() => onViewDetail(order.id)}
+                  className="rounded-lg border border-gray-600 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
                 >
                   Xem chi tiết
                 </button>

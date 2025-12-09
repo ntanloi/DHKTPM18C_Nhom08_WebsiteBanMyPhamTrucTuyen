@@ -21,7 +21,7 @@ interface Order {
   id: string;
   customer: string;
   amount: string;
-  status: 'delivered' | 'processing' | 'shipped' | 'pending';
+  status: 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed';
   date: string;
 }
 
@@ -86,6 +86,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         console.log('[AdminDashboard] Calling getDashboardSummary()...');
         const summary: DashboardSummary = await getDashboardSummary();
         console.log('[AdminDashboard] Dashboard summary received:', summary);
+        console.log('[AdminDashboard] totalRevenue type:', typeof summary.totalRevenue, 'value:', summary.totalRevenue);
+        console.log('[AdminDashboard] todayRevenue type:', typeof summary.todayRevenue, 'value:', summary.todayRevenue);
+        console.log('[AdminDashboard] Raw JSON:', JSON.stringify(summary, null, 2));
 
         // Fetch recent orders (last 30 days)
         const endDate = new Date().toISOString();
@@ -191,28 +194,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         // Helper function to map status
         const formatStatus = (
           status: string,
-        ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed' => {
           const statusMap: Record<
             string,
-            'delivered' | 'processing' | 'shipped' | 'pending'
+            'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed'
           > = {
             DELIVERED: 'delivered',
             PROCESSING: 'processing',
             SHIPPED: 'shipped',
             PENDING: 'pending',
-            CONFIRMED: 'pending',
-            CANCELLED: 'pending',
+            CONFIRMED: 'confirmed',
+            CANCELLED: 'cancelled',
           };
           return statusMap[status] || 'pending';
         };
 
         // Map recent orders (handle empty recentOrders array)
         const mappedOrders: Order[] = (orderStats.recentOrders || []).slice(0, 5).map((order) => ({
-          id: order.id ? String(order.id) : 'N/A',
+          id: order.orderId ? String(order.orderId) : 'N/A',
           customer: order.customerName || 'Unknown',
           amount: `₫${(order.totalAmount || 0).toLocaleString('vi-VN')}`,
           status: formatStatus(order.status || 'PENDING'),
-          date: order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A',
+          date: order.createdAt || 'N/A',
         }));
 
         console.log('[AdminDashboard] Mapped orders:', mappedOrders);
@@ -237,12 +240,133 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
     fetchDashboardData();
   }, []);
 
+  // Refetch when window gains focus (user comes back from another page)
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log('[AdminDashboard] Fetching dashboard data...');
+
+        // Fetch dashboard summary
+        console.log('[AdminDashboard] Calling getDashboardSummary()...');
+        const summary: DashboardSummary = await getDashboardSummary();
+        console.log('[AdminDashboard] Dashboard summary received:', summary);
+
+        // Fetch recent orders (last 30 days)
+        const endDate = new Date().toISOString();
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const orderStats = await getOrderStats(startDate, endDate);
+
+        // Map to stat cards (reuse same logic as main useEffect)
+        const calculatedStats: StatCard[] = [
+          {
+            title: 'Tổng doanh thu',
+            value: `₫${(summary.totalRevenue || 0).toLocaleString('vi-VN')}`,
+            change: `${(summary.revenueGrowth || 0) >= 0 ? '+' : ''}${(summary.revenueGrowth || 0).toFixed(1)}%`,
+            trend: (summary.revenueGrowth || 0) >= 0 ? 'up' : 'down',
+            icon: (
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+            gradient: 'from-pink-500 to-rose-500',
+          },
+          {
+            title: 'Đơn hàng',
+            value: String(summary.totalOrders || 0),
+            change: `${(summary.ordersGrowth || 0) >= 0 ? '+' : ''}${(summary.ordersGrowth || 0).toFixed(1)}%`,
+            trend: (summary.ordersGrowth || 0) >= 0 ? 'up' : 'down',
+            icon: (
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            ),
+            gradient: 'from-blue-500 to-cyan-500',
+          },
+          {
+            title: 'Sản phẩm',
+            value: String(summary.totalProducts || 0),
+            change: `${(summary.productsGrowth || 0) >= 0 ? '+' : ''}${(summary.productsGrowth || 0).toFixed(1)}%`,
+            trend: (summary.productsGrowth || 0) >= 0 ? 'up' : 'down',
+            icon: (
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            ),
+            gradient: 'from-purple-500 to-indigo-500',
+          },
+          {
+            title: 'Khách hàng',
+            value: String(summary.totalCustomers || 0),
+            change: `${(summary.customersGrowth || 0) >= 0 ? '+' : ''}${(summary.customersGrowth || 0).toFixed(1)}%`,
+            trend: (summary.customersGrowth || 0) >= 0 ? 'up' : 'down',
+            icon: (
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ),
+            gradient: 'from-green-500 to-teal-500',
+          },
+        ];
+
+        setStats(calculatedStats);
+
+        // Helper function to map status (same as main useEffect)
+        const formatStatus = (
+          status: string,
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed' => {
+          const statusMap: Record<
+            string,
+            'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed'
+          > = {
+            DELIVERED: 'delivered',
+            PROCESSING: 'processing',
+            SHIPPED: 'shipped',
+            PENDING: 'pending',
+            CONFIRMED: 'confirmed',
+            CANCELLED: 'cancelled',
+          };
+          return statusMap[status] || 'pending';
+        };
+
+        // Map recent orders with correct status formatting
+        const mappedOrders: Order[] = (orderStats.recentOrders || []).slice(0, 5).map((order) => ({
+          id: order.orderId ? String(order.orderId) : 'N/A',
+          customer: order.customerName || 'Unknown',
+          amount: `₫${(order.totalAmount || 0).toLocaleString('vi-VN')}`,
+          status: formatStatus(order.status || 'PENDING'),
+          date: order.createdAt || 'N/A',
+        }));
+
+        setRecentOrders(mappedOrders);
+      } catch (err: any) {
+        console.error('[AdminDashboard] Error refreshing dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('[AdminDashboard] Window focused, refreshing dashboard...');
+      fetchDashboardData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const getStatusBadge = (status: Order['status']) => {
     const badges = {
       delivered: { label: 'Đã giao', class: 'bg-green-100 text-green-800' },
       processing: { label: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' },
       shipped: { label: 'Đang giao', class: 'bg-indigo-100 text-indigo-800' },
-      pending: { label: 'Chờ xử lý', class: 'bg-yellow-100 text-yellow-800' },
+      pending: { label: 'Chờ xác nhận', class: 'bg-yellow-100 text-yellow-800' },
+      confirmed: { label: 'Đã xác nhận', class: 'bg-purple-100 text-purple-800' },
+      cancelled: { label: 'Đã hủy', class: 'bg-red-100 text-red-800' },
     };
     return badges[status];
   };

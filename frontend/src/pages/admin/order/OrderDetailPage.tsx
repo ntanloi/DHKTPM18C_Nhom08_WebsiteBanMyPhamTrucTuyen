@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Order } from '../../../types/Order';
 import type { OrderStatusHistory } from '../../../types/OrderStatusHistory';
 
-import { getOrderById } from '../../../mocks/orderMockData';
-import { getOrderStatusHistory } from '../../../mocks/orderStatusHistoryMockData';
+import { getOrderDetail, cancelOrder } from '../../../api/order';
 import OrderStatusBadge from '../../../components/admin/order/OrderStatusBadge';
 import OrderSummaryCard from '../../../components/admin/order/OrderSummaryCard';
 import CustomerInfoCard from '../../../components/admin/order/CustomerInfoCard';
@@ -44,19 +43,47 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const orderData = getOrderById(Number(orderId));
+      const orderData = await getOrderDetail(Number(orderId));
       if (!orderData) {
         throw new Error('Không tìm thấy đơn hàng');
       }
-      setOrder(orderData);
+      
+      // Transform OrderDetailResponse to Order type
+      const transformedOrder: Order = {
+        id: orderData.id,
+        userId: orderData.userId || 0,
+        status: orderData.status || 'PENDING',
+        subtotal: orderData.subtotal || 0,
+        totalAmount: orderData.totalAmount || 0,
+        notes: orderData.notes || '',
+        discountAmount: orderData.discountAmount || 0,
+        shippingFee: orderData.shippingFee || 0,
+        estimateDeliveryFrom: orderData.estimateDeliveryFrom || '',
+        estimateDeliveryTo: orderData.estimateDeliveryTo || '',
+        createdAt: orderData.createdAt || new Date().toISOString(),
+        updatedAt: orderData.updatedAt || new Date().toISOString(),
+        orderItems: (orderData.orderItems || []) as any,
+        payment: orderData.paymentInfo as any,
+        recipientInformation: orderData.recipientInfo as any,
+      };
+      setOrder(transformedOrder);
 
-      const history = getOrderStatusHistory(Number(orderId));
+      // TODO: Get real order status history from backend
+      // For now, create basic history from order status
+      const history: OrderStatusHistory[] = [
+        {
+          id: 1,
+          orderId: transformedOrder.id,
+          status: transformedOrder.status,
+          createdAt: transformedOrder.updatedAt,
+          updatedAt: transformedOrder.updatedAt,
+        },
+      ];
       setStatusHistory(history);
 
       setError(null);
     } catch (err: any) {
+      console.error('Failed to fetch order details:', err);
       setError(err.message || 'Có lỗi xảy ra khi tải đơn hàng');
     } finally {
       setLoading(false);
@@ -78,19 +105,18 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
   const handleCancelOrder = async () => {
     try {
       setCancelling(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (order) {
-        setOrder({
-          ...order,
-          status: 'CANCELLED',
-          updatedAt: new Date().toISOString(),
-        });
-      }
+      
+      // Call real API to cancel order
+      await cancelOrder(Number(orderId));
+      
+      // Refetch order details to get updated status
+      await fetchOrderDetails();
+      
       setShowCancelDialog(false);
       alert('Hủy đơn hàng thành công!');
-    } catch (error) {
-      alert('Có lỗi xảy ra khi hủy đơn hàng');
+    } catch (error: any) {
+      console.error('Failed to cancel order:', error);
+      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
     } finally {
       setCancelling(false);
     }

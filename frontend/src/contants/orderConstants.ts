@@ -12,6 +12,7 @@ export const PAYMENT_STATUS = {
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
   REFUNDED: 'REFUNDED',
+  CANCELLED: 'CANCELLED',
 } as const;
 
 export const SHIPMENT_STATUS = {
@@ -43,6 +44,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Đã thanh toán',
   FAILED: 'Thanh toán thất bại',
   REFUNDED: 'Đã hoàn tiền',
+  CANCELLED: 'Đã hủy',
 };
 
 export const SHIPMENT_STATUS_LABELS: Record<string, string> = {
@@ -74,6 +76,7 @@ export const PAYMENT_STATUS_COLORS: Record<string, string> = {
   COMPLETED: 'bg-green-100 text-green-800',
   FAILED: 'bg-red-100 text-red-800',
   REFUNDED: 'bg-orange-100 text-orange-800',
+  CANCELLED: 'bg-gray-100 text-gray-800',
 };
 
 export const SHIPMENT_STATUS_COLORS: Record<string, string> = {

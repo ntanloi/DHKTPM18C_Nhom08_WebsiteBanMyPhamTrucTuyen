@@ -14,6 +14,11 @@ import {
   AreaChart,
 } from 'recharts';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import {
+  getDashboardSummary,
+  getOrderStats,
+  getProductStats,
+} from '../../../api/analytics';
 
 // Type definitions
 interface RevenueData {
@@ -29,95 +34,11 @@ interface OrderStatusData {
   [key: string]: string | number;
 }
 
-interface CategoryData {
-  name: string;
-  value: number;
-}
-
 interface TopProductData {
   name: string;
   sales: number;
   revenue: number;
 }
-
-interface MockOrder {
-  id: number;
-  userId: number;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-}
-
-interface MockProduct {
-  id: number;
-  name: string;
-  categoryId: number;
-  brandId: number;
-  status: string;
-}
-
-type OrderStatus =
-  | 'DELIVERED'
-  | 'SHIPPED'
-  | 'PROCESSING'
-  | 'CONFIRMED'
-  | 'PENDING'
-  | 'CANCELLED';
-
-const mockOrders: MockOrder[] = [
-  {
-    id: 1,
-    userId: 1,
-    status: 'DELIVERED',
-    totalAmount: 2920000,
-    createdAt: '2025-01-10T10:30:00',
-  },
-  {
-    id: 2,
-    userId: 2,
-    status: 'SHIPPED',
-    totalAmount: 1680000,
-    createdAt: '2025-01-20T14:15:00',
-  },
-  {
-    id: 3,
-    userId: 3,
-    status: 'PROCESSING',
-    totalAmount: 2380000,
-    createdAt: '2025-01-23T09:45:00',
-  },
-  {
-    id: 4,
-    userId: 4,
-    status: 'CONFIRMED',
-    totalAmount: 1410000,
-    createdAt: '2025-01-24T11:20:00',
-  },
-  {
-    id: 5,
-    userId: 5,
-    status: 'PENDING',
-    totalAmount: 1880000,
-    createdAt: '2025-01-25T15:00:00',
-  },
-  {
-    id: 6,
-    userId: 6,
-    status: 'CANCELLED',
-    totalAmount: 880000,
-    createdAt: '2025-01-22T08:30:00',
-  },
-];
-
-const mockProducts: MockProduct[] = Array(10)
-  .fill(null)
-  .map((_, i) => ({
-    id: i + 1,
-    name: `Sản phẩm ${i + 1}`,
-    categoryId: (i % 5) + 1,
-    brandId: (i % 6) + 1,
-    status: 'active',
-  }));
 
 const AdminAnalytics = ({
   onNavigate,
@@ -125,9 +46,11 @@ const AdminAnalytics = ({
   onNavigate: (path: string) => void;
 }) => {
   const [timeRange, setTimeRange] = useState('7days');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [orderStatusData, setOrderStatusData] = useState<OrderStatusData[]>([]);
-  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [topProductsData, setTopProductsData] = useState<TopProductData[]>([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -137,113 +60,129 @@ const AdminAnalytics = ({
   });
 
   useEffect(() => {
-    // Tính toán dữ liệu cho biểu đồ doanh thu theo thời gian
-    const calculateRevenueData = (): RevenueData[] => {
-      const data: RevenueData[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dayOrders = mockOrders.filter((order) => {
-          const orderDate = new Date(order.createdAt);
-          return orderDate.toDateString() === date.toDateString();
+    const fetchAnalyticsData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Calculate date range based on timeRange
+        const endDate = new Date();
+        const startDate = new Date();
+        
+        switch (timeRange) {
+          case '7days':
+            startDate.setDate(endDate.getDate() - 7);
+            break;
+          case '30days':
+            startDate.setDate(endDate.getDate() - 30);
+            break;
+          case '90days':
+            startDate.setDate(endDate.getDate() - 90);
+            break;
+          case 'year':
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            break;
+        }
+
+        // Set to start of day for startDate and end of day for endDate
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+
+        const startDateStr = startDate.toISOString();
+        const endDateStr = endDate.toISOString();
+
+        // Fetch all data in parallel
+        const [dashboardData, orderStatsData, productStatsData] = await Promise.all([
+          getDashboardSummary(),
+          getOrderStats(startDateStr, endDateStr),
+          getProductStats(startDateStr, endDateStr, 5),
+        ]);
+
+        // Process dashboard summary
+        setStats({
+          totalRevenue: dashboardData.totalRevenue || 0,
+          totalOrders: dashboardData.totalOrders || 0,
+          avgOrderValue: dashboardData.totalOrders > 0 
+            ? dashboardData.totalRevenue / dashboardData.totalOrders 
+            : 0,
+          totalCustomers: dashboardData.totalCustomers || 0,
         });
-        const revenue = dayOrders.reduce(
-          (sum, order) =>
-            order.status === 'DELIVERED' ? sum + order.totalAmount : sum,
-          0,
+
+        // Process order status data for pie chart
+        const ordersByStatus = dashboardData.ordersByStatus || {};
+        const statusMap: Record<string, { name: string; color: string }> = {
+          DELIVERED: { name: 'Đã giao', color: '#10B981' },
+          SHIPPED: { name: 'Đang giao', color: '#6366F1' },
+          PROCESSING: { name: 'Đang xử lý', color: '#3B82F6' },
+          CONFIRMED: { name: 'Đã xác nhận', color: '#8B5CF6' },
+          PENDING: { name: 'Chờ xử lý', color: '#F59E0B' },
+          CANCELLED: { name: 'Đã hủy', color: '#EF4444' },
+        };
+
+        const statusData: OrderStatusData[] = Object.entries(ordersByStatus).map(
+          ([status, count]) => ({
+            name: statusMap[status]?.name || status,
+            value: count as number,
+            color: statusMap[status]?.color || '#6B7280',
+          })
         );
-        data.push({
-          date: date.toLocaleDateString('vi-VN', {
+        setOrderStatusData(statusData);
+
+        // Process revenue data for area chart (using recent orders)
+        const recentOrders = orderStatsData.recentOrders || [];
+        const revenueByDate: Record<string, { revenue: number; orders: number }> = {};
+        
+        // Generate last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateKey = date.toLocaleDateString('vi-VN', {
             month: 'short',
             day: 'numeric',
-          }),
-          revenue: revenue / 1000000, // Chuyển sang triệu đồng
-          orders: dayOrders.length,
+          });
+          revenueByDate[dateKey] = { revenue: 0, orders: 0 };
+        }
+
+        // Aggregate orders by date
+        recentOrders.forEach((order) => {
+          const orderDate = new Date(order.createdAt);
+          const dateKey = orderDate.toLocaleDateString('vi-VN', {
+            month: 'short',
+            day: 'numeric',
+          });
+          if (revenueByDate[dateKey]) {
+            revenueByDate[dateKey].revenue += order.totalAmount / 1000000; // Convert to millions
+            revenueByDate[dateKey].orders += 1;
+          }
         });
+
+        const revenueChartData: RevenueData[] = Object.entries(revenueByDate).map(
+          ([date, data]) => ({
+            date,
+            revenue: data.revenue,
+            orders: data.orders,
+          })
+        );
+        setRevenueData(revenueChartData);
+
+        // Process top products data
+        const topProducts = productStatsData.topSellingProducts || [];
+        const topProductsChartData: TopProductData[] = topProducts.map((product) => ({
+          name: product.productName,
+          sales: product.quantitySold,
+          revenue: product.totalRevenue,
+        }));
+        setTopProductsData(topProductsChartData);
+
+      } catch (err: any) {
+        console.error('Failed to fetch analytics data:', err);
+        setError(err.message || 'Không thể tải dữ liệu thống kê');
+      } finally {
+        setLoading(false);
       }
-      return data;
     };
 
-    // Tính toán trạng thái đơn hàng
-    const calculateOrderStatus = (): OrderStatusData[] => {
-      const statusCount: Record<string, number> = {};
-      mockOrders.forEach((order) => {
-        statusCount[order.status] = (statusCount[order.status] || 0) + 1;
-      });
-
-      const statusMap: Record<OrderStatus, { name: string; color: string }> = {
-        DELIVERED: { name: 'Đã giao', color: '#10B981' },
-        SHIPPED: { name: 'Đang giao', color: '#6366F1' },
-        PROCESSING: { name: 'Đang xử lý', color: '#3B82F6' },
-        CONFIRMED: { name: 'Đã xác nhận', color: '#8B5CF6' },
-        PENDING: { name: 'Chờ xử lý', color: '#F59E0B' },
-        CANCELLED: { name: 'Đã hủy', color: '#EF4444' },
-      };
-
-      return Object.entries(statusCount).map(([status, count]) => ({
-        name: statusMap[status as OrderStatus]?.name || status,
-        value: count,
-        color: statusMap[status as OrderStatus]?.color || '#6B7280',
-      }));
-    };
-
-    // Tính toán sản phẩm theo danh mục
-    const calculateCategoryData = (): CategoryData[] => {
-      const categoryCount: Record<number, number> = {};
-      mockProducts.forEach((product) => {
-        categoryCount[product.categoryId] =
-          (categoryCount[product.categoryId] || 0) + 1;
-      });
-
-      const categoryNames: Record<number, string> = {
-        1: 'Chăm Sóc Da',
-        2: 'Trang Điểm',
-        3: 'Chăm Sóc Tóc',
-        4: 'Nước Hoa',
-        5: 'Chăm Sóc Cơ Thể',
-      };
-
-      return Object.entries(categoryCount).map(([id, count]) => ({
-        name: categoryNames[Number(id)] || `Danh mục ${id}`,
-        value: count,
-      }));
-    };
-
-    // Top sản phẩm bán chạy (giả lập)
-    const calculateTopProducts = (): TopProductData[] => {
-      return [
-        { name: 'La Roche-Posay Effaclar', sales: 145, revenue: 84100000 },
-        { name: 'COSRX AHA/BHA Toner', sales: 128, revenue: 51072000 },
-        { name: 'Some By Mi Serum', sales: 112, revenue: 42560000 },
-        { name: 'The Ordinary Niacinamide', sales: 98, revenue: 21560000 },
-        { name: 'Innisfree Green Tea', sales: 87, revenue: 24360000 },
-      ];
-    };
-
-    // Tính toán số liệu tổng quan
-    const calculateStats = () => {
-      const totalRevenue = mockOrders
-        .filter((o) => o.status === 'DELIVERED')
-        .reduce((sum, o) => sum + o.totalAmount, 0);
-      const totalOrders = mockOrders.length;
-      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-      // Đếm số khách hàng unique đã mua hàng (dựa trên userId)
-      const uniqueCustomers = new Set(mockOrders.map((o) => o.userId)).size;
-
-      return {
-        totalRevenue,
-        totalOrders,
-        avgOrderValue,
-        totalCustomers: uniqueCustomers,
-      };
-    };
-
-    setRevenueData(calculateRevenueData());
-    setOrderStatusData(calculateOrderStatus());
-    setCategoryData(calculateCategoryData());
-    setTopProductsData(calculateTopProducts());
-    setStats(calculateStats());
+    fetchAnalyticsData();
   }, [timeRange]);
 
   return (
@@ -258,8 +197,23 @@ const AdminAnalytics = ({
           </p>
         </div>
 
-        <div className="mb-6 flex gap-2">
-          {['7days', '30days', '90days', 'year'].map((range) => (
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-red-700">
+            <p className="font-medium">Lỗi tải dữ liệu:</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex h-96 items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent"></div>
+              <p className="mt-4 text-gray-600">Đang tải dữ liệu thống kê...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 flex gap-2">{['7days', '30days', '90days', 'year'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
@@ -445,94 +399,76 @@ const AdminAnalytics = ({
             <h3 className="mb-4 text-lg font-bold text-gray-900">
               Phân Bổ Trạng Thái Đơn Hàng
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={orderStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(props: any) =>
-                    `${props.name}: ${(props.percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {orderStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {orderStatusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={orderStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props: any) =>
+                      `${props.name}: ${(props.percent * 100).toFixed(0)}%`
+                    }
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {orderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-gray-400">
+                Chưa có dữ liệu đơn hàng
+              </div>
+            )}
           </div>
 
-          {/* Category Distribution */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          {/* Top Products Revenue Chart */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm lg:col-span-2">
             <h3 className="mb-4 text-lg font-bold text-gray-900">
-              Sản Phẩm Theo Danh Mục
+              Top Sản Phẩm Bán Chạy - Doanh Thu
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={categoryData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#9CA3AF"
-                  style={{ fontSize: '12px' }}
-                  angle={-15}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  }}
-                />
-                <Bar dataKey="value" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Top Products */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-lg font-bold text-gray-900">
-              Top 5 Sản Phẩm Bán Chạy
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topProductsData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  type="number"
-                  stroke="#9CA3AF"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="#9CA3AF"
-                  style={{ fontSize: '11px' }}
-                  width={150}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'sales') return [value, 'Đã bán'];
-                    return [`₫${value.toLocaleString('vi-VN')}`, 'Doanh thu'];
-                  }}
-                />
-                <Bar dataKey="sales" fill="#3B82F6" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {topProductsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topProductsData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    type="number"
+                    stroke="#9CA3AF"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    stroke="#9CA3AF"
+                    style={{ fontSize: '11px' }}
+                    width={150}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'sales') return [value, 'Đã bán'];
+                      return [`₫${value.toLocaleString('vi-VN')}`, 'Doanh thu'];
+                    }}
+                  />
+                  <Bar dataKey="revenue" fill="#8B5CF6" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-gray-400">
+                Chưa có dữ liệu sản phẩm
+              </div>
+            )}
           </div>
         </div>
 
@@ -543,76 +479,63 @@ const AdminAnalytics = ({
               Chi Tiết Top Sản Phẩm
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    Sản phẩm
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    Đã bán
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    Doanh thu
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    Xu hướng
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {topProductsData.map((product, index) => (
-                  <tr
-                    key={index}
-                    className="transition-colors hover:bg-gray-50"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 font-bold text-white">
-                          {index + 1}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.name}
+          {topProductsData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      Sản phẩm
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      Đã bán
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      Doanh thu
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {topProductsData.map((product, index) => (
+                    <tr
+                      key={index}
+                      className="transition-colors hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-pink-500 to-rose-500 font-bold text-white">
+                            {index + 1}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {product.name}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {product.sales}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">
-                        ₫{product.revenue.toLocaleString('vi-VN')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
-                        <svg
-                          className="mr-1 h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                          />
-                        </svg>
-                        +{(Math.random() * 20 + 5).toFixed(1)}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {product.sales}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-gray-900">
+                          ₫{product.revenue.toLocaleString('vi-VN')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex h-40 items-center justify-center text-gray-400">
+              Chưa có dữ liệu sản phẩm
+            </div>
+          )}
         </div>
+          </>
+        )}
       </div>
     </AdminLayout>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Order } from '../../../types/Order';
-import { getAllOrders, type OrderResponse } from '../../../api/order';
+import { getAllOrders, cancelOrder, deleteOrder, updateOrderStatus, type OrderResponse } from '../../../api/order';
 import OrderTable from '../../../components/admin/order/OrderTable';
 import SearchBar from '../../../components/admin/SearchBar';
 import Pagination from '../../../components/admin/Pagination';
@@ -40,42 +40,56 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   });
 
   // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const ordersData = await getAllOrders();
+      
+      // Transform OrderResponse to Order type
+      const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
+        id: order.id,
+        userId: order.userId || 0,
+        status: order.status || 'PENDING',
+        subtotal: order.subtotal || 0,
+        totalAmount: order.totalAmount || 0,
+        notes: order.notes || '',
+        discountAmount: order.discountAmount || 0,
+        shippingFee: order.shippingFee || 0,
+        estimateDeliveryFrom: order.estimateDeliveryFrom || '',
+        estimateDeliveryTo: order.estimateDeliveryTo || '',
+        createdAt: order.createdAt || new Date().toISOString(),
+        updatedAt: order.updatedAt || new Date().toISOString(),
+        orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
+        payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
+        recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
+      }));
+      
+      setOrders(transformedOrders);
+    } catch (err: any) {
+      console.error('Failed to fetch orders:', err);
+      setError(err.message || 'Không thể tải danh sách đơn hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const ordersData = await getAllOrders();
-        
-        // Transform OrderResponse to Order type
-        const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
-          id: order.id,
-          userId: order.userId || 0,
-          status: order.status || 'PENDING',
-          subtotal: order.subtotal || 0,
-          totalAmount: order.totalAmount || 0,
-          notes: order.notes || '',
-          discountAmount: order.discountAmount || 0,
-          shippingFee: order.shippingFee || 0,
-          estimateDeliveryFrom: order.estimateDeliveryFrom || '',
-          estimateDeliveryTo: order.estimateDeliveryTo || '',
-          createdAt: order.createdAt || new Date().toISOString(),
-          updatedAt: order.updatedAt || new Date().toISOString(),
-          orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
-          payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
-          recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
-        }));
-        
-        setOrders(transformedOrders);
-      } catch (err: any) {
-        console.error('Failed to fetch orders:', err);
-        setError(err.message || 'Không thể tải danh sách đơn hàng');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchOrders();
+  }, []);
+
+  // Refetch when window gains focus (user comes back from another tab/page)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('[OrderListPage] Window focused, refetching orders...');
+      fetchOrders();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   useEffect(() => {
@@ -128,6 +142,8 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
 
     setFilteredOrders(result);
     setCurrentPage(1);
+    // Clear selected orders when tab/filter changes to avoid confusion
+    setSelectedOrders([]);
   }, [searchQuery, dateFrom, dateTo, orders, activeTab]);
 
   const getPaginatedOrders = () => {
@@ -140,47 +156,41 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
     onNavigate(`/admin/orders/${orderId}`);
   };
 
-  const handleUpdateStatus = (orderId: number) => {
-    onNavigate(`/admin/orders/${orderId}/status`);
-  };
-
   const handleCancelOrder = async (orderId: number) => {
     if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
 
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                status: 'CANCELLED',
-                updatedAt: new Date().toISOString(),
-              }
-            : order,
-        ),
-      );
+      // Call real API to cancel order
+      await cancelOrder(orderId);
+      
+      // Refetch orders to get updated data from backend
+      await fetchOrders();
+      
       alert('Hủy đơn hàng thành công!');
-    } catch (error) {
-      alert('Có lỗi xảy ra khi hủy đơn hàng');
+    } catch (error: any) {
+      console.error('Cancel order error:', error);
+      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteOrder = async (orderId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác!')) return;
 
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setOrders((prev) => prev.filter((order) => order.id !== orderId));
+      // Call real API to delete order
+      await deleteOrder(orderId);
+      
+      // Refetch orders to get updated data from backend
+      await fetchOrders();
+      
       alert('Xóa đơn hàng thành công!');
-    } catch (error) {
-      alert('Có lỗi xảy ra khi xóa đơn hàng');
+    } catch (error: any) {
+      console.error('Delete order error:', error);
+      alert(error.response?.data?.error || error.message || 'Có lỗi xảy ra khi xóa đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -194,9 +204,17 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrders(getPaginatedOrders().map((o) => o.id));
+      // Only select orders on current page
+      const currentPageOrderIds = getPaginatedOrders().map((o) => o.id);
+      setSelectedOrders((prev) => {
+        // Merge with previously selected orders from other pages
+        const newSelected = new Set([...prev, ...currentPageOrderIds]);
+        return Array.from(newSelected);
+      });
     } else {
-      setSelectedOrders([]);
+      // Only deselect orders on current page
+      const currentPageOrderIds = getPaginatedOrders().map((o) => o.id);
+      setSelectedOrders((prev) => prev.filter((id) => !currentPageOrderIds.includes(id)));
     }
   };
 
@@ -214,27 +232,47 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
       return;
     }
 
-    if (!window.confirm(`Bạn có chắc chắn muốn ${bulkAction} ${selectedOrders.length} đơn hàng đã chọn?`)) {
+    const statusLabel = {
+      CONFIRMED: 'xác nhận',
+      PROCESSING: 'chuyển sang xử lý',
+      SHIPPED: 'đánh dấu đã gửi hàng',
+      DELIVERED: 'đánh dấu đã giao hàng',
+      CANCELLED: 'hủy',
+    }[bulkAction] || bulkAction;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn ${statusLabel} ${selectedOrders.length} đơn hàng đã chọn?`)) {
       return;
     }
 
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      let successCount = 0;
+      let failCount = 0;
 
-      setOrders((prev) =>
-        prev.map((order) =>
-          selectedOrders.includes(order.id)
-            ? { ...order, status: bulkAction, updatedAt: new Date().toISOString() }
-            : order,
-        ),
-      );
+      // Call real API for each selected order
+      for (const orderId of selectedOrders) {
+        try {
+          await updateOrderStatus(orderId, { status: bulkAction });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to update order ${orderId}:`, err);
+          failCount++;
+        }
+      }
 
-      alert(`Đã cập nhật ${selectedOrders.length} đơn hàng thành công!`);
+      // Refetch orders to get updated data from backend
+      await fetchOrders();
+
+      if (failCount === 0) {
+        alert(`Đã cập nhật ${successCount} đơn hàng thành công!`);
+      } else {
+        alert(`Cập nhật hoàn tất: ${successCount} thành công, ${failCount} thất bại`);
+      }
+      
       setSelectedOrders([]);
       setBulkAction('');
     } catch (error) {
+      console.error('Bulk action error:', error);
       alert('Có lỗi xảy ra khi cập nhật đơn hàng');
     } finally {
       setLoading(false);
@@ -481,7 +519,6 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
           <OrderTable
             orders={getPaginatedOrders()}
             onViewDetail={handleViewDetail}
-            onUpdateStatus={handleUpdateStatus}
             onCancelOrder={handleCancelOrder}
             onDeleteOrder={handleDeleteOrder}
             loading={loading}
