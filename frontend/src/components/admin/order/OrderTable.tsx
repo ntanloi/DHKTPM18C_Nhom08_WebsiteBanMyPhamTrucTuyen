@@ -107,14 +107,16 @@ const OrderTable: React.FC<OrderTableProps> = ({
     );
   };
 
-  const allSelected = orders.length > 0 && orders.every((o) => selectedOrders.includes(o.id));
-  const someSelected = orders.some((o) => selectedOrders.includes(o.id)) && !allSelected;
+  const allSelected =
+    orders.length > 0 && orders.every((o) => selectedOrders.includes(o.id));
+  const someSelected =
+    orders.some((o) => selectedOrders.includes(o.id)) && !allSelected;
 
   return (
     <div className="space-y-4">
       {onSelectAll && orders.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
               checked={allSelected}
@@ -125,7 +127,11 @@ const OrderTable: React.FC<OrderTableProps> = ({
               className="h-5 w-5 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
             />
             <span className="text-sm font-medium text-gray-700">
-              {allSelected ? 'Bỏ chọn tất cả' : someSelected ? `Đã chọn ${selectedOrders.length} đơn` : 'Chọn tất cả đơn hàng trên trang này'}
+              {allSelected
+                ? 'Bỏ chọn tất cả'
+                : someSelected
+                  ? `Đã chọn ${selectedOrders.length} đơn`
+                  : 'Chọn tất cả đơn hàng trên trang này'}
             </span>
           </label>
         </div>
@@ -134,7 +140,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
         <div
           key={order.id}
           className={`overflow-hidden rounded-lg border ${
-            selectedOrders.includes(order.id) ? 'border-pink-500 ring-2 ring-pink-200' : 'border-gray-200'
+            selectedOrders.includes(order.id)
+              ? 'border-pink-500 ring-2 ring-pink-200'
+              : 'border-gray-200'
           } bg-white shadow-sm transition-all hover:shadow-md`}
         >
           <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-3">
@@ -182,14 +190,19 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     />
                   </svg>
                   <span className="font-medium text-gray-900">
-                    {order.recipientInformation?.recipientFirstName && order.recipientInformation?.recipientLastName
+                    {order.recipientInformation?.recipientFirstName &&
+                    order.recipientInformation?.recipientLastName
                       ? `${order.recipientInformation.recipientFirstName} ${order.recipientInformation.recipientLastName}`
                       : 'N/A'}
                   </span>
                 </div>
                 <div className="ml-7 text-sm text-gray-600">
-                  <div>{order.recipientInformation?.recipientPhone || 'N/A'}</div>
-                  <div>{order.recipientInformation?.recipientEmail || 'N/A'}</div>
+                  <div>
+                    {order.recipientInformation?.recipientPhone || 'N/A'}
+                  </div>
+                  <div>
+                    {order.recipientInformation?.recipientEmail || 'N/A'}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
@@ -197,7 +210,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <>
                     {getPaymentBadge(order.payment.status)}
                     <div className="mt-1 text-xs text-gray-500">
-                      {order.payment.paymentMethods?.[0]?.name || 'COD'}
+                      {(order as any).paymentMethod || 'COD'}
                     </div>
                   </>
                 ) : (

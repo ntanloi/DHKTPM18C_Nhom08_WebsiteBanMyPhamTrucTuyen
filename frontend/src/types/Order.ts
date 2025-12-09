@@ -26,4 +26,5 @@ export interface Order {
   shipment?: Shipment;
   orderStatusHistory?: OrderStatusHistory;
   recipientInformation?: RecipientInformation;
+  paymentMethod?: string; // Payment method name from backend
 }

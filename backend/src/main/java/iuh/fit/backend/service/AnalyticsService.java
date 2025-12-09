@@ -434,14 +434,23 @@ public class AnalyticsService {
      * Get daily revenue for date range (for charts)
      */
     public List<DailyRevenue> getDailyRevenue(LocalDateTime startDate, LocalDateTime endDate) {
+        log.info("Getting daily revenue from {} to {}", startDate, endDate);
         List<Object[]> dailyData = orderRepository.getRevenueByDay(startDate, endDate);
+        log.info("Query returned {} rows", dailyData.size());
         
-        return dailyData.stream()
-                .map(row -> DailyRevenue.builder()
-                        .date(((java.sql.Date) row[0]).toLocalDate())
-                        .revenue((BigDecimal) row[1])
-                        .orderCount(((Number) row[2]).longValue())
-                        .build())
+        List<DailyRevenue> result = dailyData.stream()
+                .map(row -> {
+                    DailyRevenue revenue = DailyRevenue.builder()
+                            .date(((java.sql.Date) row[0]).toLocalDate())
+                            .revenue((BigDecimal) row[1])
+                            .orderCount(((Number) row[2]).longValue())
+                            .build();
+                    log.info("Daily revenue: date={}, revenue={}, orders={}", 
+                            revenue.getDate(), revenue.getRevenue(), revenue.getOrderCount());
+                    return revenue;
+                })
                 .collect(Collectors.toList());
+        
+        return result;
     }
 }

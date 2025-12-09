@@ -299,6 +299,18 @@ public class OrderService {
             paymentResponse.setStatus(payment.getStatus());
             paymentResponse.setTransactionCode(payment.getTransactionCode());
             paymentResponse.setCreatedAt(payment.getCreatedAt());
+            
+            // Get payment method name
+            if (payment.getPaymentMethodId() != null) {
+                paymentMethodRepository.findById(payment.getPaymentMethodId()).ifPresent(paymentMethod -> {
+                    log.info("Found payment method for order detail {}: name={}, code={}", 
+                            orderId, paymentMethod.getName(), paymentMethod.getCode());
+                    paymentResponse.setPaymentMethodName(paymentMethod.getName());
+                });
+            } else {
+                log.warn("Payment method ID is null for order detail {}", orderId);
+            }
+            
             response.setPaymentInfo(paymentResponse);
         });
 
@@ -491,6 +503,8 @@ public class OrderService {
         
         // Add payment info
         paymentRepository.findByOrderId(order.getId()).ifPresent(payment -> {
+            log.info("Found payment for order {}: paymentMethodId={}", order.getId(), payment.getPaymentMethodId());
+            
             PaymentInfoResponse paymentResponse = new PaymentInfoResponse();
             paymentResponse.setId(payment.getId());
             paymentResponse.setStatus(payment.getStatus());
@@ -501,9 +515,13 @@ public class OrderService {
             // Get payment method name
             if (payment.getPaymentMethodId() != null) {
                 paymentMethodRepository.findById(payment.getPaymentMethodId()).ifPresent(paymentMethod -> {
+                    log.info("Found payment method for order {}: name={}, code={}", 
+                            order.getId(), paymentMethod.getName(), paymentMethod.getCode());
                     paymentResponse.setPaymentMethodName(paymentMethod.getName());
                     response.setPaymentMethod(paymentMethod.getName());
                 });
+            } else {
+                log.warn("Payment method ID is null for order {}", order.getId());
             }
             
             response.setPaymentInfo(paymentResponse);

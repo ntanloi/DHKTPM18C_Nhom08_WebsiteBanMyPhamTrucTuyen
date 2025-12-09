@@ -71,7 +71,7 @@ export const getDashboardSummary = async (): Promise<DashboardSummary> => {
 
 export const getRevenueData = async (
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<RevenueData> => {
   const response = await api.get(`${API_BASE}/revenue`, {
     params: { startDate, endDate },
@@ -81,7 +81,7 @@ export const getRevenueData = async (
 
 export const getOrderStats = async (
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<OrderStats> => {
   const response = await api.get(`${API_BASE}/orders`, {
     params: { startDate, endDate },
@@ -92,7 +92,7 @@ export const getOrderStats = async (
 export const getProductStats = async (
   startDate: string,
   endDate: string,
-  topCount: number = 10
+  topCount: number = 10,
 ): Promise<ProductStats> => {
   const response = await api.get(`${API_BASE}/products`, {
     params: { startDate, endDate, topCount },
@@ -102,9 +102,25 @@ export const getProductStats = async (
 
 export const getUserStats = async (
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<UserStats> => {
   const response = await api.get(`${API_BASE}/users`, {
+    params: { startDate, endDate },
+  });
+  return response.data;
+};
+
+export interface DailyRevenue {
+  date: string;
+  revenue: number;
+  orderCount: number;
+}
+
+export const getDailyRevenue = async (
+  startDate: string,
+  endDate: string,
+): Promise<DailyRevenue[]> => {
+  const response = await api.get(`${API_BASE}/daily-revenue`, {
     params: { startDate, endDate },
   });
   return response.data;

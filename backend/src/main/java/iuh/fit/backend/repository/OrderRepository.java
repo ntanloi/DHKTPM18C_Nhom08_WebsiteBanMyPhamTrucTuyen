@@ -35,12 +35,16 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Object[]> countGroupByStatus();
     
     @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as order_count " +
-            "FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY DATE(created_at) ORDER BY date", 
+            "FROM orders WHERE created_at BETWEEN :start AND :end " +
+            "AND status IN ('CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED') " +
+            "GROUP BY DATE(created_at) ORDER BY date", 
             nativeQuery = true)
     List<Object[]> getRevenueByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
     @Query(value = "SELECT DATE_FORMAT(created_at, '%Y-%m') as period, SUM(total_amount) as revenue, COUNT(*) as order_count " +
-            "FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY period", 
+            "FROM orders WHERE created_at BETWEEN :start AND :end " +
+            "AND status IN ('CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED') " +
+            "GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY period", 
             nativeQuery = true)
     List<Object[]> getRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
