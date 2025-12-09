@@ -15,6 +15,22 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
     processPaymentCallback();
   }, []);
 
+  // Notify opener tab (checkout) so it can refresh payment status immediately
+  useEffect(() => {
+    if (!paymentResult) return;
+    if (!window.opener || window.opener === window) return;
+
+    window.opener.postMessage(
+      {
+        type: 'VNPAY_PAYMENT_RESULT',
+        success: paymentResult.success,
+        orderId: paymentResult.orderId,
+        transactionNo: paymentResult.transactionNo,
+      },
+      window.location.origin,
+    );
+  }, [paymentResult]);
+
   const processPaymentCallback = async () => {
     try {
       // Get URL params from current URL

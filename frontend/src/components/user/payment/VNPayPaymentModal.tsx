@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface VNPayPaymentModalProps {
@@ -26,11 +26,19 @@ export default function VNPayPaymentModal({
 }: VNPayPaymentModalProps) {
   const [timeLeft, setTimeLeft] = useState(COUNTDOWN_SECONDS);
   const [isChecking, setIsChecking] = useState(false);
+  const [hasCompleted, setHasCompleted] = useState(false);
+
+  const handlePaymentSuccess = useCallback(() => {
+    if (hasCompleted) return;
+    setHasCompleted(true);
+    onSuccess();
+  }, [hasCompleted, onSuccess]);
 
   // Reset timer mỗi lần mở modal
   useEffect(() => {
     if (isOpen) {
       setTimeLeft(COUNTDOWN_SECONDS);
+      setHasCompleted(false);
     }
   }, [isOpen]);
 
@@ -55,13 +63,13 @@ export default function VNPayPaymentModal({
   // Auto-check payment status every 5 seconds (chỉ khi còn thời gian)
   useEffect(() => {
     if (!isOpen) return;
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0 || hasCompleted) return;
 
     const statusChecker = setInterval(async () => {
       try {
         const result = await onCheckStatus();
         if (result.isPaid) {
-          onSuccess();
+          handlePaymentSuccess();
         }
       } catch (error) {
         console.error('Error checking payment status:', error);
@@ -69,7 +77,37 @@ export default function VNPayPaymentModal({
     }, 5000);
 
     return () => clearInterval(statusChecker);
-  }, [isOpen, timeLeft, onCheckStatus, onSuccess]);
+  }, [isOpen, timeLeft, hasCompleted, onCheckStatus, handlePaymentSuccess]);
+
+  // Check lại khi user quay lại tab (đã thanh toán ở tab khác)
+  useEffect(() => {
+    if (!isOpen || hasCompleted) return;
+
+    const checkOnFocus = async () => {
+      try {
+        const result = await onCheckStatus();
+        if (result.isPaid) {
+          handlePaymentSuccess();
+        }
+      } catch (error) {
+        console.error('Error checking payment on focus:', error);
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void checkOnFocus();
+      }
+    };
+
+    window.addEventListener('focus', checkOnFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', checkOnFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isOpen, hasCompleted, onCheckStatus, handlePaymentSuccess]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -93,7 +131,7 @@ export default function VNPayPaymentModal({
       const result = await onCheckStatus();
       if (result.isPaid) {
         alert('Thanh toán thành công! Đang chuyển đến trang đơn hàng...');
-        onSuccess();
+        handlePaymentSuccess();
       } else {
         alert('Chưa nhận được thanh toán. Vui lòng thử lại sau.');
       }
@@ -110,7 +148,18 @@ export default function VNPayPaymentModal({
       alert('Phiên thanh toán đã hết hạn. Vui lòng đặt hàng lại.');
       return;
     }
-    window.open(paymentUrl, '_blank');
+
+    if (!paymentUrl) {
+      alert('Không tìm thấy liên kết thanh toán. Vui lòng thử lại.');
+      return;
+    }
+
+    const newTab = window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+    if (!newTab) {
+      alert(
+        'Trình duyệt đã chặn cửa sổ mới. Vui lòng cho phép pop-up cho trang này và thử lại.',
+      );
+    }
   };
 
   if (!isOpen) return null;

@@ -393,15 +393,13 @@ export default function CheckoutInfoPage({
       const selectedMethod = paymentMethods.find(
         (m) => m.id === selectedPaymentMethodId,
       );
-      if (selectedMethod?.code === 'VNPAY') {
-        const vnpayResponse = await createVNPayPayment({
-          orderId: order.id,
-          amount: cart.totalAmount,
-          orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
-          language: 'vn',
-        });
-
-        if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+        if (selectedMethod?.code === 'VNPAY') {
+          const vnpayResponse = await createVNPayPayment({
+            orderId: order.id,
+            amount: cart.totalAmount,
+            orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
+            language: 'vn',
+          });        if (vnpayResponse.success && vnpayResponse.paymentUrl) {
           // Show VNPay modal instead of redirecting
           setCurrentOrderId(order.id);
           setVnpayPaymentUrl(vnpayResponse.paymentUrl);
