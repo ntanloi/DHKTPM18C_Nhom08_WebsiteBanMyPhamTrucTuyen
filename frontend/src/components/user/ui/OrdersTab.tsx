@@ -3,6 +3,8 @@ import { cancelOrder } from '../../../api/order';
 import type { OrderResponse } from '../../../api/order';
 import { Toast } from './Toast';
 import { useToast } from '../../../hooks/useToast';
+import ConfirmDialog from '../../admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface OrdersTabProps {
   orders: OrderResponse[];
@@ -14,6 +16,7 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
   const { toast, showToast, hideToast } = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   const statusTabs = [
     { label: 'Tất cả', value: 'all' },
@@ -55,7 +58,13 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
   };
 
   const handleCancelOrder = async (orderId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+    const confirmCancel = await confirm({
+      title: 'Hủy đơn hàng',
+      message: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
+      variant: 'warning'
+    });
+
+    if (!confirmCancel) return;
 
     try {
       setCancelingOrderId(orderId);
@@ -210,6 +219,18 @@ export default function OrdersTab({ orders, onUpdate }: OrdersTabProps) {
           onClose={hideToast}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </div>
   );
 }

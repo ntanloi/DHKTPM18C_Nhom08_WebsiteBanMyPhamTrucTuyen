@@ -5,6 +5,8 @@ import { deleteAddress } from '../../../api/address';
 import type { AddressResponse } from '../../../api/address';
 import { Toast } from './Toast';
 import { useToast } from '../../../hooks/useToast';
+import ConfirmDialog from '../../admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface AddressesTabProps {
   addresses: AddressResponse[];
@@ -23,6 +25,7 @@ export default function AddressesTab({
     useState<AddressResponse | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { toast, showToast, hideToast } = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   const handleEdit = (address: AddressResponse) => {
     setSelectedAddress(address);
@@ -37,7 +40,13 @@ export default function AddressesTab({
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) return;
+    const confirmDelete = await confirm({
+      title: 'Xóa địa chỉ',
+      message: 'Bạn có chắc chắn muốn xóa địa chỉ này?',
+      variant: 'danger'
+    });
+
+    if (!confirmDelete) return;
 
     try {
       setDeletingId(id);
@@ -153,6 +162,18 @@ export default function AddressesTab({
           onClose={hideToast}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </>
   );
 }

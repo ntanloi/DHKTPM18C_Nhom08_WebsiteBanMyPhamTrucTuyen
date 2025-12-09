@@ -11,6 +11,8 @@ import {
   type ProductImageResponse,
 } from '../../../api/productImage';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { useConfirm } from '../../../hooks/useConfirm';
 
 interface ProductListPageProps {
   onNavigate: (path: string) => void;
@@ -29,6 +31,7 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterBrand, setFilterBrand] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const { confirm, confirmState } = useConfirm();
 
   useEffect(() => {
     fetchData();
@@ -57,7 +60,13 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
   };
 
   const handleDelete = async (productId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+    const confirmDelete = await confirm({
+      title: 'Xóa sản phẩm',
+      message: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
+      variant: 'danger'
+    });
+
+    if (!confirmDelete) return;
 
     try {
       await deleteProduct(productId);
@@ -605,6 +614,18 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        loading={confirmState.loading}
+      />
     </AdminLayout>
   );
 };

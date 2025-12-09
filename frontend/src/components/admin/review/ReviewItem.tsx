@@ -91,8 +91,9 @@ const ReviewItem: React.FC<ReviewItemProps> = ({
             )}
             {onDelete && (
               <button
-                onClick={() => {
-                  if (window.confirm('Bạn có chắc chắn muốn xóa review này?')) {
+                onClick={async () => {
+                  const confirmed = window.confirm('Bạn có chắc chắn muốn xóa review này?');
+                  if (confirmed) {
                     onDelete(review.id);
                   }
                 }}
