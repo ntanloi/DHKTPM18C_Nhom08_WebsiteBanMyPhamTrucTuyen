@@ -292,21 +292,28 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
             {files.map((fileWithPreview) => (
               <div
                 key={fileWithPreview.id}
-                className="group relative overflow-hidden rounded-lg border border-gray-200"
+                className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white"
               >
                 <div className="aspect-square">
                   <img
                     src={fileWithPreview.preview}
                     alt={fileWithPreview.file.name}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      console.error(
+                        'Failed to load preview:',
+                        fileWithPreview.preview,
+                      );
+                      e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    }}
                   />
                 </div>
 
-                <div className="bg-opacity-0 group-hover:bg-opacity-40 absolute inset-0 bg-black transition-all">
+                <div className="pointer-events-none absolute inset-0 bg-black/0 transition-all group-hover:bg-black/40">
                   <button
                     onClick={() => removeFile(fileWithPreview.id)}
                     disabled={uploading}
-                    className="absolute top-2 right-2 rounded-full bg-red-500 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 disabled:bg-gray-400"
+                    className="pointer-events-auto absolute top-2 right-2 rounded-full bg-red-500 p-1.5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 hover:bg-red-600 disabled:bg-gray-400"
                   >
                     <svg
                       className="h-4 w-4"
@@ -324,7 +331,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
                   </button>
                 </div>
 
-                <div className="bg-opacity-60 absolute right-0 bottom-0 left-0 bg-black p-2 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="pointer-events-none absolute right-0 bottom-0 left-0 bg-black/60 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100">
                   <p className="truncate text-xs">
                     {fileWithPreview.file.name}
                   </p>

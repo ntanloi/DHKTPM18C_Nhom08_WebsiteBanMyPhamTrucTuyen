@@ -37,6 +37,8 @@ export interface OrderItemResponse {
   price?: number;
   productName?: string;
   variantName?: string;
+  imageUrl?: string; // Product image URL
+  productSlug?: string; // Product slug for navigation
   subtotal?: number;
 }
 

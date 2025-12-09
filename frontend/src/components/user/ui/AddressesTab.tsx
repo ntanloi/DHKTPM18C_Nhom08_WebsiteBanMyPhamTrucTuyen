@@ -3,6 +3,8 @@ import { Edit, Trash2 } from 'lucide-react';
 import AddressModal from './AddressModal';
 import { deleteAddress } from '../../../api/address';
 import type { AddressResponse } from '../../../api/address';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface AddressesTabProps {
   addresses: AddressResponse[];
@@ -20,6 +22,7 @@ export default function AddressesTab({
   const [selectedAddress, setSelectedAddress] =
     useState<AddressResponse | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const handleEdit = (address: AddressResponse) => {
     setSelectedAddress(address);
@@ -39,10 +42,10 @@ export default function AddressesTab({
     try {
       setDeletingId(id);
       await deleteAddress(id);
-      alert('Đã xóa địa chỉ thành công!');
+      showToast('Đã xóa địa chỉ thành công!', 'success');
       if (onUpdate) onUpdate();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Có lỗi xảy ra khi xóa địa chỉ');
+      showToast(error.response?.data?.error || 'Có lỗi xảy ra khi xóa địa chỉ', 'error');
     } finally {
       setDeletingId(null);
     }
@@ -142,6 +145,14 @@ export default function AddressesTab({
         address={selectedAddress}
         userId={userId}
       />
+
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
+      )}
     </>
   );
 }

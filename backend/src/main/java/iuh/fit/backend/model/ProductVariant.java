@@ -53,13 +53,13 @@ public class ProductVariant {
     @JsonIgnore
     private List<VariantAttribute> variantAttributes;
 
-    @OneToOne(mappedBy = "productVariant", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "productVariant", fetch = FetchType.LAZY)
     @JsonIgnore
-    private CartItem cartItem;
+    private List<CartItem> cartItems;
 
-    @OneToOne(mappedBy = "productVariant", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "productVariant", fetch = FetchType.LAZY)
     @JsonIgnore
-    private OrderItem orderItem;
+    private List<OrderItem> orderItems;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "favorite_id", insertable = false, updatable = false)

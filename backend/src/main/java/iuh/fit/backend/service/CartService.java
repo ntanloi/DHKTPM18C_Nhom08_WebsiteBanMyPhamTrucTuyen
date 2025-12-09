@@ -34,6 +34,7 @@ public class CartService {
     @Autowired
     private ProductImageRepository productImageRepository;
 
+
     @Transactional
     public CartResponse getCartByUserId(Integer userId) {
         Cart cart = cartRepository.findByUserId(userId)
@@ -138,8 +139,10 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
+        // Delete all cart items for this cart
         cartItemRepository.deleteByCartId(cart.getId());
-
+        
+        // Update cart timestamp
         cart.setUpdatedAt(LocalDateTime.now());
         cartRepository.save(cart);
     }

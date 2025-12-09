@@ -160,4 +160,18 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
+
+    @PutMapping("/{orderId}/payment/complete")
+    public ResponseEntity<?> markPaymentCompleted(@PathVariable Integer orderId) {
+        try {
+            orderService.markPaymentAsCompleted(orderId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Payment marked as completed");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
 }

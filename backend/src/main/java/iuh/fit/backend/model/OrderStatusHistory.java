@@ -30,7 +30,7 @@ public class OrderStatusHistory {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonIgnore
     private Order order;

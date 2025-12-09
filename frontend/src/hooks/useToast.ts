@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import type { ToastType } from '../components/user/ui/Toast';
 
 interface ToastState {
@@ -14,13 +14,17 @@ export const useToast = () => {
     type: 'info',
   });
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+  const showToast = (message: string, type: ToastType = 'success') => {
     setToast({ show: true, message, type });
-  }, []);
+    
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  };
 
-  const hideToast = useCallback(() => {
+  const hideToast = () => {
     setToast({ show: false, message: '', type: 'info' });
-  }, []);
+  };
 
   return {
     toast,

@@ -14,8 +14,9 @@ public class OrderItemResponse {
     private Integer productVariantId;
     private String productName;
     private String variantName;
+    private String imageUrl;  // Product image URL
+    private String productSlug;  // Product slug for navigation to detail page
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal subtotal;
-    private String imageUrl;
 }

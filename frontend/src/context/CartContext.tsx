@@ -1,6 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from 'react';
 import type { CartResponse, CartItemResponse } from '../api/cart';
-import { getCartByUserId, addToCart as addToCartAPI, updateCartItem as updateCartItemAPI, removeCartItem as removeCartItemAPI, clearCart as clearCartAPI } from '../api/cart';
+import {
+  getCartByUserId,
+  addToCart as addToCartAPI,
+  updateCartItem as updateCartItemAPI,
+  removeCartItem as removeCartItemAPI,
+  clearCart as clearCartAPI,
+} from '../api/cart';
 import { AuthContext } from './auth-context';
 
 const GUEST_CART_KEY = 'guest_cart';
@@ -10,7 +22,14 @@ interface CartContextType {
   loading: boolean;
   error: string | null;
   fetchCart: () => Promise<void>;
-  addToCart: (productVariantId: number, quantity: number, productName?: string, variantName?: string, price?: number, imageUrl?: string) => Promise<void>;
+  addToCart: (
+    productVariantId: number,
+    quantity: number,
+    productName?: string,
+    variantName?: string,
+    price?: number,
+    imageUrl?: string,
+  ) => Promise<void>;
   updateQuantity: (cartItemId: number, quantity: number) => Promise<void>;
   removeItem: (cartItemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -96,25 +115,26 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const addToCart = async (
-    productVariantId: number, 
+    productVariantId: number,
     quantity: number,
     productName?: string,
     variantName?: string,
     price?: number,
-    imageUrl?: string
+    imageUrl?: string,
   ) => {
     if (isGuest) {
       // Guest user - save to localStorage
       const currentCart = getGuestCart();
       const existingItemIndex = currentCart.cartItems.findIndex(
-        item => item.productVariantId === productVariantId
+        (item) => item.productVariantId === productVariantId,
       );
 
       if (existingItemIndex >= 0) {
         // Update existing item
         currentCart.cartItems[existingItemIndex].quantity += quantity;
-        currentCart.cartItems[existingItemIndex].subtotal = 
-          currentCart.cartItems[existingItemIndex].quantity * currentCart.cartItems[existingItemIndex].price;
+        currentCart.cartItems[existingItemIndex].subtotal =
+          currentCart.cartItems[existingItemIndex].quantity *
+          currentCart.cartItems[existingItemIndex].price;
       } else {
         // Add new item
         const newItem: CartItemResponse = {
@@ -133,7 +153,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       // Recalculate total
       currentCart.totalAmount = currentCart.cartItems.reduce(
         (sum, item) => sum + item.subtotal,
-        0
+        0,
       );
       currentCart.updatedAt = new Date().toISOString();
 
@@ -150,10 +170,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await addToCartAPI(user.userId, { productVariantId, quantity });
+      const data = await addToCartAPI(user.userId, {
+        productVariantId,
+        quantity,
+      });
       setCart(data);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.error || 'Không thể thêm sản phẩm vào giỏ hàng';
+      const errorMsg =
+        err.response?.data?.error || 'Không thể thêm sản phẩm vào giỏ hàng';
       setError(errorMsg);
       throw new Error(errorMsg);
     } finally {
@@ -169,19 +193,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     if (isGuest) {
       // Guest user - update localStorage
       const currentCart = getGuestCart();
-      const itemIndex = currentCart.cartItems.findIndex(item => item.id === cartItemId);
-      
+      const itemIndex = currentCart.cartItems.findIndex(
+        (item) => item.id === cartItemId,
+      );
+
       if (itemIndex >= 0) {
         currentCart.cartItems[itemIndex].quantity = quantity;
-        currentCart.cartItems[itemIndex].subtotal = 
+        currentCart.cartItems[itemIndex].subtotal =
           quantity * currentCart.cartItems[itemIndex].price;
-        
+
         currentCart.totalAmount = currentCart.cartItems.reduce(
           (sum, item) => sum + item.subtotal,
-          0
+          0,
         );
         currentCart.updatedAt = new Date().toISOString();
-        
+
         saveGuestCart(currentCart);
         setCart(currentCart);
       }
@@ -195,10 +221,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await updateCartItemAPI(user.userId, cartItemId, { quantity });
+      const data = await updateCartItemAPI(user.userId, cartItemId, {
+        quantity,
+      });
       setCart(data);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.error || 'Không thể cập nhật số lượng';
+      const errorMsg =
+        err.response?.data?.error || 'Không thể cập nhật số lượng';
       setError(errorMsg);
       throw new Error(errorMsg);
     } finally {
@@ -210,14 +239,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     if (isGuest) {
       // Guest user - remove from localStorage
       const currentCart = getGuestCart();
-      currentCart.cartItems = currentCart.cartItems.filter(item => item.id !== cartItemId);
-      
+      currentCart.cartItems = currentCart.cartItems.filter(
+        (item) => item.id !== cartItemId,
+      );
+
       currentCart.totalAmount = currentCart.cartItems.reduce(
         (sum, item) => sum + item.subtotal,
-        0
+        0,
       );
       currentCart.updatedAt = new Date().toISOString();
-      
+
       saveGuestCart(currentCart);
       setCart(currentCart);
       return;
@@ -257,7 +288,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setError(null);
     try {
       await clearCartAPI(user.userId);
-      setCart(null);
+      // Fetch cart again to get empty cart from backend
+      // This ensures cart is ready for new items
+      await fetchCart();
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || 'Không thể xóa giỏ hàng';
       setError(errorMsg);

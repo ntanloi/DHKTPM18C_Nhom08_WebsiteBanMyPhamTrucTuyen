@@ -226,9 +226,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   return (
     <AdminLayout onNavigate={onNavigate}>
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-6">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <button
               onClick={() => onNavigate('/admin/products')}
               className="mb-4 flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-900"
@@ -248,9 +248,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </svg>
               Quay lại danh sách
             </button>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                   Chi Tiết Sản Phẩm
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
@@ -262,13 +262,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   onClick={() =>
                     onNavigate(`/admin/products/${productId}/edit`)
                   }
-                  className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow-lg transition-colors hover:bg-blue-700"
+                  className="flex-1 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-700 sm:flex-none"
                 >
                   Chỉnh Sửa
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-colors hover:bg-red-700"
+                  className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-red-700 sm:flex-none"
                 >
                   Xóa
                 </button>
@@ -353,12 +353,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
 
           {product.productVariant && (
-            <div className="mb-6 rounded-2xl bg-white p-6 shadow-lg">
-              <h3 className="mb-6 text-xl font-bold text-gray-900">
+            <div className="mb-6 rounded-2xl bg-white p-4 shadow-lg sm:p-6">
+              <h3 className="mb-4 text-lg font-bold text-gray-900 sm:mb-6 sm:text-xl">
                 Thông Tin Phiên Bản & Giá
               </h3>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                 <div className="rounded-xl bg-purple-50 p-4">
                   <label className="mb-1 block text-sm font-medium text-purple-700">
                     Tên Phiên Bản
@@ -438,11 +438,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           )}
 
           {attributes.length > 0 && (
-            <div className="mb-6 rounded-2xl bg-white p-6 shadow-lg">
-              <h3 className="mb-6 text-xl font-bold text-gray-900">
+            <div className="mb-6 rounded-2xl bg-white p-4 shadow-lg sm:p-6">
+              <h3 className="mb-4 text-lg font-bold text-gray-900 sm:mb-6 sm:text-xl">
                 Thuộc Tính Sản Phẩm
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                 {attributes.map((attr) => (
                   <div
                     key={attr.id}

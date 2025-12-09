@@ -60,9 +60,17 @@ export default function HomePage() {
     )
     .slice(0, 12);
 
-  const navigateToProducts = (category: string) => {
-    window.history.pushState({}, '', `/products/${category}`);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+  const navigateToProducts = (filter?: string) => {
+    // Navigate to products page
+    // For skincare/makeup, use search with keywords
+    // For others, just go to all products
+    if (filter === 'skincare') {
+      window.location.href = '/search?q=dưỡng';
+    } else if (filter === 'makeup') {
+      window.location.href = '/search?q=trang điểm';
+    } else {
+      window.location.href = '/products';
+    }
   };
 
   const images = [LuongVe, DocQuyen99, RangRo7Nam, Clio, SachSau, LungLinh];
@@ -488,6 +496,9 @@ export default function HomePage() {
           ].map((tag, index) => (
             <button
               key={index}
+              onClick={() => {
+                window.location.href = `/search?q=${encodeURIComponent(tag)}`;
+              }}
               className="rounded-full bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black hover:text-white"
             >
               {tag}
@@ -497,31 +508,51 @@ export default function HomePage() {
 
         {/* 4 Banner Images */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('son peripera')}`;
+            }}
+          >
             <img
               src={TimKiem1}
-              alt="Banner 1"
+              alt="Son Peripera"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('toner pad')}`;
+            }}
+          >
             <img
               src={TimKiem2}
-              alt="Banner 2"
+              alt="Toner Pad"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('cushion clio')}`;
+            }}
+          >
             <img
               src={TimKiem3}
-              alt="Banner 3"
+              alt="Cushion Clio"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('mặt nạ')}`;
+            }}
+          >
             <img
               src={TimKiem4}
-              alt="Banner 4"
+              alt="Mặt nạ"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>

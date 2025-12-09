@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Share2 } from 'lucide-react';
 import { useProductDetail } from '../../hooks/useProductDetail';
 import { useCart } from '../../context/CartContext';
+import { useFavorites } from '../../context/FavoriteContext';
 import { AuthContext } from '../../context/auth-context';
 import { useNavigation } from '../../context/NavigationContext';
 import ReviewSection from '../../components/user/ui/ReviewSection';
@@ -20,7 +21,6 @@ const ProductDetailPage = ({
   const [quantity, setQuantity] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState('home');
   const [activeTab, setActiveTab] = useState('intro');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [toast, setToast] = useState<{
     show: boolean;
@@ -48,6 +48,32 @@ const ProductDetailPage = ({
 
   const { addToCart } = useCart();
   const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const { isFavorited, addToFavorites, removeFromFavorites } = useFavorites();
+
+  // Check if product is favorited
+  const isFavorite = product ? isFavorited(product.id) : false;
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      showToast('Vui lòng đăng nhập để thêm vào yêu thích', 'warning');
+      return;
+    }
+
+    if (!product) return;
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(product.id);
+        showToast('Đã xóa khỏi danh sách yêu thích', 'success');
+      } else {
+        await addToFavorites(product.id);
+        showToast('Đã thêm vào danh sách yêu thích', 'success');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Có lỗi xảy ra', 'error');
+    }
+  };
   if (!authContext) {
     throw new Error('ProductDetailPage must be used within AuthProvider');
   }
@@ -534,7 +560,7 @@ const ProductDetailPage = ({
               </button>
 
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleToggleFavorite}
                 className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 hover:bg-gray-100"
               >
                 <Heart
