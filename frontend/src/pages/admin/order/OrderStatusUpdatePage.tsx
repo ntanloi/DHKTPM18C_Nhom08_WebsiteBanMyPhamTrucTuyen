@@ -4,6 +4,7 @@ import { getOrderDetail, updateOrderStatus } from '../../../api/order';
 import OrderStatusUpdateForm from '../../../components/admin/order/OrderStatusUpdateForm';
 import { formatOrderId, formatDateTime } from '../../../utils/orderStatusUtils';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { Toast, type ToastType } from '../../../components/user/ui/Toast';
 
 interface OrderStatusUpdatePageProps {
   orderId: string;
@@ -18,6 +19,22 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: ToastType;
+  }>({
+    show: false,
+    message: '',
+    type: 'info',
+  });
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  };
 
   useEffect(() => {
     fetchOrderDetails();
@@ -61,16 +78,23 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
   const handleUpdateStatus = async (newStatus: string) => {
     try {
       setSubmitting(true);
-      
+
       // Call real API to update order status
       await updateOrderStatus(Number(orderId), { status: newStatus });
-      
-      alert('Cập nhật trạng thái thành công!');
-      // Navigate back to order list to see updated status
-      onNavigate('/admin/orders');
+
+      showToast('Cập nhật trạng thái thành công!', 'success');
+      // Navigate back to order list after a short delay
+      setTimeout(() => {
+        onNavigate('/admin/orders');
+      }, 1500);
     } catch (err: any) {
       console.error('Failed to update order status:', err);
-      alert(err.response?.data?.error || err.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+      showToast(
+        err.response?.data?.error ||
+          err.message ||
+          'Có lỗi xảy ra khi cập nhật trạng thái',
+        'error',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -248,6 +272,12 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
           </div>
         </div>
       </div>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
     </AdminLayout>
   );
 };

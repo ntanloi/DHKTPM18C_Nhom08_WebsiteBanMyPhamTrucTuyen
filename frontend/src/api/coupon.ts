@@ -2,24 +2,55 @@ import api from '../lib/api';
 
 const API_BASE_URL = '/coupons';
 
-export interface CreateCouponRequest {
+export interface CouponResponse {
+  id: number;
   code: string;
   description: string;
   isActive: boolean;
-  discountType: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
   discountValue: number;
-  minOrderValue: number;
-  maxUsageValue: number;
-  validFrom: string;
-  validTo: string;
-  createdByUserId: number;
+  minOrderValue?: number;
+  maxUsageValue?: number;
+  validFrom?: string;
+  validTo?: string;
+  createdByUserId?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ValidateCouponRequest {
+  couponCode: string;
+  subtotal: number;
+  userId?: number;
+}
+
+export interface ValidateCouponResponse {
+  valid: boolean;
+  couponId?: number;
+  couponCode?: string;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
+  discountAmount?: number;
+  description?: string;
+  error?: string;
+}
+
+export interface CreateCouponRequest {
+  code: string;
+  description: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  minOrderValue?: number;
+  maxUsageValue?: number;
+  validFrom?: string;
+  validTo?: string;
+  createdByUserId?: number;
 }
 
 export interface UpdateCouponRequest {
-  code?: string;
   description?: string;
   isActive?: boolean;
-  discountType?: string;
+  discountType?: 'PERCENTAGE' | 'FIXED';
   discountValue?: number;
   minOrderValue?: number;
   maxUsageValue?: number;
@@ -27,35 +58,10 @@ export interface UpdateCouponRequest {
   validTo?: string;
 }
 
-export interface CouponResponse {
-  id: number;
-  code: string;
-  description: string;
-  isActive: boolean;
-  discountType: string;
-  discountValue: number;
-  minOrderValue: number;
-  maxUsageValue: number;
-  validFrom: string;
-  validTo: string;
-  createdByUserId: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const createCoupon = async (
-  request: CreateCouponRequest,
-): Promise<CouponResponse> => {
-  const response = await api.post<CouponResponse>(API_BASE_URL, request);
-  return response.data;
-};
-
 export const getCouponById = async (
   couponId: number,
 ): Promise<CouponResponse> => {
-  const response = await api.get<CouponResponse>(
-    `${API_BASE_URL}/${couponId}`,
-  );
+  const response = await api.get<CouponResponse>(`${API_BASE_URL}/${couponId}`);
   return response.data;
 };
 
@@ -68,8 +74,13 @@ export const getCouponByCode = async (
   return response.data;
 };
 
-export const getAllCoupons = async (): Promise<CouponResponse[]> => {
-  const response = await api.get<CouponResponse[]>(API_BASE_URL);
+export const validateAndCalculateDiscount = async (
+  request: ValidateCouponRequest,
+): Promise<ValidateCouponResponse> => {
+  const response = await api.post<ValidateCouponResponse>(
+    `${API_BASE_URL}/validate`,
+    request,
+  );
   return response.data;
 };
 
@@ -78,14 +89,8 @@ export const getActiveCoupons = async (): Promise<CouponResponse[]> => {
   return response.data;
 };
 
-export const updateCoupon = async (
-  couponId: number,
-  request: UpdateCouponRequest,
-): Promise<CouponResponse> => {
-  const response = await api.put<CouponResponse>(
-    `${API_BASE_URL}/${couponId}`,
-    request,
-  );
+export const getAllCoupons = async (): Promise<CouponResponse[]> => {
+  const response = await api.get<CouponResponse[]>(API_BASE_URL);
   return response.data;
 };
 
@@ -103,6 +108,24 @@ export const deleteCoupon = async (
 ): Promise<{ message: string }> => {
   const response = await api.delete<{ message: string }>(
     `${API_BASE_URL}/${couponId}`,
+  );
+  return response.data;
+};
+
+export const createCoupon = async (
+  request: CreateCouponRequest,
+): Promise<CouponResponse> => {
+  const response = await api.post<CouponResponse>(API_BASE_URL, request);
+  return response.data;
+};
+
+export const updateCoupon = async (
+  couponId: number,
+  request: UpdateCouponRequest,
+): Promise<CouponResponse> => {
+  const response = await api.put<CouponResponse>(
+    `${API_BASE_URL}/${couponId}`,
+    request,
   );
   return response.data;
 };

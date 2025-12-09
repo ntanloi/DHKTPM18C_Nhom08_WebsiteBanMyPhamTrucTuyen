@@ -8,6 +8,7 @@ import ReturnRequestCard from '../../../components/admin/return/ReturnRequestCar
 import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 import { formatOrderId } from '../../../utils/orderStatusUtils';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { Toast, type ToastType } from '../../../components/user/ui/Toast';
 
 interface OrderReturnManagePageProps {
   orderId: string;
@@ -25,6 +26,14 @@ const OrderReturnManagePage: React.FC<OrderReturnManagePageProps> = ({
   const [returnInfo, setReturnInfo] = useState<Return | null>(null);
 
   const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approveNotes, setApproveNotes] = useState<string | undefined>();
+
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: ToastType;
+  } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,21 +68,25 @@ const OrderReturnManagePage: React.FC<OrderReturnManagePageProps> = ({
   };
 
   const handleApprove = async (notes?: string) => {
-    if (
-      !window.confirm(
-        'Xác nhận chấp nhận yêu cầu hoàn trả? Trạng thái thanh toán sẽ được cập nhật.',
-      )
-    ) {
-      return;
-    }
+    setApproveNotes(notes);
+    setShowApproveDialog(true);
+  };
 
+  const confirmApprove = async () => {
+    setShowApproveDialog(false);
     try {
       setSubmitting(true);
-      await mockReturnService.approveReturn(returnInfo!.id, notes);
-      alert('Đã chấp nhận yêu cầu hoàn trả!');
+      await mockReturnService.approveReturn(returnInfo!.id, approveNotes);
+      setToast({
+        message: 'Đã chấp nhận yêu cầu hoàn trả!',
+        type: 'success',
+      });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra khi chấp nhận yêu cầu');
+      setToast({
+        message: err.message || 'Có lỗi xảy ra khi chấp nhận yêu cầu',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -83,10 +96,16 @@ const OrderReturnManagePage: React.FC<OrderReturnManagePageProps> = ({
     try {
       setSubmitting(true);
       await mockReturnService.rejectReturn(returnInfo!.id, reason);
-      alert('Đã từ chối yêu cầu hoàn trả!');
+      setToast({
+        message: 'Đã từ chối yêu cầu hoàn trả!',
+        type: 'success',
+      });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra khi từ chối yêu cầu');
+      setToast({
+        message: err.message || 'Có lỗi xảy ra khi từ chối yêu cầu',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -97,10 +116,16 @@ const OrderReturnManagePage: React.FC<OrderReturnManagePageProps> = ({
       setSubmitting(true);
       setShowRefundDialog(false);
       await mockReturnService.processRefund(returnInfo!.id);
-      alert('Xử lý hoàn tiền thành công!');
+      setToast({
+        message: 'Xử lý hoàn tiền thành công!',
+        type: 'success',
+      });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra khi xử lý hoàn tiền');
+      setToast({
+        message: err.message || 'Có lỗi xảy ra khi xử lý hoàn tiền',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -214,6 +239,26 @@ const OrderReturnManagePage: React.FC<OrderReturnManagePageProps> = ({
             variant="warning"
             loading={submitting}
           />
+
+          <ConfirmDialog
+            open={showApproveDialog}
+            title="Xác nhận chấp nhận yêu cầu hoàn trả"
+            message="Xác nhận chấp nhận yêu cầu hoàn trả? Trạng thái thanh toán sẽ được cập nhật."
+            onConfirm={confirmApprove}
+            onCancel={() => setShowApproveDialog(false)}
+            confirmText="Chấp nhận"
+            cancelText="Hủy"
+            variant="warning"
+            loading={submitting}
+          />
+
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
         </div>
       </div>
     </AdminLayout>

@@ -13,6 +13,8 @@ import {
   formatDateTime,
 } from '../../../utils/orderStatusUtils';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { Toast, type ToastType } from '../../../components/user/ui/Toast';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 
 interface OrderShipmentManagePageProps {
   orderId: string;
@@ -28,6 +30,26 @@ const OrderShipmentManagePage: React.FC<OrderShipmentManagePageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [shipment, setShipment] = useState<Shipment | null>(null);
+
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: ToastType;
+  } | null>(null);
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     fetchData();
@@ -63,15 +85,26 @@ const OrderShipmentManagePage: React.FC<OrderShipmentManagePageProps> = ({
 
       if (shipment) {
         await mockShipmentService.updateShipment(Number(orderId), data);
-        alert('Cập nhật thông tin vận chuyển thành công!');
+        setToast({
+          message: 'Cập nhật thông tin vận chuyển thành công!',
+          type: 'success',
+        });
       } else {
         await mockShipmentService.createShipment(Number(orderId), data);
-        alert('Tạo thông tin vận chuyển thành công!');
+        setToast({
+          message: 'Tạo thông tin vận chuyển thành công!',
+          type: 'success',
+        });
       }
 
-      onNavigate(`/admin/orders/${orderId}`);
+      setTimeout(() => {
+        onNavigate(`/admin/orders/${orderId}`);
+      }, 1500);
     } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra khi lưu thông tin vận chuyển');
+      setToast({
+        message: err.message || 'Có lỗi xảy ra khi lưu thông tin vận chuyển',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -83,31 +116,41 @@ const OrderShipmentManagePage: React.FC<OrderShipmentManagePageProps> = ({
   };
 
   const handleQuickAction = async (action: 'SHIPPED' | 'DELIVERED') => {
-    if (
-      !window.confirm(
-        `Xác nhận đánh dấu đơn hàng là ${action === 'SHIPPED' ? 'Đã giao' : 'Đã giao thành công'}?`,
-      )
-    ) {
-      return;
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Xác nhận cập nhật trạng thái',
+      message: `Xác nhận đánh dấu đơn hàng là ${action === 'SHIPPED' ? 'Đã giao' : 'Đã giao thành công'}?`,
+      variant: 'info',
+      onConfirm: async () => {
+        setConfirmDialog({ ...confirmDialog, open: false });
+        try {
+          setSubmitting(true);
 
-    try {
-      setSubmitting(true);
+          if (action === 'SHIPPED') {
+            await mockShipmentService.markAsShipped(Number(orderId));
+            setToast({
+              message: 'Đã đánh dấu đơn hàng là Đã giao!',
+              type: 'success',
+            });
+          } else {
+            await mockShipmentService.markAsDelivered(Number(orderId));
+            setToast({
+              message: 'Đã đánh dấu đơn hàng là Đã giao thành công!',
+              type: 'success',
+            });
+          }
 
-      if (action === 'SHIPPED') {
-        await mockShipmentService.markAsShipped(Number(orderId));
-        alert('Đã đánh dấu đơn hàng là Đã giao!');
-      } else {
-        await mockShipmentService.markAsDelivered(Number(orderId));
-        alert('Đã đánh dấu đơn hàng là Đã giao thành công!');
-      }
-
-      await fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra');
-    } finally {
-      setSubmitting(false);
-    }
+          await fetchData();
+        } catch (err: any) {
+          setToast({
+            message: err.message || 'Có lỗi xảy ra',
+            type: 'error',
+          });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -324,6 +367,23 @@ const OrderShipmentManagePage: React.FC<OrderShipmentManagePageProps> = ({
           )}
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        variant={confirmDialog.variant}
+      />
     </AdminLayout>
   );
 };
