@@ -181,9 +181,15 @@ export default function CheckoutInfoPage({
     return Math.max(0, subtotal - discount);
   };
 
-  // Load available coupons
+  // Load available coupons (only for logged-in users)
   useEffect(() => {
     const loadCoupons = async () => {
+      // Skip loading coupons for guest users
+      if (!user?.userId) {
+        console.log('Guest user - skipping coupon loading');
+        return;
+      }
+
       try {
         const coupons = await getActiveCoupons();
         setAvailableCoupons(
@@ -202,7 +208,7 @@ export default function CheckoutInfoPage({
     };
 
     loadCoupons();
-  }, []);
+  }, [user]);
 
   // Load saved addresses for logged-in users
   useEffect(() => {

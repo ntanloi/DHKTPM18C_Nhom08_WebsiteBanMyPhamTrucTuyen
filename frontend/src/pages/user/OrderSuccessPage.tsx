@@ -145,6 +145,10 @@ export default function OrderSuccessPage({
           console.log(
             'Authenticated endpoint failed, trying guest endpoint...',
           );
+
+          // Wait a bit for localStorage to be set (in case we just navigated from checkout)
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
           // Try guest endpoint with email from localStorage
           const guestEmail = localStorage.getItem(
             `guestOrder_${orderId}_email`,
@@ -161,6 +165,7 @@ export default function OrderSuccessPage({
             );
           } else {
             console.error('No guest email found in localStorage');
+            console.log('All localStorage keys:', Object.keys(localStorage));
             throw authError;
           }
         }
