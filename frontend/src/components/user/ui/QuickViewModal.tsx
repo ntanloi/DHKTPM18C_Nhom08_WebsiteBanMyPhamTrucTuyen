@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { X, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { useCart } from '../../../context/CartContext';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface ProductVariant {
   id: number;
@@ -36,6 +38,7 @@ export default function QuickViewModal({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     if (product && product.variants.length > 0) {
@@ -54,17 +57,17 @@ export default function QuickViewModal({
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
-      alert('Vui lòng chọn phiên bản sản phẩm');
+      showToast('Vui lòng chọn phiên bản sản phẩm', 'warning');
       return;
     }
 
     if (selectedVariant.stockQuantity === 0) {
-      alert('Sản phẩm đã hết hàng');
+      showToast('Sản phẩm đã hết hàng', 'error');
       return;
     }
 
     if (quantity > selectedVariant.stockQuantity) {
-      alert(`Chỉ còn ${selectedVariant.stockQuantity} sản phẩm trong kho`);
+      showToast(`Chỉ còn ${selectedVariant.stockQuantity} sản phẩm trong kho`, 'warning');
       return;
     }
 
@@ -78,10 +81,10 @@ export default function QuickViewModal({
         selectedVariant.name,
         price
       );
-      alert('Đã thêm sản phẩm vào giỏ hàng');
+      showToast('Đã thêm sản phẩm vào giỏ hàng', 'success');
       onClose();
     } catch (error: any) {
-      alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng');
+      showToast(error.message || 'Không thể thêm sản phẩm vào giỏ hàng', 'error');
     } finally {
       setIsAdding(false);
     }
@@ -250,6 +253,14 @@ export default function QuickViewModal({
             )}
           </div>
         </div>
+
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
+        )}
       </div>
     </div>
   );

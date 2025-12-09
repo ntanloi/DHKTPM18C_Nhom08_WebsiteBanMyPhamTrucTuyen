@@ -1,6 +1,8 @@
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '../../../context/CartContext';
+import { Toast } from './Toast';
+import { useToast } from '../../../hooks/useToast';
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ export default function CartSidebar({
   } = useCart();
   const [activeTab, setActiveTab] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const { toast, showToast, hideToast } = useToast();
 
   // Fetch cart khi mở sidebar
   useEffect(() => {
@@ -65,7 +68,7 @@ export default function CartSidebar({
     try {
       await updateCartQuantity(id, newQuantity);
     } catch (error: any) {
-      alert(error.message || 'Không thể cập nhật số lượng');
+      showToast(error.message || 'Không thể cập nhật số lượng', 'error');
     }
   };
 
@@ -74,7 +77,7 @@ export default function CartSidebar({
       try {
         await removeCartItem(id);
       } catch (error: any) {
-        alert(error.message || 'Không thể xóa sản phẩm');
+        showToast(error.message || 'Không thể xóa sản phẩm', 'error');
       }
     }
   };
@@ -302,6 +305,14 @@ export default function CartSidebar({
               Tiếp tục với hình thức giao hàng
             </button>
           </div>
+        )}
+
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
         )}
       </div>
     </>
