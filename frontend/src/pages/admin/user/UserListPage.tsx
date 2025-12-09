@@ -14,6 +14,7 @@ interface UserListPageProps {
 const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const canEditCustomer = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +110,7 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                   Quản Lý Khách Hàng
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  Quản lý khách hàng.
+                  Quản lý khách hàng (CUSTOMER/USER). Admin & Manager được chỉnh sửa thông tin cho phép; không thêm/xóa.
                 </p>
               </div>
               {/* Creation disabled as requested */}
@@ -401,7 +402,7 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                               />
                             </svg>
                           </button>
-                          {isAdmin && (
+                          {canEditCustomer && (
                             <button
                               onClick={() =>
                                 onNavigate(`/admin/users/${user.id}/edit`)

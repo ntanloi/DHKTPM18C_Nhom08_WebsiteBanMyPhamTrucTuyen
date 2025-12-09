@@ -528,9 +528,9 @@ function App() {
                   </AdminOnlyRoute>
                 )}
                 {page === 'admin-user-edit' && (
-                  <AdminOnlyRoute>
+                  <AdminOrManagerRoute>
                     <UserEditPage userId={userId} onNavigate={navigate} />
-                  </AdminOnlyRoute>
+                  </AdminOrManagerRoute>
                 )}
                 {page === 'admin-user-detail' && (
                   <AdminOrManagerRoute>

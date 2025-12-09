@@ -225,7 +225,9 @@ export default function Header({
                         <p className="text-xs text-gray-500">
                           {user.role === 'ADMIN'
                             ? 'Quản trị viên'
-                            : 'Khách hàng'}
+                            : user.role === 'MANAGER'
+                              ? 'Quản lý hệ thống'
+                              : 'Khách hàng'}
                         </p>
                       </div>
 
@@ -277,7 +279,7 @@ export default function Header({
                           Đơn hàng của tôi
                         </button>
 
-                        {user.role === 'ADMIN' && (
+                        {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
                           <button
                             onClick={() => {
                               setShowUserMenu(false);
@@ -304,7 +306,9 @@ export default function Header({
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            Quản trị hệ thống
+                            {user.role === 'ADMIN'
+                              ? 'Quản trị hệ thống'
+                              : 'Vận hành hệ thống'}
                           </button>
                         )}
                       </div>
