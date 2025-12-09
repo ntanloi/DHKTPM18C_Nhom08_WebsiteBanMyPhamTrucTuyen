@@ -21,7 +21,7 @@ interface Order {
   id: string;
   customer: string;
   amount: string;
-  status: 'delivered' | 'processing' | 'shipped' | 'pending';
+  status: 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed';
   date: string;
 }
 
@@ -194,17 +194,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         // Helper function to map status
         const formatStatus = (
           status: string,
-        ): 'delivered' | 'processing' | 'shipped' | 'pending' => {
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed' => {
           const statusMap: Record<
             string,
-            'delivered' | 'processing' | 'shipped' | 'pending'
+            'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed'
           > = {
             DELIVERED: 'delivered',
             PROCESSING: 'processing',
             SHIPPED: 'shipped',
             PENDING: 'pending',
-            CONFIRMED: 'pending',
-            CANCELLED: 'pending',
+            CONFIRMED: 'confirmed',
+            CANCELLED: 'cancelled',
           };
           return statusMap[status] || 'pending';
         };
@@ -312,8 +312,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         ];
 
         setStats(calculatedStats);
-        // Cast recentOrders to Order[] type (they share similar structure)
-        setRecentOrders((orderStats.recentOrders || []) as any);
+
+        // Helper function to map status (same as main useEffect)
+        const formatStatus = (
+          status: string,
+        ): 'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed' => {
+          const statusMap: Record<
+            string,
+            'delivered' | 'processing' | 'shipped' | 'pending' | 'cancelled' | 'confirmed'
+          > = {
+            DELIVERED: 'delivered',
+            PROCESSING: 'processing',
+            SHIPPED: 'shipped',
+            PENDING: 'pending',
+            CONFIRMED: 'confirmed',
+            CANCELLED: 'cancelled',
+          };
+          return statusMap[status] || 'pending';
+        };
+
+        // Map recent orders with correct status formatting
+        const mappedOrders: Order[] = (orderStats.recentOrders || []).slice(0, 5).map((order) => ({
+          id: order.orderId ? String(order.orderId) : 'N/A',
+          customer: order.customerName || 'Unknown',
+          amount: `₫${(order.totalAmount || 0).toLocaleString('vi-VN')}`,
+          status: formatStatus(order.status || 'PENDING'),
+          date: order.createdAt || 'N/A',
+        }));
+
+        setRecentOrders(mappedOrders);
       } catch (err: any) {
         console.error('[AdminDashboard] Error refreshing dashboard data:', err);
       } finally {
@@ -337,7 +364,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
       delivered: { label: 'Đã giao', class: 'bg-green-100 text-green-800' },
       processing: { label: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' },
       shipped: { label: 'Đang giao', class: 'bg-indigo-100 text-indigo-800' },
-      pending: { label: 'Chờ xử lý', class: 'bg-yellow-100 text-yellow-800' },
+      pending: { label: 'Chờ xác nhận', class: 'bg-yellow-100 text-yellow-800' },
+      confirmed: { label: 'Đã xác nhận', class: 'bg-purple-100 text-purple-800' },
+      cancelled: { label: 'Đã hủy', class: 'bg-red-100 text-red-800' },
     };
     return badges[status];
   };
