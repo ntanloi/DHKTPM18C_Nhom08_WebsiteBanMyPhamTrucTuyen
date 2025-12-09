@@ -23,7 +23,7 @@ interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
 }
 
-const VNPAY_TEST_BANK_CODE = 'NCB';
+const VNPAY_TEST_BANK_CODE = 'INTCARD';
 
 export default function CheckoutInfoPage({
   onNavigate,
@@ -461,7 +461,12 @@ export default function CheckoutInfoPage({
 
   const handleVNPaySuccess = async () => {
     setShowVNPayModal(false);
-    await clearCart();
+    try {
+      await clearCart();
+      console.log('Cart cleared after successful payment');
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
     onNavigate?.(`/order-success/${currentOrderId}`);
   };
 
