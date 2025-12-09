@@ -4,7 +4,6 @@ import { AuthContext } from '../../context/auth-context';
 import {
   createOrder,
   createGuestOrder,
-  getOrderDetail,
   type CreateOrderRequest,
   type CreateGuestOrderRequest,
 } from '../../api/order';
@@ -13,11 +12,12 @@ import {
   getPaymentMethods,
   type PaymentMethod,
 } from '../../api/payment';
+import { getAddressesByUserId, type AddressResponse } from '../../api/address';
 import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
-import VNPayPaymentModal from '../../components/user/payment/VNPayPaymentModal';
+// VNPayPaymentModal removed - now using direct redirect to VNPay
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
@@ -60,10 +60,14 @@ export default function CheckoutInfoPage({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // VNPay Payment Modal State
-  const [showVNPayModal, setShowVNPayModal] = useState(false);
-  const [vnpayPaymentUrl, setVnpayPaymentUrl] = useState('');
-  const [currentOrderId, setCurrentOrderId] = useState<number>(0);
+  // Saved addresses
+  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+
+  // VNPay Payment Modal State (removed - now using direct redirect)
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -196,6 +200,31 @@ export default function CheckoutInfoPage({
     loadPaymentMethods();
   }, []);
 
+  // Load saved addresses for logged in users
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (user && user.userId) {
+        setLoadingAddresses(true);
+        try {
+          const addresses = await getAddressesByUserId(user.userId);
+          setSavedAddresses(addresses);
+
+          // Auto-select default address if available
+          const defaultAddress = addresses.find((addr) => addr.isDefault);
+          if (defaultAddress) {
+            handleSelectAddress(defaultAddress);
+          }
+        } catch (error) {
+          console.error('Error loading addresses:', error);
+        } finally {
+          setLoadingAddresses(false);
+        }
+      }
+    };
+
+    loadSavedAddresses();
+  }, [user]);
+
   // Auto-fill user info if logged in
   useEffect(() => {
     if (user && user.fullName) {
@@ -214,6 +243,42 @@ export default function CheckoutInfoPage({
   }, [user]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
+
+  const handleSelectAddress = (address: AddressResponse) => {
+    setSelectedAddressId(address.id);
+
+    // Parse recipient name
+    const nameParts = address.recipientName.split(' ');
+    const firstName = nameParts[nameParts.length - 1] || '';
+    const lastName = nameParts.slice(0, -1).join(' ') || '';
+
+    // Fill form with selected address
+    setFormData({
+      recipientFirstName: firstName,
+      recipientLastName: lastName,
+      recipientPhone: address.recipientPhone,
+      recipientEmail: formData.recipientEmail || user?.email || '',
+      province: address.city, // city is province/city
+      district: address.district,
+      ward: address.ward,
+      address: address.streetAddress,
+      notes: formData.notes,
+    });
+
+    // Load districts and wards for selected province/district
+    const province = provinces.find((p) => p.name === address.city);
+    if (province) {
+      fetchDistricts(province.code);
+
+      // Wait a bit for districts to load, then load wards
+      setTimeout(() => {
+        const district = districts.find((d) => d.name === address.district);
+        if (district) {
+          fetchWards(district.code);
+        }
+      }, 500);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -368,7 +433,12 @@ export default function CheckoutInfoPage({
         return;
       }
 
-      // Logged in user - create order via API
+      // Logged in user - check payment method first
+      const selectedMethod = paymentMethods.find(
+        (m) => m.id === selectedPaymentMethodId,
+      );
+
+      // Prepare order request
       const orderRequest: CreateOrderRequest = {
         userId: user.userId,
         orderItems: cart.cartItems.map((item) => ({
@@ -387,31 +457,35 @@ export default function CheckoutInfoPage({
         paymentMethodId: selectedPaymentMethodId,
       };
 
-      const order = await createOrder(orderRequest);
-
-      // Check if payment method requires online payment (VNPay, Momo, ZaloPay, etc.)
-      const selectedMethod = paymentMethods.find(
-        (m) => m.id === selectedPaymentMethodId,
-      );
+      // If VNPay or other online payment, save order info and redirect to payment first
       if (selectedMethod?.code === 'VNPAY') {
+        // Save pending order info to localStorage
+        localStorage.setItem(
+          'pending_logged_order',
+          JSON.stringify(orderRequest),
+        );
+        localStorage.setItem('pending_cart', JSON.stringify(cart.cartItems));
+
+        // Create temporary order ID for tracking
+        const tempOrderId = `TEMP-${Date.now()}`;
         const vnpayResponse = await createVNPayPayment({
-          orderId: order.id,
+          orderId: 0, // Will create real order after payment success
           amount: cart.totalAmount,
-          orderInfo: `Thanh toan don hang #${order.id} - BeautyBox`,
+          orderInfo: `Thanh toan don hang ${tempOrderId} - BeautyBox`,
           language: 'vn',
         });
 
         if (vnpayResponse.success && vnpayResponse.paymentUrl) {
-          // Show VNPay modal instead of redirecting
-          setCurrentOrderId(order.id);
-          setVnpayPaymentUrl(vnpayResponse.paymentUrl);
-          setShowVNPayModal(true);
+          // Redirect to VNPay payment page
+          window.location.href = vnpayResponse.paymentUrl;
         } else {
           throw new Error(
             vnpayResponse.message || 'Không thể tạo thanh toán VNPay',
           );
         }
       } else {
+        // COD or other payment methods - create order immediately
+        const order = await createOrder(orderRequest);
         await clearCart();
         onNavigate?.(`/order-success/${order.id}`);
       }
@@ -448,32 +522,7 @@ export default function CheckoutInfoPage({
     }
   };
 
-  // VNPay Modal Handlers
-  const handleVNPayModalClose = () => {
-    setShowVNPayModal(false);
-    setVnpayPaymentUrl('');
-    // Don't clear currentOrderId immediately, user might want to check status
-  };
-
-  const handleVNPaySuccess = async () => {
-    setShowVNPayModal(false);
-    await clearCart();
-    onNavigate?.(`/order-success/${currentOrderId}`);
-  };
-
-  const handleCheckPaymentStatus = async (): Promise<{ isPaid: boolean; status: string }> => {
-    try {
-      const order = await getOrderDetail(currentOrderId);
-      const isPaid = order.paymentInfo?.status === 'PAID' || order.paymentInfo?.status === 'COMPLETED';
-      return {
-        isPaid,
-        status: order.paymentInfo?.status || 'PENDING',
-      };
-    } catch (error) {
-      console.error('Error checking payment status:', error);
-      return { isPaid: false, status: 'UNKNOWN' };
-    }
-  };
+  // VNPay Modal Handlers removed - now using direct redirect
 
   if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
     return (
@@ -636,6 +685,42 @@ export default function CheckoutInfoPage({
               <h2 className="mb-5 text-lg font-semibold text-gray-900">
                 Địa chỉ nhận hàng
               </h2>
+
+              {/* Saved Addresses Selector - Only for logged in users */}
+              {user && savedAddresses.length > 0 && (
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Chọn địa chỉ đã lưu
+                  </label>
+                  <select
+                    value={selectedAddressId || ''}
+                    onChange={(e) => {
+                      const addressId = parseInt(e.target.value);
+                      if (addressId) {
+                        const address = savedAddresses.find(
+                          (a) => a.id === addressId,
+                        );
+                        if (address) {
+                          handleSelectAddress(address);
+                        }
+                      } else {
+                        setSelectedAddressId(null);
+                      }
+                    }}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-pink-500 focus:outline-none"
+                  >
+                    <option value="">-- Nhập địa chỉ mới --</option>
+                    {savedAddresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.recipientName} - {address.recipientPhone} |{' '}
+                        {address.streetAddress}, {address.ward},{' '}
+                        {address.district}, {address.city}
+                        {address.isDefault && ' (Mặc định)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -888,18 +973,6 @@ export default function CheckoutInfoPage({
           </div>
         </div>
       </div>
-
-      {/* VNPay Payment Modal */}
-      <VNPayPaymentModal
-        isOpen={showVNPayModal}
-        paymentUrl={vnpayPaymentUrl}
-        orderId={currentOrderId}
-        amount={cart.totalAmount}
-        orderInfo={`Thanh toán đơn hàng #${currentOrderId} - BeautyBox`}
-        onClose={handleVNPayModalClose}
-        onSuccess={handleVNPaySuccess}
-        onCheckStatus={handleCheckPaymentStatus}
-      />
     </div>
   );
 }

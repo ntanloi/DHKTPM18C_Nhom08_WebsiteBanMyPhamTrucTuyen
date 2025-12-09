@@ -371,7 +371,6 @@ export default function Header({
       <FavoriteSidebar
         isOpen={isFavoriteOpen}
         onClose={() => setIsFavoriteOpen(false)}
-        onNavigate={onNavigate}
       />
 
       {/* Cart Sidebar */}

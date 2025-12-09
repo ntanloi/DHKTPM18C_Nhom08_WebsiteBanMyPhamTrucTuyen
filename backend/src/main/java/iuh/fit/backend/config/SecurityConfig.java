@@ -85,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/payment-methods").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/orders/guest").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/guest/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/payment/complete").permitAll()
 
                         // Admin only - User management
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -111,6 +112,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasAnyRole("MANAGER", "ADMIN")
                         
                         // VNPay payment endpoints
+                        .requestMatchers("/api/payments/vnpay/create").permitAll()
                         .requestMatchers("/api/payments/vnpay/callback").permitAll()
                         .requestMatchers("/api/payments/vnpay/ipn").permitAll()
                         
@@ -134,6 +136,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/reviews/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()
+                        .requestMatchers("/api/favorites/**").authenticated()
+                        .requestMatchers("/api/cart/**").authenticated()
                         
                         // Coupon endpoints - read access for authenticated users
                         .requestMatchers(HttpMethod.GET, "/api/coupons/**").authenticated()

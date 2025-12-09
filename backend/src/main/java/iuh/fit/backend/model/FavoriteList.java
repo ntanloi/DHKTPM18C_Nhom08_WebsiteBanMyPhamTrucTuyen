@@ -29,7 +29,7 @@ public class FavoriteList {
     @JsonIgnore
     private List<ProductVariant> productVariants;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     @JsonIgnore
     private User user;

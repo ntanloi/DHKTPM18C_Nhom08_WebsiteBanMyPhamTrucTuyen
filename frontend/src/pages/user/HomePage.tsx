@@ -60,9 +60,10 @@ export default function HomePage() {
     )
     .slice(0, 12);
 
-  const navigateToProducts = (category: string) => {
-    window.history.pushState({}, '', `/products/${category}`);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+  const navigateToProducts = (filter?: string) => {
+    // Navigate to products page with optional filter
+    const url = filter ? `/products?filter=${filter}` : '/products';
+    window.location.href = url;
   };
 
   const images = [LuongVe, DocQuyen99, RangRo7Nam, Clio, SachSau, LungLinh];
@@ -119,8 +120,8 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Banner Section */}
-      <div className="flex flex-col gap-4 md:flex-row">
-        <div className="relative h-60 w-full overflow-hidden rounded-xl bg-gray-100 sm:h-80 md:h-90 md:w-2/3">
+      <div className="flex gap-4">
+        <div className="relative h-90 w-2/3 overflow-hidden rounded-xl bg-gray-100">
           <div
             className="flex h-full transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
@@ -162,7 +163,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="hidden h-90 w-1/3 flex-col gap-4 md:flex">
+        <div className="flex h-90 w-1/3 flex-col gap-4">
           <div className="h-45 overflow-hidden rounded-xl shadow-lg">
             <img
               src={DocQuyen99}
@@ -206,7 +207,7 @@ export default function HomePage() {
                   (_, pageIndex) => (
                     <div
                       key={pageIndex}
-                      className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
+                      className="flex w-full flex-shrink-0 gap-4 px-2"
                     >
                       {bestSellingProducts
                         .slice(
@@ -214,7 +215,7 @@ export default function HomePage() {
                           (pageIndex + 1) * itemsPerPage,
                         )
                         .map((product) => (
-                          <div key={product.id} className="w-1/2 sm:w-1/3 lg:w-1/4">
+                          <div key={product.id} className="w-1/4">
                             <ProductCard
                               id={product.id}
                               slug={product.slug}
@@ -272,10 +273,10 @@ export default function HomePage() {
       </div>
 
       {/* 3 Images */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-1">
-        <img className="w-full rounded-xl" src={Anh1} alt="" />
-        <img className="w-full rounded-xl" src={Anh2} alt="" />
-        <img className="w-full rounded-xl" src={Anh3} alt="" />
+      <div className="flex gap-1">
+        <img className="w-1/3 rounded-xl" src={Anh1} alt="" />
+        <img className="w-1/3 rounded-xl" src={Anh2} alt="" />
+        <img className="w-1/3 rounded-xl" src={Anh3} alt="" />
       </div>
 
       {/* Phần Xu hướng làm đẹp */}
@@ -346,7 +347,7 @@ export default function HomePage() {
                     (_, pageIndex) => (
                       <div
                         key={pageIndex}
-                        className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
+                        className="flex w-full flex-shrink-0 gap-4 px-2"
                       >
                         {displayProducts
                           .slice(
@@ -356,7 +357,7 @@ export default function HomePage() {
                           .map((product) => (
                             <div
                               key={`${activeTab}-${product.id}`}
-                              className="w-1/2 sm:w-1/3 lg:w-1/4"
+                              className="w-1/4"
                             >
                               <ProductCard
                                 id={product.id}
@@ -423,7 +424,7 @@ export default function HomePage() {
                   (_, pageIndex) => (
                     <div
                       key={pageIndex}
-                      className="flex w-full flex-shrink-0 gap-2 px-2 sm:gap-4"
+                      className="flex w-full flex-shrink-0 gap-4 px-2"
                     >
                       {newProducts
                         .slice(
@@ -431,7 +432,7 @@ export default function HomePage() {
                           (pageIndex + 1) * itemsPerPage,
                         )
                         .map((product) => (
-                          <div key={product.id} className="w-1/2 sm:w-1/3 lg:w-1/4">
+                          <div key={product.id} className="w-1/4">
                             <ProductCard
                               id={product.id}
                               slug={product.slug}
@@ -488,6 +489,9 @@ export default function HomePage() {
           ].map((tag, index) => (
             <button
               key={index}
+              onClick={() => {
+                window.location.href = `/search?q=${encodeURIComponent(tag)}`;
+              }}
               className="rounded-full bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black hover:text-white"
             >
               {tag}
@@ -496,32 +500,52 @@ export default function HomePage() {
         </div>
 
         {/* 4 Banner Images */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+        <div className="grid grid-cols-4 gap-4">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('son peripera')}`;
+            }}
+          >
             <img
               src={TimKiem1}
-              alt="Banner 1"
+              alt="Son Peripera"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('toner pad')}`;
+            }}
+          >
             <img
               src={TimKiem2}
-              alt="Banner 2"
+              alt="Toner Pad"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('cushion clio')}`;
+            }}
+          >
             <img
               src={TimKiem3}
-              alt="Banner 3"
+              alt="Cushion Clio"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <div className="group relative overflow-hidden rounded-xl shadow-lg">
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+            onClick={() => {
+              window.location.href = `/search?q=${encodeURIComponent('mặt nạ')}`;
+            }}
+          >
             <img
               src={TimKiem4}
-              alt="Banner 4"
+              alt="Mặt nạ"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
