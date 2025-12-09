@@ -147,10 +147,10 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
             </div>
           </div>
 
-          <div className="mx-auto max-w-[1200px] px-6 py-16 text-center">
-            <div className="mb-6">
+          <div className="mx-auto max-w-[1200px] px-3 py-8 text-center sm:px-6 sm:py-16">
+            <div className="mb-4 sm:mb-6">
               <svg
-                className="mx-auto h-24 w-24 text-gray-300"
+                className="mx-auto h-16 w-16 text-gray-300 sm:h-24 sm:w-24"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -163,15 +163,15 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
                 />
               </svg>
             </div>
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">
+            <h2 className="mb-3 text-xl font-bold text-gray-900 sm:mb-4 sm:text-2xl">
               Giỏ hàng trống
             </h2>
-            <p className="mb-8 text-gray-600">
+            <p className="mb-6 text-sm text-gray-600 sm:mb-8 sm:text-base">
               Bạn chưa có sản phẩm nào trong giỏ hàng
             </p>
             <button
               onClick={() => onNavigate?.('/products')}
-              className="rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] px-8 py-3 font-semibold text-white"
+              className="rounded-full bg-gradient-to-r from-[#f59e0b] via-[#d4145a] to-[#9333ea] px-6 py-2.5 text-sm font-semibold text-white sm:px-8 sm:py-3 sm:text-base"
             >
               Tiếp tục mua sắm
             </button>
@@ -212,8 +212,8 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
       <div className="min-h-screen bg-white">
         {/* Breadcrumb */}
         <div className="bg-white">
-          <div className="mx-auto max-w-[1200px] px-6 py-3">
-            <div className="flex items-center text-sm text-gray-500">
+          <div className="mx-auto max-w-[1200px] px-3 py-2 sm:px-6 sm:py-3">
+            <div className="flex items-center text-xs text-gray-500 sm:text-sm">
               <span>Trang chủ</span>
               <span className="mx-2">›</span>
               <span className="font-medium text-gray-900">Giỏ hàng</span>
@@ -222,15 +222,15 @@ export default function CheckoutPage({ onNavigate }: CheckoutPageProps) {
         </div>
 
         {/* Main Content */}
-        <div className="mx-auto max-w-[1200px] px-6 py-8">
-          <h1 className="mb-6 text-[28px] font-bold text-gray-900">
+        <div className="mx-auto max-w-[1200px] px-3 py-4 sm:px-6 sm:py-8">
+          <h1 className="mb-4 text-xl font-bold text-gray-900 sm:mb-6 sm:text-2xl lg:text-[28px]">
             Giỏ hàng của bạn ({cart.cartItems.length} sản phẩm)
           </h1>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
             {/* Left Column - Cart Items */}
-            <div className="space-y-5 lg:col-span-2">
-              <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="space-y-4 sm:space-y-5 lg:col-span-2">
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
                 <h2 className="mb-5 text-[15px] font-semibold text-gray-900">
                   Sản phẩm trong giỏ hàng
                 </h2>
