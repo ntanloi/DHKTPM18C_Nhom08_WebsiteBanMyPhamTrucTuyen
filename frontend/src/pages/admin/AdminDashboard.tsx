@@ -86,6 +86,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
         console.log('[AdminDashboard] Calling getDashboardSummary()...');
         const summary: DashboardSummary = await getDashboardSummary();
         console.log('[AdminDashboard] Dashboard summary received:', summary);
+        console.log('[AdminDashboard] totalRevenue type:', typeof summary.totalRevenue, 'value:', summary.totalRevenue);
+        console.log('[AdminDashboard] todayRevenue type:', typeof summary.todayRevenue, 'value:', summary.todayRevenue);
+        console.log('[AdminDashboard] Raw JSON:', JSON.stringify(summary, null, 2));
 
         // Fetch recent orders (last 30 days)
         const endDate = new Date().toISOString();
