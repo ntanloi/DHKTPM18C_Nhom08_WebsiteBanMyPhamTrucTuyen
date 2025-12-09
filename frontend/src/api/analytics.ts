@@ -4,13 +4,22 @@ const API_BASE = '/admin/analytics';
 
 export interface DashboardSummary {
   totalRevenue: number;
-  totalOrders: number;
-  totalProducts: number;
-  totalCustomers: number;
+  todayRevenue: number;
+  monthRevenue: number;
   revenueGrowth: number;
+  totalOrders: number;
+  todayOrders: number;
+  pendingOrders: number;
   ordersGrowth: number;
-  productsGrowth: number;
+  totalCustomers: number;
+  newCustomersToday: number;
   customersGrowth: number;
+  totalProducts: number;
+  lowStockProducts: number;
+  productsGrowth: number;
+  totalReturns: number;
+  pendingReturns: number;
+  ordersByStatus: Record<string, number>;
 }
 
 export interface RevenueData {
