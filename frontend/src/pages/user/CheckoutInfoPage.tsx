@@ -16,7 +16,7 @@ import CartItemCard from '../../components/user/ui/CartItemCard';
 import { useAddress } from '../../hooks/useAddress';
 import { getPaymentIcon } from '../../utils/paymentIcons';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
-
+import { getAddressesByUserId, type AddressResponse } from '../../api/address';
 
 interface CheckoutInfoPageProps {
   onNavigate?: (path: string) => void;
@@ -61,7 +61,9 @@ export default function CheckoutInfoPage({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-
+  // Saved addresses
+  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -79,6 +81,32 @@ export default function CheckoutInfoPage({
       setToast({ show: false, message: '', type: 'info' });
     }, 3000);
   };
+
+  // Load saved addresses for logged-in users
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (user?.userId && provinces.length > 0) {
+        try {
+          const addresses = await getAddressesByUserId(user.userId);
+          setSavedAddresses(addresses);
+
+          // Auto-select default address if available
+          const defaultAddress = addresses.find((addr) => addr.isDefault);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id.toString());
+            // Wait a bit to ensure provinces are fully loaded
+            setTimeout(() => {
+              handleSelectAddress(defaultAddress);
+            }, 200);
+          }
+        } catch (error) {
+          console.error('Error loading saved addresses:', error);
+        }
+      }
+    };
+
+    loadSavedAddresses();
+  }, [user?.userId, provinces]);
 
   // Load payment methods
   useEffect(() => {
@@ -196,18 +224,29 @@ export default function CheckoutInfoPage({
 
   // Auto-fill user info if logged in
   useEffect(() => {
-    if (user && user.fullName) {
-      const fullName = user.fullName || '';
-      const nameParts = fullName.split(' ');
-      const firstName = nameParts[nameParts.length - 1] || '';
-      const lastName = nameParts.slice(0, -1).join(' ') || '';
+    if (user) {
+      const updates: any = {};
 
-      setFormData((prev) => ({
-        ...prev,
-        recipientFirstName: firstName,
-        recipientLastName: lastName,
-        recipientEmail: user.email || '',
-      }));
+      // Always fill email if available
+      if (user.email) {
+        updates.recipientEmail = user.email;
+      }
+
+      // Fill name if available
+      if (user.fullName) {
+        const fullName = user.fullName || '';
+        const nameParts = fullName.split(' ');
+        updates.recipientFirstName = nameParts[nameParts.length - 1] || '';
+        updates.recipientLastName = nameParts.slice(0, -1).join(' ') || '';
+      }
+
+      // Update form data
+      if (Object.keys(updates).length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          ...updates,
+        }));
+      }
     }
   }, [user]);
 
@@ -297,9 +336,12 @@ export default function CheckoutInfoPage({
           };
 
           const order = await createGuestOrder(guestOrderRequest);
-          
+
           // Save guest email to localStorage for callback page
-          localStorage.setItem(`guestOrder_${order.id}_email`, formData.recipientEmail);
+          localStorage.setItem(
+            `guestOrder_${order.id}_email`,
+            formData.recipientEmail,
+          );
 
           // Create VNPay payment URL
           const vnpayResponse = await createVNPayPayment({
@@ -311,6 +353,8 @@ export default function CheckoutInfoPage({
           });
 
           if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+            // Don't clear cart here - will be cleared in callback after successful payment
+            // This allows user to go back if they cancel payment
             // Redirect directly to VNPay payment page (same tab)
             window.location.href = vnpayResponse.paymentUrl;
           } else {
@@ -340,10 +384,13 @@ export default function CheckoutInfoPage({
         };
 
         const order = await createGuestOrder(guestOrderRequest);
-        
+
         // Save guest email to localStorage for order retrieval
-        localStorage.setItem(`guestOrder_${order.id}_email`, formData.recipientEmail);
-        
+        localStorage.setItem(
+          `guestOrder_${order.id}_email`,
+          formData.recipientEmail,
+        );
+
         await clearCart();
         onNavigate?.(`/order-success/${order.id}`);
         return;
@@ -384,6 +431,8 @@ export default function CheckoutInfoPage({
         });
 
         if (vnpayResponse.success && vnpayResponse.paymentUrl) {
+          // Don't clear cart here - will be cleared in callback after successful payment
+          // This allows user to go back if they cancel payment
           // Redirect directly to VNPay payment page
           window.location.href = vnpayResponse.paymentUrl;
         } else {
@@ -409,6 +458,90 @@ export default function CheckoutInfoPage({
     }
   };
 
+  // Handle address selection
+  const handleSelectAddress = async (address: AddressResponse) => {
+    try {
+      // Step 1: Fill basic info and province
+      const nameParts = address.recipientName.split(' ');
+      const firstName = nameParts[nameParts.length - 1] || '';
+      const lastName = nameParts.slice(0, -1).join(' ') || '';
+
+      setFormData((prev) => ({
+        ...prev,
+        recipientFirstName: firstName,
+        recipientLastName: lastName,
+        recipientPhone: address.recipientPhone,
+        recipientEmail: prev.recipientEmail,
+        address: address.streetAddress,
+        province: address.city,
+        district: '',
+        ward: '',
+      }));
+
+      // Step 2: Find province and load districts
+      const province = provinces.find((p) => p.name === address.city);
+      if (!province) {
+        console.error('Province not found:', address.city);
+        return;
+      }
+
+      console.log('Loading districts for province:', province.name);
+      await fetchDistricts(province.code);
+
+      // Step 3: Load districts and set district + ward
+      setTimeout(() => {
+        // Get fresh districts from the API response
+        fetch(
+          `https://provinces.open-api.vn/api/p/${province.code}?depth=2`,
+        ).then((res) =>
+          res.json().then((data) => {
+            const loadedDistricts = data.districts || [];
+            const district = loadedDistricts.find(
+              (d: any) => d.name === address.district,
+            );
+
+            if (district) {
+              console.log('Setting district:', district.name);
+              setFormData((prev) => ({
+                ...prev,
+                district: address.district,
+              }));
+
+              // Load wards
+              console.log('Loading wards for district:', district.name);
+              fetchWards(district.code);
+
+              // Step 4: Load wards and set ward (reduced delay)
+              setTimeout(() => {
+                fetch(
+                  `https://provinces.open-api.vn/api/d/${district.code}?depth=2`,
+                ).then((res) =>
+                  res.json().then((wardData) => {
+                    const loadedWards = wardData.wards || [];
+                    const ward = loadedWards.find(
+                      (w: any) => w.name === address.ward,
+                    );
+
+                    if (ward) {
+                      console.log('Setting ward:', ward.name);
+                      setFormData((prev) => ({
+                        ...prev,
+                        ward: address.ward,
+                      }));
+                    }
+                  }),
+                );
+              }, 400);
+            }
+          }),
+        );
+      }, 400);
+    } catch (error) {
+      console.error('Error selecting address:', error);
+      showToast('Có lỗi khi tải địa chỉ', 'error');
+    }
+  };
+
   const handleUpdateQuantity = async (cartItemId: number, quantity: number) => {
     try {
       await updateQuantity(cartItemId, quantity);
@@ -428,8 +561,6 @@ export default function CheckoutInfoPage({
       }
     }
   };
-
-
 
   if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
     return (
@@ -594,6 +725,42 @@ export default function CheckoutInfoPage({
               </h2>
 
               <div className="space-y-4">
+                {/* Saved Address Selector - Only show for logged-in users with saved addresses */}
+                {user && savedAddresses.length > 0 && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      Chọn địa chỉ đã lưu
+                    </label>
+                    <select
+                      value={selectedAddressId}
+                      onChange={(e) => {
+                        const addressId = e.target.value;
+                        setSelectedAddressId(addressId);
+
+                        if (addressId) {
+                          const address = savedAddresses.find(
+                            (addr) => addr.id.toString() === addressId,
+                          );
+                          if (address) {
+                            handleSelectAddress(address);
+                          }
+                        }
+                      }}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">-- Chọn địa chỉ hoặc nhập mới --</option>
+                      {savedAddresses.map((address) => (
+                        <option key={address.id} value={address.id}>
+                          {address.recipientName} - {address.recipientPhone} -{' '}
+                          {address.streetAddress}, {address.ward},{' '}
+                          {address.district}, {address.city}
+                          {address.isDefault && ' (Mặc định)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <select
                     value={formData.province}
@@ -844,8 +1011,6 @@ export default function CheckoutInfoPage({
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }

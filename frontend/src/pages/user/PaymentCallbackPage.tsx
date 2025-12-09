@@ -2,15 +2,24 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader2, Home, FileText } from 'lucide-react';
 import { processVNPayCallback, type VNPayResponse } from '../../api/payment';
 import { useCart } from '../../context/CartContext';
+import { clearCart as clearCartAPI } from '../../api/cart';
+import { useAuth } from '../../hooks/useAuth';
 
 interface PaymentCallbackPageProps {
   onNavigate?: (path: string) => void;
 }
 
-export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageProps) {
+export default function PaymentCallbackPage({
+  onNavigate,
+}: PaymentCallbackPageProps) {
   const { clearCart } = useCart();
-  const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
-  const [paymentResult, setPaymentResult] = useState<VNPayResponse | null>(null);
+  const { user } = useAuth();
+  const [status, setStatus] = useState<'loading' | 'success' | 'failed'>(
+    'loading',
+  );
+  const [paymentResult, setPaymentResult] = useState<VNPayResponse | null>(
+    null,
+  );
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -22,7 +31,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
       // Get URL params from current URL
       const urlParams = new URLSearchParams(window.location.search);
       const params: Record<string, string> = {};
-      
+
       urlParams.forEach((value, key) => {
         params[key] = value;
       });
@@ -37,17 +46,32 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
       // Process callback
       const result = await processVNPayCallback(params);
       setPaymentResult(result);
-      
+
       if (result.success) {
-        setStatus('success');
+        console.log('✅ Payment successful, clearing cart...');
+
         // Clear cart after successful payment
         try {
+          // Call API directly to clear cart
+          if (user?.userId) {
+            console.log('Clearing cart for user:', user.userId);
+            await clearCartAPI(user.userId);
+            console.log('✅ Cart cleared via API');
+          } else {
+            // Guest user - clear localStorage
+            localStorage.removeItem('guestCart');
+            console.log('✅ Guest cart cleared from localStorage');
+          }
+
+          // Also use context to update UI
           await clearCart();
-          console.log('Cart cleared after successful VNPay payment');
+          console.log('✅ Cart context updated');
         } catch (cartError) {
-          console.error('Error clearing cart:', cartError);
-          // Don't fail the whole flow if cart clear fails
+          console.error('❌ Error clearing cart:', cartError);
         }
+
+        // Show success (no reload to avoid infinite loop)
+        setStatus('success');
       } else {
         setStatus('failed');
         setError(result.message || 'Thanh toán không thành công');
@@ -82,9 +106,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
               <h2 className="mb-2 text-xl font-bold text-gray-900">
                 Đang xử lý thanh toán
               </h2>
-              <p className="text-gray-500">
-                Vui lòng đợi trong giây lát...
-              </p>
+              <p className="text-gray-500">Vui lòng đợi trong giây lát...</p>
             </div>
           )}
 
@@ -179,9 +201,7 @@ export default function PaymentCallbackPage({ onNavigate }: PaymentCallbackPageP
 
         {/* VNPay Logo */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-400">
-            Thanh toán được xử lý bởi
-          </p>
+          <p className="text-sm text-gray-400">Thanh toán được xử lý bởi</p>
           <img
             src="https://vnpay.vn/wp-content/uploads/2019/09/logo-vnpay-768x254.png"
             alt="VNPay"

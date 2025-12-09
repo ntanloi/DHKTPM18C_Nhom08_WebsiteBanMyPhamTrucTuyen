@@ -256,7 +256,7 @@ export default function Header({
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            // Navigate to orders page
+                            onNavigate?.('/account?tab=orders');
                           }}
                           className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                         >
@@ -342,9 +342,7 @@ export default function Header({
                 />
               )}
 
-              <HeartIconWithBadge
-                onClick={() => setIsFavoriteOpen(true)}
-              />
+              <HeartIconWithBadge onClick={() => setIsFavoriteOpen(true)} />
 
               {/* Notification Bell */}
               {isLoggedIn && <NotificationBell />}

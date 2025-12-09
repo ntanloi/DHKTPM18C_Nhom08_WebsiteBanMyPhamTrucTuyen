@@ -30,6 +30,7 @@ public class VNPayService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final NotificationService notificationService;
+    private final CartService cartService;
 
     private static final Integer VALID_MINUTE = 15;
 
@@ -151,13 +152,21 @@ public class VNPayService {
                     payment.setUpdatedAt(LocalDateTime.now());
                     paymentRepository.save(payment);
 
-                    // Send notification to customer
+                    // Get order and clear cart
                     try {
                         Order order = orderRepository.findById(payment.getOrderId())
                                 .orElseThrow(() -> new RuntimeException("Order not found"));
+                        
+                        // Clear cart after successful payment
+                        if (order.getUserId() != null) {
+                            cartService.clearCart(order.getUserId());
+                            log.info("Cart cleared for user: {} after successful VNPay payment", order.getUserId());
+                        }
+                        
+                        // Send notification to customer
                         notificationService.notifyPaymentCompleted(payment.getOrderId(), order.getUserId());
                     } catch (Exception e) {
-                        log.warn("Failed to send payment notification: {}", e.getMessage());
+                        log.warn("Failed to clear cart or send notification: {}", e.getMessage());
                     }
                     
                     log.info("Payment completed for order: {}, txnRef: {}", payment.getOrderId(), txnRef);
