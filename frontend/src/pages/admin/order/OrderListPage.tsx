@@ -40,42 +40,56 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
   });
 
   // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const ordersData = await getAllOrders();
+      
+      // Transform OrderResponse to Order type
+      const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
+        id: order.id,
+        userId: order.userId || 0,
+        status: order.status || 'PENDING',
+        subtotal: order.subtotal || 0,
+        totalAmount: order.totalAmount || 0,
+        notes: order.notes || '',
+        discountAmount: order.discountAmount || 0,
+        shippingFee: order.shippingFee || 0,
+        estimateDeliveryFrom: order.estimateDeliveryFrom || '',
+        estimateDeliveryTo: order.estimateDeliveryTo || '',
+        createdAt: order.createdAt || new Date().toISOString(),
+        updatedAt: order.updatedAt || new Date().toISOString(),
+        orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
+        payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
+        recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
+      }));
+      
+      setOrders(transformedOrders);
+    } catch (err: any) {
+      console.error('Failed to fetch orders:', err);
+      setError(err.message || 'Không thể tải danh sách đơn hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const ordersData = await getAllOrders();
-        
-        // Transform OrderResponse to Order type
-        const transformedOrders: Order[] = ordersData.map((order: OrderResponse) => ({
-          id: order.id,
-          userId: order.userId || 0,
-          status: order.status || 'PENDING',
-          subtotal: order.subtotal || 0,
-          totalAmount: order.totalAmount || 0,
-          notes: order.notes || '',
-          discountAmount: order.discountAmount || 0,
-          shippingFee: order.shippingFee || 0,
-          estimateDeliveryFrom: order.estimateDeliveryFrom || '',
-          estimateDeliveryTo: order.estimateDeliveryTo || '',
-          createdAt: order.createdAt || new Date().toISOString(),
-          updatedAt: order.updatedAt || new Date().toISOString(),
-          orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
-          payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
-          recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
-        }));
-        
-        setOrders(transformedOrders);
-      } catch (err: any) {
-        console.error('Failed to fetch orders:', err);
-        setError(err.message || 'Không thể tải danh sách đơn hàng');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchOrders();
+  }, []);
+
+  // Refetch when window gains focus (user comes back from another tab/page)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('[OrderListPage] Window focused, refetching orders...');
+      fetchOrders();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   useEffect(() => {

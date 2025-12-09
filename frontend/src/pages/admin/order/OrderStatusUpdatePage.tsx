@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Order } from '../../../types/Order';
-import { getOrderById } from '../../../mocks/orderMockData';
+import { getOrderDetail, updateOrderStatus } from '../../../api/order';
 import OrderStatusUpdateForm from '../../../components/admin/order/OrderStatusUpdateForm';
 import { formatOrderId, formatDateTime } from '../../../utils/orderStatusUtils';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
@@ -26,31 +26,51 @@ const OrderStatusUpdatePage: React.FC<OrderStatusUpdatePageProps> = ({
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const orderData = getOrderById(Number(orderId));
+      const orderData = await getOrderDetail(Number(orderId));
       if (!orderData) {
         throw new Error('Không tìm thấy đơn hàng');
       }
-      setOrder(orderData);
+      // Transform OrderDetailResponse to Order type
+      const transformedOrder: Order = {
+        id: orderData.id,
+        userId: orderData.userId || 0,
+        status: orderData.status || 'PENDING',
+        subtotal: orderData.subtotal || 0,
+        totalAmount: orderData.totalAmount || 0,
+        notes: orderData.notes || '',
+        discountAmount: orderData.discountAmount || 0,
+        shippingFee: orderData.shippingFee || 0,
+        estimateDeliveryFrom: orderData.estimateDeliveryFrom || '',
+        estimateDeliveryTo: orderData.estimateDeliveryTo || '',
+        createdAt: orderData.createdAt || new Date().toISOString(),
+        updatedAt: orderData.updatedAt || new Date().toISOString(),
+        orderItems: (orderData.orderItems || []) as any,
+        payment: orderData.paymentInfo as any,
+        recipientInformation: orderData.recipientInfo as any,
+      };
+      setOrder(transformedOrder);
       setError(null);
     } catch (err: any) {
+      console.error('Failed to fetch order details:', err);
       setError(err.message || 'Có lỗi xảy ra khi tải đơn hàng');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateStatus = async (_newStatus: string, _notes?: string) => {
+  const handleUpdateStatus = async (newStatus: string) => {
     try {
       setSubmitting(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      
+      // Call real API to update order status
+      await updateOrderStatus(Number(orderId), { status: newStatus });
+      
       alert('Cập nhật trạng thái thành công!');
-      onNavigate(`/admin/orders/${orderId}`);
+      // Navigate back to order list to see updated status
+      onNavigate('/admin/orders');
     } catch (err: any) {
-      alert(err.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+      console.error('Failed to update order status:', err);
+      alert(err.response?.data?.error || err.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
     } finally {
       setSubmitting(false);
     }
