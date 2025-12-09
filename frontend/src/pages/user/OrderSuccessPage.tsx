@@ -4,9 +4,11 @@ import CancelOrderModal from '../../components/user/ui/CancelOrderModal';
 import {
   getOrderDetail,
   getGuestOrderDetail,
+  cancelOrder,
   type OrderDetailResponse,
 } from '../../api/order';
 import { Toast, type ToastType } from '../../components/user/ui/Toast';
+import { useCart } from '../../context/CartContext';
 
 interface OrderSuccessPageProps {
   orderCode: string;
@@ -15,6 +17,7 @@ interface OrderSuccessPageProps {
 
 interface OrderInfo {
   code: string;
+  status: string; // Order status: PENDING, CONFIRMED, SHIPPING, DELIVERED, CANCELLED
   customer: string;
   customerId?: string;
   address: string;
@@ -25,6 +28,8 @@ interface OrderInfo {
     name: string;
     size: string;
     sku?: string;
+    productSlug?: string; // Product slug for navigation to detail page
+    productVariantId: number; // Product variant ID for adding to cart
     quantity: number;
     price: number;
     image: string;
@@ -39,10 +44,13 @@ export default function OrderSuccessPage({
   orderCode,
   onBack,
 }: OrderSuccessPageProps) {
+  const { addToCart } = useCart();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -59,6 +67,65 @@ export default function OrderSuccessPage({
     }, 3000);
   };
 
+  // Handle cancel order
+  const handleCancelOrder = async () => {
+    if (!orderInfo) return;
+
+    try {
+      setCanceling(true);
+      await cancelOrder(parseInt(orderInfo.code));
+      showToast('Đơn hàng đã được hủy thành công!', 'success');
+      setShowCancelModal(false);
+
+      // Reload order detail to update status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      showToast(
+        error.response?.data?.error || 'Có lỗi xảy ra khi hủy đơn hàng',
+        'error',
+      );
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  // Handle reorder - add all items back to cart
+  const handleReorder = async () => {
+    if (!orderInfo || !orderInfo.items.length) return;
+
+    try {
+      setReordering(true);
+
+      // Add each item to cart
+      for (const item of orderInfo.items) {
+        if (item.productVariantId) {
+          await addToCart(item.productVariantId, item.quantity);
+        }
+      }
+
+      showToast('Đã thêm tất cả sản phẩm vào giỏ hàng!', 'success');
+
+      // Navigate to cart after a short delay
+      setTimeout(() => {
+        window.location.href = '/checkout';
+      }, 1500);
+    } catch (error: any) {
+      showToast(
+        error.response?.data?.error || 'Có lỗi xảy ra khi thêm vào giỏ hàng',
+        'error',
+      );
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  // Handle complete order - go to homepage
+  const handleCompleteOrder = () => {
+    window.location.href = '/';
+  };
+
   useEffect(() => {
     const loadOrderDetail = async () => {
       try {
@@ -66,29 +133,28 @@ export default function OrderSuccessPage({
         console.log('📡 Loading order detail for order:', orderCode);
         const orderId = parseInt(orderCode);
 
-        // Try guest endpoint first (no auth required), fallback to authenticated endpoint
+        // Try authenticated endpoint first (for logged in users), fallback to guest endpoint
         let orderDetail: OrderDetailResponse;
         try {
-          console.log('Trying guest order endpoint...');
-          orderDetail = await getGuestOrderDetail(orderId, '');
-          console.log(
-            '✅ Order detail loaded from guest endpoint:',
-            orderDetail,
-          );
-        } catch (guestError) {
-          console.log(
-            'Guest endpoint failed, trying authenticated endpoint... ',
-          );
+          console.log('Trying authenticated order endpoint...');
           orderDetail = await getOrderDetail(orderId);
           console.log(
-            '✅ Order detail loaded from authenticated endpoint: ',
+            '✅ Order detail loaded from authenticated endpoint:',
             orderDetail,
           );
+        } catch (authError) {
+          console.log(
+            'Authenticated endpoint failed, trying guest endpoint...',
+          );
+          // For guest orders, we would need email from URL params or localStorage
+          // For now, just throw the error
+          throw authError;
         }
 
         // Transform API response to OrderInfo format
         const transformedInfo: OrderInfo = {
           code: orderDetail.id.toString(),
+          status: orderDetail.status || 'PENDING', // Add order status
           customer: orderDetail.recipientInfo
             ? `${orderDetail.recipientInfo.recipientFirstName} ${orderDetail.recipientInfo.recipientLastName}`
             : 'Khách hàng',
@@ -109,6 +175,8 @@ export default function OrderSuccessPage({
             name: item.productName || 'Sản phẩm',
             size: item.variantName || 'Phiên bản',
             sku: item.productVariantId?.toString() || '000000',
+            productSlug: item.productSlug, // Add product slug for navigation
+            productVariantId: item.productVariantId, // Add variant ID for cart
             quantity: item.quantity,
             price: item.price || 0,
             image: item.imageUrl || 'https://via.placeholder.com/80',
@@ -129,6 +197,7 @@ export default function OrderSuccessPage({
         // Create fallback order info if API fails
         const fallbackInfo: OrderInfo = {
           code: orderCode,
+          status: 'PENDING',
           customer: 'Khách hàng',
           customerId: '',
           address: 'Đang cập nhật',
@@ -162,6 +231,22 @@ export default function OrderSuccessPage({
   }, [orderCode]);
 
   const formatPrice = (price: number) => price.toLocaleString('vi-VN') + 'đ';
+
+  // Helper function to determine which steps are completed based on order status
+  const getOrderProgress = (status: string) => {
+    const steps = {
+      PENDING: 1, // Đã đặt đơn hàng
+      CONFIRMED: 2, // Xác nhận đơn hàng
+      PREPARING: 3, // Đang chuẩn bị đơn hàng
+      SHIPPING: 4, // Đang vận chuyển
+      DELIVERED: 5, // Hoàn tất
+      DELIVERY: 5, // Hoàn tất (alternative name)
+      CANCELLED: 0, // Đã hủy
+    };
+    return steps[status as keyof typeof steps] || 1;
+  };
+
+  const currentStep = orderInfo ? getOrderProgress(orderInfo.status) : 1;
 
   if (loading) {
     return (
@@ -242,7 +327,9 @@ export default function OrderSuccessPage({
           <div className="mb-6 flex items-start justify-between">
             <div>
               <h1 className="mb-2 text-2xl font-bold text-gray-900">
-                Đơn hàng #{orderInfo.code} đã đặt thành công!
+                {orderInfo.status === 'CANCELLED'
+                  ? `Đơn hàng #${orderInfo.code} đã được hủy thành công!`
+                  : `Đơn hàng #${orderInfo.code} đã đặt thành công!`}
               </h1>
               <p className="text-sm text-gray-600">
                 Giao hàng dự kiến: {orderInfo.deliveryDate}
@@ -252,88 +339,195 @@ export default function OrderSuccessPage({
               </p>
             </div>
             <div className="flex gap-3">
+              {/* Reorder button - add all items back to cart */}
               <button
-                onClick={onBack}
-                className="rounded-full border-2 border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                onClick={handleReorder}
+                disabled={reordering}
+                className="rounded-full border-2 border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
               >
-                Mua lại
+                {reordering ? 'Đang xử lý...' : 'Mua lại'}
               </button>
-              <button className="rounded-full bg-black px-6 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
+
+              {/* Complete order button - go to homepage */}
+              <button
+                onClick={handleCompleteOrder}
+                className="rounded-full bg-black px-6 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
+              >
                 Hoàn tất đơn hàng
               </button>
-              <button
-                onClick={() => setShowCancelModal(true)}
-                className="rounded-full border-2 border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
-                Hủy
-              </button>
+
+              {/* Cancel button - only show for PENDING orders */}
+              {orderInfo.status === 'PENDING' && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="rounded-full border-2 border-red-300 px-6 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                >
+                  Hủy đơn
+                </button>
+              )}
             </div>
           </div>
 
           {/* Order Status Timeline */}
           <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="relative flex items-center justify-between">
-              {/* Step 1 */}
+              {/* Step 1 - Đã đặt đơn hàng */}
               <div className="flex flex-1 flex-col items-center">
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600">
-                  <Package className="text-white" size={28} />
+                <div
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${
+                    currentStep >= 1
+                      ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600'
+                      : 'bg-gray-200'
+                  }`}
+                >
+                  <Package
+                    className={
+                      currentStep >= 1 ? 'text-white' : 'text-gray-400'
+                    }
+                    size={28}
+                  />
                 </div>
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p
+                    className={`text-sm font-semibold ${currentStep >= 1 ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
                     Đã đặt đơn hàng
                   </p>
-                  <p className="text-xs text-gray-500">a few seconds ago</p>
+                  {currentStep >= 1 && (
+                    <p className="text-xs text-gray-500">Đã hoàn thành</p>
+                  )}
                 </div>
               </div>
 
-              {/* Connector */}
-              <div className="absolute top-8 right-[12.5%] left-[12.5%] h-1 bg-gray-200" />
+              {/* Connector 1-2 */}
+              <div
+                className={`absolute top-8 right-[80%] left-[10%] h-1 ${currentStep >= 2 ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+              />
 
-              {/* Step 2 */}
+              {/* Step 2 - Xác nhận đơn hàng */}
               <div className="flex flex-1 flex-col items-center">
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                  <Clock className="text-gray-400" size={28} />
+                <div
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${
+                    currentStep >= 2
+                      ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600'
+                      : 'bg-gray-200'
+                  }`}
+                >
+                  <Clock
+                    className={
+                      currentStep >= 2 ? 'text-white' : 'text-gray-400'
+                    }
+                    size={28}
+                  />
                 </div>
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-gray-400">
+                  <p
+                    className={`text-sm font-semibold ${currentStep >= 2 ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
                     Xác nhận đơn hàng
                   </p>
+                  {currentStep >= 2 && (
+                    <p className="text-xs text-gray-500">Đã hoàn thành</p>
+                  )}
                 </div>
               </div>
 
-              {/* Step 3 */}
+              {/* Connector 2-3 */}
+              <div
+                className={`absolute top-8 right-[60%] left-[30%] h-1 ${currentStep >= 3 ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+              />
+
+              {/* Step 3 - Đang chuẩn bị */}
               <div className="flex flex-1 flex-col items-center">
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                  <Package className="text-gray-400" size={28} />
+                <div
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${
+                    currentStep >= 3
+                      ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600'
+                      : 'bg-gray-200'
+                  }`}
+                >
+                  <Package
+                    className={
+                      currentStep >= 3 ? 'text-white' : 'text-gray-400'
+                    }
+                    size={28}
+                  />
                 </div>
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-gray-400">
-                    Đang chuẩn bị đơn hàng
+                  <p
+                    className={`text-sm font-semibold ${currentStep >= 3 ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
+                    Đang chuẩn bị
                   </p>
+                  {currentStep >= 3 && (
+                    <p className="text-xs text-gray-500">Đã hoàn thành</p>
+                  )}
                 </div>
               </div>
 
-              {/* Step 4 */}
+              {/* Connector 3-4 */}
+              <div
+                className={`absolute top-8 right-[40%] left-[50%] h-1 ${currentStep >= 4 ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+              />
+
+              {/* Step 4 - Đang vận chuyển */}
               <div className="flex flex-1 flex-col items-center">
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                  <Truck className="text-gray-400" size={28} />
+                <div
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${
+                    currentStep >= 4
+                      ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600'
+                      : 'bg-gray-200'
+                  }`}
+                >
+                  <Truck
+                    className={
+                      currentStep >= 4 ? 'text-white' : 'text-gray-400'
+                    }
+                    size={28}
+                  />
                 </div>
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-gray-400">
+                  <p
+                    className={`text-sm font-semibold ${currentStep >= 4 ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
                     Đang vận chuyển
                   </p>
+                  {currentStep >= 4 && (
+                    <p className="text-xs text-gray-500">Đã hoàn thành</p>
+                  )}
                 </div>
               </div>
 
-              {/* Step 5 */}
+              {/* Connector 4-5 */}
+              <div
+                className={`absolute top-8 right-[20%] left-[70%] h-1 ${currentStep >= 5 ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gray-200'}`}
+              />
+
+              {/* Step 5 - Hoàn tất */}
               <div className="flex flex-1 flex-col items-center">
-                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                  <CheckCircle className="text-gray-400" size={28} />
+                <div
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${
+                    currentStep >= 5
+                      ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600'
+                      : 'bg-gray-200'
+                  }`}
+                >
+                  <CheckCircle
+                    className={
+                      currentStep >= 5 ? 'text-white' : 'text-gray-400'
+                    }
+                    size={28}
+                  />
                 </div>
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-gray-400">
+                  <p
+                    className={`text-sm font-semibold ${currentStep >= 5 ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
                     Hoàn tất
                   </p>
+                  {currentStep >= 5 && (
+                    <p className="text-xs text-gray-500">Đã giao hàng</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -393,31 +587,46 @@ export default function OrderSuccessPage({
 
                 <div className="mb-5 space-y-4">
                   {orderInfo.items.map((item) => (
-                    <div key={item.id} className="flex gap-3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-20 w-20 flex-shrink-0 rounded-lg border border-gray-200 object-cover"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="mb-2 line-clamp-2 text-sm leading-tight font-medium text-gray-900">
-                          {item.name}
-                        </p>
-                        <p className="mb-1 text-xs text-gray-500">
-                          {item.size}
-                        </p>
-                        <p className="mb-2 text-xs text-gray-500">
-                          SKU: {item.sku}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">
-                            x{item.quantity}
-                          </span>
-                          <span className="text-sm font-bold text-gray-900">
-                            {formatPrice(item.price)}
-                          </span>
+                    <div key={item.id} className="flex flex-col gap-2">
+                      <div className="flex gap-3">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-20 w-20 flex-shrink-0 rounded-lg border border-gray-200 object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="mb-2 line-clamp-2 text-sm leading-tight font-medium text-gray-900">
+                            {item.name}
+                          </p>
+                          <p className="mb-1 text-xs text-gray-500">
+                            {item.size}
+                          </p>
+                          <p className="mb-2 text-xs text-gray-500">
+                            SKU: {item.sku}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              x{item.quantity}
+                            </span>
+                            <span className="text-sm font-bold text-gray-900">
+                              {formatPrice(item.price)}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      {/* Review button - only show when order is delivered */}
+                      {(orderInfo.status === 'DELIVERED' ||
+                        orderInfo.status === 'DELIVERY') &&
+                        item.productSlug && (
+                          <button
+                            onClick={() =>
+                              (window.location.href = `/product/${item.productSlug}`)
+                            }
+                            className="w-full rounded-lg border-2 border-[rgb(235,97,164)] bg-white px-3 py-2 text-sm font-medium text-[rgb(235,97,164)] transition-colors duration-200 hover:bg-[rgb(235,97,164)] hover:text-white"
+                          >
+                            Đánh giá sản phẩm
+                          </button>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -456,10 +665,7 @@ export default function OrderSuccessPage({
         <CancelOrderModal
           isOpen={showCancelModal}
           onClose={() => setShowCancelModal(false)}
-          onConfirm={() => {
-            setShowCancelModal(false);
-            showToast('Đơn hàng đã được hủy thành công', 'success');
-          }}
+          onConfirm={handleCancelOrder}
           orderCode={orderInfo.code}
         />
       </div>

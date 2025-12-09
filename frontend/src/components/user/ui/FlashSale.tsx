@@ -20,9 +20,9 @@ export default function FlashSale() {
   // For now, we'll take the first 8 products
   const flashSaleProducts = products.slice(0, 8);
 
-  const navigateToProducts = (category: string) => {
-    window.history.pushState({}, '', `/products/${category}`);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+  const navigateToProducts = () => {
+    // Navigate to all products page
+    window.location.href = '/products';
   };
 
   // Calculate countdown to midnight
@@ -128,7 +128,7 @@ export default function FlashSale() {
 
         {/* View All Button */}
         <button
-          onClick={() => navigateToProducts('flash-sale')}
+          onClick={navigateToProducts}
           className="rounded-xl border-2 border-white bg-white px-8 py-3 font-semibold text-[#d20062] transition-all hover:bg-pink-50"
         >
           Xem tất cả

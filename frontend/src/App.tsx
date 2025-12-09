@@ -246,6 +246,12 @@ function App() {
       const slug = path.replace('/product/', '');
       setProductSlug(slug);
     }
+
+    // Handle order success page
+    if (path.startsWith('/order-success/')) {
+      const code = path.replace('/order-success/', '');
+      setOrderSuccessCode(code);
+    }
   }, []);
 
   const navigate = (to: string) => {

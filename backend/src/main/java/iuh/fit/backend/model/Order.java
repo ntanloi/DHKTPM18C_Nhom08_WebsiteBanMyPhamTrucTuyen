@@ -79,9 +79,9 @@ public class Order {
     @JsonIgnore
     private Shipment shipment;
 
-    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
-    private OrderStatusHistory orderStatusHistory;
+    private List<OrderStatusHistory> orderStatusHistories;
 
     @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     @JsonIgnore
