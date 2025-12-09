@@ -37,6 +37,8 @@ export interface UserResponse {
   emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  roleName?: string;
+  hasPassword?: boolean;
 }
 
 export const createUser = async (

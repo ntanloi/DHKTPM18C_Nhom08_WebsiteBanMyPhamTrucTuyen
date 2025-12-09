@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   getAllUsers,
-  activateUser,
-  deactivateUser,
-  deleteUser,
   type UserResponse,
 } from '../../../api/user';
+import { useAuth } from '../../../hooks/useAuth';
 
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
 
@@ -14,6 +12,8 @@ interface UserListPageProps {
 }
 
 const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,45 +26,20 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
     fetchUsers();
   }, []);
 
+  const isCustomerRole = (u: UserResponse) =>
+    !u.roleName || u.roleName === 'USER' || u.roleName === 'CUSTOMER';
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const data = await getAllUsers();
-      setUsers(data);
+      const onlyCustomers = data.filter(isCustomerRole);
+      setUsers(onlyCustomers);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch users');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleActivate = async (userId: number) => {
-    try {
-      await activateUser(userId);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to activate user');
-    }
-  };
-
-  const handleDeactivate = async (userId: number) => {
-    try {
-      await deactivateUser(userId);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to deactivate user');
-    }
-  };
-
-  const handleDelete = async (userId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
-
-    try {
-      await deleteUser(userId);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete user');
     }
   };
 
@@ -131,31 +106,13 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Quản Lý Người Dùng
+                  Quản Lý Khách Hàng
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  Quản lý tài khoản khách hàng và thông tin
+                  Quản lý khách hàng.
                 </p>
               </div>
-              <button
-                onClick={() => onNavigate('/admin/users/create')}
-                className="flex transform items-center gap-2 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-pink-700 hover:to-rose-700"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Thêm Người Dùng
-              </button>
+              {/* Creation disabled as requested */}
             </div>
           </div>
 
@@ -333,7 +290,7 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-700 uppercase">
-                      Người dùng
+                      Khách hàng
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-700 uppercase">
                       Liên hệ
@@ -444,52 +401,13 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                               />
                             </svg>
                           </button>
-                          <button
-                            onClick={() =>
-                              onNavigate(`/admin/users/${user.id}/edit`)
-                            }
-                            className="rounded-lg bg-green-100 px-3 py-2 text-green-700 transition-colors hover:bg-green-200"
-                            title="Chỉnh sửa"
-                          >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          {user.isActive ? (
+                          {isAdmin && (
                             <button
-                              onClick={() => handleDeactivate(user.id)}
-                              className="rounded-lg bg-orange-100 px-3 py-2 text-orange-700 transition-colors hover:bg-orange-200"
-                              title="Vô hiệu hóa"
-                            >
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                                />
-                              </svg>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleActivate(user.id)}
+                              onClick={() =>
+                                onNavigate(`/admin/users/${user.id}/edit`)
+                              }
                               className="rounded-lg bg-green-100 px-3 py-2 text-green-700 transition-colors hover:bg-green-200"
-                              title="Kích hoạt"
+                              title="Chỉnh sửa"
                             >
                               <svg
                                 className="h-4 w-4"
@@ -501,30 +419,11 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
-                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                 />
                               </svg>
                             </button>
                           )}
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            className="rounded-lg bg-red-100 px-3 py-2 text-red-700 transition-colors hover:bg-red-200"
-                            title="Xóa"
-                          >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -549,7 +448,7 @@ const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                   />
                 </svg>
                 <p className="mt-4 text-gray-600">
-                  Không tìm thấy người dùng nào
+                  Không tìm thấy khách hàng nào
                 </p>
               </div>
             )}

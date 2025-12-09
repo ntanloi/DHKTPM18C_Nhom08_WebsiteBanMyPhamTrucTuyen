@@ -11,6 +11,7 @@ import {
 import { getProductById } from '../../../api/product';
 import { getProductImagesByProductId } from '../../../api/productImage';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface UserDetailPageProps {
   userId: string;
@@ -29,6 +30,8 @@ const UserDetailPage: React.FC<UserDetailPageProps> = ({
   userId,
   onNavigate,
 }) => {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'ADMIN';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -216,25 +219,27 @@ const UserDetailPage: React.FC<UserDetailPageProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={() => onNavigate(`/admin/users/${userId}/edit`)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:from-pink-700 hover:to-rose-700"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {isAdmin && (
+                <button
+                  onClick={() => onNavigate(`/admin/users/${userId}/edit`)}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:from-pink-700 hover:to-rose-700"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                Chỉnh Sửa
-              </button>
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  Chỉnh Sửa
+                </button>
+              )}
             </div>
           </div>
 

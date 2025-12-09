@@ -39,11 +39,13 @@ const UserCreatePage: React.FC<UserCreatePageProps> = ({ onNavigate }) => {
       setLoading(true);
       setError(null);
       await createUser(formData);
-      alert('Tạo người dùng thành công!');
+      alert('Tạo khách hàng thành công!');
       onNavigate('/admin/users');
     } catch (err: any) {
       setError(
-        err.response?.data?.error || err.message || 'Tạo người dùng thất bại',
+        err.response?.data?.error ||
+          err.message ||
+          'Tạo khách hàng thất bại',
       );
     } finally {
       setLoading(false);
@@ -94,10 +96,10 @@ const UserCreatePage: React.FC<UserCreatePageProps> = ({ onNavigate }) => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Tạo Người Dùng Mới
+                  Tạo Khách Hàng Mới
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  Điền thông tin để tạo tài khoản mới
+                  Điền thông tin để tạo khách hàng mới
                 </p>
               </div>
             </div>
