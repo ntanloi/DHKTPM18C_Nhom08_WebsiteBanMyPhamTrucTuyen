@@ -66,6 +66,9 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
       }
 
       // Transform OrderDetailResponse to Order type
+      console.log('[OrderDetailPage] Fetched order data:', orderData);
+      console.log('[OrderDetailPage] Payment info:', orderData.paymentInfo);
+
       const transformedOrder: Order = {
         id: orderData.id,
         userId: orderData.userId || 0,
@@ -83,6 +86,11 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
         payment: orderData.paymentInfo as any,
         recipientInformation: orderData.recipientInfo as any,
       };
+
+      console.log(
+        '[OrderDetailPage] Transformed order payment:',
+        transformedOrder.payment,
+      );
       setOrder(transformedOrder);
 
       // TODO: Get real order status history from backend
@@ -453,12 +461,13 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
           loading={cancelling}
         />
       </div>
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
     </AdminLayout>
   );
 };

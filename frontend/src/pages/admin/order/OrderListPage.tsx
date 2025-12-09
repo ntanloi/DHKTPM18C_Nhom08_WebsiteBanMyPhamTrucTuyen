@@ -74,25 +74,42 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ onNavigate }) => {
       setError(null);
       const ordersData = await getAllOrders();
 
+      console.log('[OrderListPage] Fetched orders:', ordersData);
+      console.log(
+        '[OrderListPage] First order payment info:',
+        ordersData[0]?.paymentInfo,
+      );
+      console.log(
+        '[OrderListPage] First order paymentMethod:',
+        ordersData[0]?.paymentMethod,
+      );
+
       // Transform OrderResponse to Order type
       const transformedOrders: Order[] = ordersData.map(
-        (order: OrderResponse) => ({
-          id: order.id,
-          userId: order.userId || 0,
-          status: order.status || 'PENDING',
-          subtotal: order.subtotal || 0,
-          totalAmount: order.totalAmount || 0,
-          notes: order.notes || '',
-          discountAmount: order.discountAmount || 0,
-          shippingFee: order.shippingFee || 0,
-          estimateDeliveryFrom: order.estimateDeliveryFrom || '',
-          estimateDeliveryTo: order.estimateDeliveryTo || '',
-          createdAt: order.createdAt || new Date().toISOString(),
-          updatedAt: order.updatedAt || new Date().toISOString(),
-          orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
-          payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
-          recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
-        }),
+        (order: OrderResponse) => {
+          console.log(
+            `[OrderListPage] Order ${order.id} - paymentMethod: ${order.paymentMethod}, paymentInfo:`,
+            order.paymentInfo,
+          );
+          return {
+            id: order.id,
+            userId: order.userId || 0,
+            status: order.status || 'PENDING',
+            subtotal: order.subtotal || 0,
+            totalAmount: order.totalAmount || 0,
+            notes: order.notes || '',
+            discountAmount: order.discountAmount || 0,
+            shippingFee: order.shippingFee || 0,
+            estimateDeliveryFrom: order.estimateDeliveryFrom || '',
+            estimateDeliveryTo: order.estimateDeliveryTo || '',
+            createdAt: order.createdAt || new Date().toISOString(),
+            updatedAt: order.updatedAt || new Date().toISOString(),
+            orderItems: undefined, // OrderResponse.orderItems is just a count, not the actual items
+            payment: order.paymentInfo as any, // PaymentInfoResponse doesn't fully match Payment type
+            recipientInformation: order.recipientInfo as any, // RecipientInfoResponse doesn't fully match RecipientInformation type
+            paymentMethod: order.paymentMethod, // Add payment method from backend
+          };
+        },
       );
 
       setOrders(transformedOrders);

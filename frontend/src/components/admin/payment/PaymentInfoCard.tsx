@@ -26,18 +26,43 @@ interface PaymentInfoCardProps {
 }
 
 const PaymentInfoCard: React.FC<PaymentInfoCardProps> = ({ payment }) => {
-  const paymentMethod = payment.paymentMethods?.[0];
+  console.log('[PaymentInfoCard] Received payment:', payment);
+  console.log(
+    '[PaymentInfoCard] paymentMethodName:',
+    (payment as any).paymentMethodName,
+  );
+  console.log(
+    '[PaymentInfoCard] paymentMethods array:',
+    payment.paymentMethods,
+  );
 
-  const getPaymentMethodIcon = (code: string) => {
+  const paymentMethod = payment.paymentMethods?.[0];
+  // Get payment method name from payment object (from backend)
+  const paymentMethodName =
+    (payment as any).paymentMethodName || paymentMethod?.name || 'N/A';
+  const paymentMethodCode = paymentMethod?.code || 'UNKNOWN';
+
+  console.log('[PaymentInfoCard] Final paymentMethodName:', paymentMethodName);
+
+  const getPaymentMethodIcon = (name: string) => {
+    const nameUpper = name.toUpperCase();
     const icons: Record<string, string> = {
       COD: '💵',
-      BANK_TRANSFER: '🏦',
-      CREDIT_CARD: '💳',
+      'BANK TRANSFER': '🏦',
+      'CREDIT CARD': '💳',
       MOMO: '📱',
       ZALOPAY: '💰',
       VNPAY: '🔷',
+      'VN PAY': '🔷',
     };
-    return icons[code] || '💳';
+
+    // Try to match by name
+    for (const [key, icon] of Object.entries(icons)) {
+      if (nameUpper.includes(key)) {
+        return icon;
+      }
+    }
+    return '💳';
   };
 
   const getStatusDescription = (status: string) => {
@@ -94,17 +119,17 @@ const PaymentInfoCard: React.FC<PaymentInfoCardProps> = ({ payment }) => {
 
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl">
-            {paymentMethod && getPaymentMethodIcon(paymentMethod.code)}
+            {getPaymentMethodIcon(paymentMethodName)}
           </div>
           <div className="flex-1">
             <p className="text-xs text-gray-500">Phương thức thanh toán</p>
             <p className="text-sm font-medium text-gray-900">
-              {paymentMethod?.name || 'N/A'}
+              {paymentMethodName}
             </p>
             {paymentMethod && (
               <div className="mt-1 flex items-center gap-2">
                 <span className="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                  {paymentMethod.code}
+                  {paymentMethodCode}
                 </span>
                 {paymentMethod.isActive && (
                   <span className="inline-flex items-center gap-1 text-xs text-green-600">
