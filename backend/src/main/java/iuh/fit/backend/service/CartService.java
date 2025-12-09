@@ -5,12 +5,10 @@ import iuh.fit.backend.model.Cart;
 import iuh.fit.backend.model.CartItem;
 import iuh.fit.backend.model.ProductImage;
 import iuh.fit.backend.model.ProductVariant;
-import iuh.fit.backend.model.ProductImage;
 import iuh.fit.backend.repository.CartItemRepository;
 import iuh.fit.backend.repository.CartRepository;
 import iuh.fit.backend.repository.ProductImageRepository;
 import iuh.fit.backend.repository.ProductVariantRepository;
-import iuh.fit.backend.repository.ProductImageRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,8 +34,6 @@ public class CartService {
     @Autowired
     private ProductImageRepository productImageRepository;
 
-    @Autowired
-    private ProductImageRepository productImageRepository;
 
     @Transactional
     public CartResponse getCartByUserId(Integer userId) {
